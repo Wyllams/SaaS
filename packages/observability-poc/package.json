@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "build": "node --check src/runtime.mjs && node --check src/structured-log.mjs && node --check src/scenario.mjs && node --check src/sentry-contract.mjs",
-    "check": "node --test tests/*.test.mjs"
+    "check": "node --test tests/*.test.mjs",
+    "external": "node src/sentry-external.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/context-async-hooks": "2.11.0",
     "@opentelemetry/core": "2.11.0",
-    "@opentelemetry/sdk-trace": "2.11.0"
+    "@opentelemetry/sdk-trace": "2.11.0",
+    "@sentry/node": "11.0.0"
   }
 }

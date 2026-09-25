@@ -1,0 +1,58 @@
+name: POC-12 Sentry External Bootstrap
+
+on:
+  push:
+    branches:
+      - poc/12-observability-e2e
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sentry-external:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: poc/12-observability-e2e
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Resolve Sentry dependency
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify local observability contract
+        run: |
+          pnpm run verify:structure
+          pnpm --filter observability-poc build
+          pnpm --filter observability-poc check
+
+      - name: Send controlled error and trace to Sentry
+        run: pnpm --filter observability-poc external
+
+      - name: Commit Sentry dependency lock
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Dependency lock already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore(poc-12): lock Sentry external dependency [skip ci]"
+          git push origin HEAD:poc/12-observability-e2e

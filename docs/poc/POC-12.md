@@ -88,6 +88,20 @@ The local contract verifies:
 
 Sentry is therefore **not approved as the external backend by POC-12 yet**.
 
+### External test prepared
+
+The branch includes a controlled Sentry external-ingestion test that:
+
+- reads `SENTRY_DSN` only from the GitHub Actions secret environment;
+- initializes `@sentry/node` with tracing enabled at 100% sampling for the PoC;
+- sends one synthetic controlled exception inside an active span;
+- disables default PII collection;
+- strips Authorization/Cookie headers if present;
+- flushes before process exit;
+- prints only the returned Sentry event id and flush status.
+
+The workflow never prints the DSN.
+
 ## Security guardrails
 
 - no Authorization headers in logs;
