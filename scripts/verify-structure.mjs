@@ -29,6 +29,6 @@ for (const [directory, packageName] of expected) {
 
 await access(resolve(root, "supabase/functions/identity-me/index.ts"));
 await access(resolve(root, "supabase/config.toml"));
-await access(resolve(root, "supabase/migrations/20260925201500_enable_supabase_async_infrastructure.sql"));
+await access(resolve(root, "supabase/migrations/20260925230745_enable_supabase_async_infrastructure.sql"));
 
 console.log(`Foundation structure verified: ${expected.size} workspaces + Supabase backend runtime.`);
