@@ -519,9 +519,9 @@ Este documento não deve esconder o que os POCs não provaram.
 
 ### 15.1 POC-10 — Resend
 
-Falta o webhook externo real.
+O webhook externo real permanece pendente.
 
-Até esse teste, Resend não é considerado completamente aprovado para o fluxo inbound/webhook.
+**Decisão do proprietário em 2026-09-25:** esta pendência está **deferida e não bloqueia** o avanço das demais decisões arquiteturais. Até o teste ser retomado, Resend continua não aprovado para o fluxo inbound/webhook definitivo.
 
 ### 15.2 Web framework definitivo
 
