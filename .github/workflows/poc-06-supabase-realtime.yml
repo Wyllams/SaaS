@@ -1,0 +1,102 @@
+name: POC-06 Supabase Realtime
+
+on:
+  push:
+    branches:
+      - poc/06-supabase-realtime
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_PROJECT_URL: https://obpncbnzwrocvgngtodg.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: sb_publishable_azN1kYX6Kc1HnFMybY754g_yS0AbUTc
+      SUPABASE_SESSION_DATABASE_URL: ${{ secrets.SUPABASE_SESSION_DATABASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Verify required database secret exists
+        run: test -n "$SUPABASE_SESSION_DATABASE_URL"
+
+      - name: Install dependencies and update lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Persist dependency lockfile once
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml pnpm-workspace.yaml
+            git commit -m "chore: persist POC-06 dependency lockfile"
+            git push
+          fi
+
+      - name: Prepare temporary Realtime authorization and persistence resources
+        env:
+          PGSSLMODE: require
+        run: |
+          psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          drop policy if exists "poc06_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_send_authorized_topic" on realtime.messages;
+
+          create policy "poc06_receive_authorized_topic"
+          on realtime.messages
+          for select
+          to anon
+          using (
+            (select realtime.topic()) = 'poc06:authorized'
+            and realtime.messages.extension = 'broadcast'
+          );
+
+          create policy "poc06_send_authorized_topic"
+          on realtime.messages
+          for insert
+          to anon
+          with check (
+            (select realtime.topic()) = 'poc06:authorized'
+            and realtime.messages.extension = 'broadcast'
+          );
+
+          create table if not exists public.poc06_events (
+            id uuid primary key,
+            payload jsonb not null,
+            created_at timestamptz not null default now()
+          );
+
+          alter table public.poc06_events enable row level security;
+          SQL
+
+      - name: Type-check Realtime PoC
+        run: pnpm --filter @crewcommand/realtime-poc check
+
+      - name: Run Realtime PoC
+        run: pnpm --filter @crewcommand/realtime-poc poc:test
+
+      - name: Cleanup temporary Supabase resources
+        if: always()
+        env:
+          PGSSLMODE: require
+        run: |
+          psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          drop policy if exists "poc06_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_send_authorized_topic" on realtime.messages;
+          drop table if exists public.poc06_events;
+          SQL
