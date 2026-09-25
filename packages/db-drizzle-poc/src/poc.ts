@@ -11,12 +11,20 @@ const CUSTOMER_A2 = "aaaaaaaa-aaaa-7aaa-8aaa-aaaaaaaaaaa2";
 const CUSTOMER_B1 = "bbbbbbbb-bbbb-7bbb-8bbb-bbbbbbbbbbb1";
 const ROLLBACK_ID = "aaaaaaaa-aaaa-7aaa-8aaa-aaaaaaaaaaa9";
 
+type CustomerRow = typeof customers.$inferSelect;
+type NamedCustomer = { id: string; name: string };
+type TrigramRow = { name: string; score: number };
+type QueryRows<T> = { rows: T[] };
+
 const adminPool = new Pool({ connectionString: process.env.DRIZZLE_DATABASE_URL });
 const appPool = new Pool({ connectionString: process.env.DRIZZLE_APP_DATABASE_URL });
 const admin = drizzle(adminPool);
 const app = drizzle(appPool);
 
-async function withWorkspace<T>(workspaceId: string, fn: (tx: any) => Promise<T>) {
+async function withWorkspace<T>(
+  workspaceId: string,
+  fn: (tx: any) => Promise<T>,
+): Promise<T> {
   return app.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.workspace_id', ${workspaceId}, true)`);
     return fn(tx);
@@ -37,13 +45,13 @@ async function main() {
     { id: CUSTOMER_B1, workspaceId: WORKSPACE_B, name: "Beta Customer", email: "b1@example.com", metadata: { tier: "vip" } },
   ]);
 
-  const alphaRows = await withWorkspace(WORKSPACE_A, (tx) =>
+  const alphaRows = await withWorkspace<CustomerRow[]>(WORKSPACE_A, (tx) =>
     tx.select().from(customers).orderBy(customers.name),
   );
   assert.equal(alphaRows.length, 2);
-  assert.ok(alphaRows.every((row: typeof customers.$inferSelect) => row.workspaceId === WORKSPACE_A));
+  assert.ok(alphaRows.every((row) => row.workspaceId === WORKSPACE_A));
 
-  const betaRows = await withWorkspace(WORKSPACE_B, (tx) =>
+  const betaRows = await withWorkspace<CustomerRow[]>(WORKSPACE_B, (tx) =>
     tx.select().from(customers),
   );
   assert.equal(betaRows.length, 1);
@@ -51,7 +59,7 @@ async function main() {
 
   let crossTenantInsertDenied = false;
   try {
-    await withWorkspace(WORKSPACE_A, (tx) =>
+    await withWorkspace<unknown>(WORKSPACE_A, (tx) =>
       tx.insert(customers).values({
         id: "bbbbbbbb-bbbb-7bbb-8bbb-bbbbbbbbbbb9",
         workspaceId: WORKSPACE_B,
@@ -65,7 +73,7 @@ async function main() {
   assert.equal(crossTenantInsertDenied, true, "RLS must deny cross-workspace insert");
 
   try {
-    await withWorkspace(WORKSPACE_A, async (tx) => {
+    await withWorkspace<never>(WORKSPACE_A, async (tx) => {
       await tx.insert(customers).values({
         id: ROLLBACK_ID,
         workspaceId: WORKSPACE_A,
@@ -84,15 +92,15 @@ async function main() {
     .where(eq(customers.id, ROLLBACK_ID));
   assert.equal(rolledBack.length, 0, "transaction rollback must remove inserted row");
 
-  const vipRows = await withWorkspace(WORKSPACE_A, (tx) =>
+  const vipRows = await withWorkspace<NamedCustomer[]>(WORKSPACE_A, (tx) =>
     tx
       .select({ id: customers.id, name: customers.name })
       .from(customers)
       .where(sql`${customers.metadata}->>'tier' = 'vip'`),
   );
-  assert.deepEqual(vipRows.map((row: { name: string }) => row.name), ["Acme Home"]);
+  assert.deepEqual(vipRows.map((row) => row.name), ["Acme Home"]);
 
-  const fts = await withWorkspace(WORKSPACE_A, (tx) =>
+  const fts = await withWorkspace<QueryRows<NamedCustomer>>(WORKSPACE_A, (tx) =>
     tx.execute(sql`
       select id, name
       from customers
@@ -102,7 +110,7 @@ async function main() {
   );
   assert.equal(fts.rows.length, 1);
 
-  const trigram = await withWorkspace(WORKSPACE_A, (tx) =>
+  const trigram = await withWorkspace<QueryRows<TrigramRow>>(WORKSPACE_A, (tx) =>
     tx.execute(sql`
       select name, similarity(name, 'Acme') as score
       from customers
@@ -120,6 +128,7 @@ async function main() {
     jsonb: "PASS",
     fullTextSearch: "PASS",
     pgTrgm: "PASS",
+    strictTypecheckHarness: "PASS",
   }));
 }
 
