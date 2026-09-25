@@ -33,6 +33,9 @@ jobs:
       - name: Resolve dependency graph
         run: pnpm install --no-frozen-lockfile
 
+      - name: Ensure manifests were not mutated
+        run: git diff --exit-code -- package.json pnpm-workspace.yaml apps/*/package.json packages/*/package.json
+
       - name: Verify foundation structure
         run: pnpm run verify:structure
 
