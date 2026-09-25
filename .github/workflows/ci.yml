@@ -1,0 +1,116 @@
+name: Foundation CI
+
+on:
+  push:
+    branches:
+      - main
+      - epic/00-foundation
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Install committed dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify foundation structure
+        run: pnpm run verify:structure
+
+      - name: Verify secret baseline
+        run: pnpm run verify:secrets
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Unit tests
+        run: pnpm run test
+
+      - name: Type-check
+        run: pnpm run check
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Smoke-test API health and readiness contract
+        run: |
+          APP_ENV=development PORT=4000 HOST=127.0.0.1 node apps/api/dist/main.js >/tmp/api.log 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4000/health >/tmp/api-health.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          cat /tmp/api-health.json
+          node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync("/tmp/api-health.json","utf8")); if(x.status!=="ok"||x.service!=="api") process.exit(1)'
+
+          READY_CODE=$(curl --silent --output /tmp/api-ready.json --write-out "%{http_code}" http://127.0.0.1:4000/ready)
+          cat /tmp/api-ready.json
+          test "$READY_CODE" = "503"
+
+          kill "$API_PID"
+          wait "$API_PID" || true
+          trap - EXIT
+
+      - name: Smoke-test Worker readiness against Valkey
+        run: |
+          APP_ENV=development REDIS_URL=redis://127.0.0.1:6379 node apps/worker/dist/main.js >/tmp/worker.log 2>&1 &
+          WORKER_PID=$!
+          trap 'kill "$WORKER_PID" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if grep -q '"readiness":"ready"' /tmp/worker.log; then
+              break
+            fi
+            sleep 1
+          done
+
+          cat /tmp/worker.log
+          grep -q '"readiness":"ready"' /tmp/worker.log
+          grep -q '"handlers":0' /tmp/worker.log
+
+          kill "$WORKER_PID"
+          wait "$WORKER_PID" || true
+          trap - EXIT
+
+      - name: Verify repository remains clean
+        run: |
+          STATUS=$(git status --porcelain)
+          if [ -n "$STATUS" ]; then
+            echo "$STATUS"
+            exit 1
+          fi
