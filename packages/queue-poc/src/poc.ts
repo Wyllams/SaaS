@@ -73,9 +73,9 @@ async function idempotencyTest() {
         const claimed = await redis.set(
           `poc05:idempotency:${job.data.operationId}`,
           "processed",
-          "NX",
           "EX",
           120,
+          "NX",
         );
         if (claimed === "OK") {
           await redis.incr(sideEffectCounter);
