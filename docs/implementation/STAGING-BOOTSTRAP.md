@@ -1,96 +1,54 @@
 # Staging Bootstrap Contract
 
 - **Date:** 2026-09-25
-- **Authority:** ADR-015
-- **Status:** documented; external provisioning requires its own execution/review
+- **Authority:** ADR-016
 - **Purpose:** production-like validation with synthetic/test data
 
 ## Required topology
 
-1. Supabase project in North Virginia (`us-east-1`).
-2. Render Key Value in Virginia.
-3. Render API Web Service in Virginia.
-4. Render Background Worker in Virginia.
-5. Vercel Web environment/project using US East server execution.
-6. Sentry Staging environment/project configuration.
-7. Expo EAS Preview profile for mobile validation when required.
-8. GitHub Actions as CI source.
+1. isolated Supabase Staging project in `us-east-1`;
+2. PostgreSQL/Auth/Storage/Realtime in that project;
+3. Edge Functions deployed from `supabase/functions`;
+4. PGMQ + pg_cron (+ pg_net when required) enabled through versioned migrations;
+5. Vercel Staging/Preview Web configured with the Staging Supabase URL + publishable key;
+6. Sentry Staging configuration where observability is enabled;
+7. Expo EAS Preview when mobile validation is required;
+8. GitHub Actions as CI.
+
+No Render API, Render Worker, Render Key Value, Redis or Valkey resource is required.
 
 ## Order
 
-### 1. Data plane
+### 1. Supabase project
 
-Create/identify the isolated Staging Supabase project.
+Create/identify isolated Staging. Keep secrets in secret stores.
 
-Record only non-secret identifiers in documentation. Keep connection credentials in secret stores.
+### 2. Database modules and migrations
 
-### 2. Queue
+Apply reviewed migrations. Verify required extensions and RLS/constraints. Never create business schema manually as an undocumented dashboard-only change.
 
-Create Staging Render Key Value in Virginia.
+### 3. Edge Functions
 
-Provide `REDIS_URL` only to server/worker environments that require it.
+Deploy approved functions. Verify auth behavior, error safety and logs without secrets.
 
-### 3. API
+### 4. Queues/Cron
 
-Create Render Web Service for `apps/api`.
-
-Required configuration includes:
-
-- `APP_ENV=staging`
-- `DATABASE_URL`
-- `REDIS_URL`
-- `SENTRY_DSN` when enabled
-- explicit `SENTRY_TRACES_SAMPLE_RATE` when tracing is enabled
-
-Verify:
-
-- `/health` returns success;
-- `/ready` returns success only after required dependencies are configured.
-
-### 4. Worker
-
-Create Render Background Worker for `apps/worker`.
-
-Verify its readiness log after a successful Valkey connection.
-
-No business queue handlers exist in Epic 0.
+Create only queues/schedules owned by an implemented business handler. Do not expose queues to client-side Data API by default.
 
 ### 5. Web
 
-Configure Vercel for `apps/web`.
+Configure Vercel with:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-Set:
+There is no separate backend base URL.
 
-- `NEXT_PUBLIC_API_BASE_URL` to the Staging API public origin.
-
-No secret belongs in this variable.
-
-### 6. Observability
-
-Use Staging-specific Sentry configuration.
-
-Verify error/tracing behavior without real customer data.
-
-### 7. Mobile preview
-
-Use the EAS `preview` profile when a mobile release candidate needs device validation.
-
-Final App Store / Play Store credentials are not part of this bootstrap.
-
-## Staging acceptance
-
-Before Staging is considered usable:
+## Acceptance
 
 - CI passes from committed lockfile;
-- Web/API/Worker builds are reproducible;
-- API health/readiness are verified;
-- Worker reaches queue readiness;
-- environment secrets are isolated;
-- no Production provider credential is present;
-- no real customer/payment data is used.
-
-## Rollback / disposal
-
-Staging resources are disposable relative to Production.
-
-Deleting or recreating a Staging provider resource must still be deliberate and documented; this file does not authorize external deletion.
+- Web/Mobile builds are reproducible;
+- Supabase migrations are versioned;
+- required Edge Functions are deployed;
+- queues/schedules match implemented handlers only;
+- secrets are isolated;
+- no Production credentials or real customer/payment data are used.

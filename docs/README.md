@@ -2,16 +2,21 @@
 
 The `main` branch is the canonical working branch for this SaaS.
 
-## Source of truth
+## Current authority
 
-- `source-of-truth/` — approved product and implementation documents.
-- `architecture/` — consolidated technical architecture.
-- `adr/` — accepted architecture decisions.
-- `implementation/` — execution model, Epic status/QA, environments and bootstrap guides.
-- `repository/` — repository organization and historical branch inventory.
+1. `source-of-truth/CURRENT-DECISIONS.md`
+2. `architecture/TECHNICAL-ARCHITECTURE.md`
+3. accepted/current ADRs, especially ADR-016 for backend runtime
+4. canonical product documents
+5. historical PoC/validation evidence
 
-## Historical validation
+## Directories
 
-The PoC and validation branches are retained as historical evidence. Their accepted decisions have already been consolidated into the architecture and ADRs in `main`.
+- `source-of-truth/` — approved product documents plus current overrides.
+- `architecture/` — consolidated current technical architecture.
+- `adr/` — current and superseded architecture decisions.
+- `implementation/` — execution model, status/QA, environments and bootstrap.
+- `repository/` — repository organization/history.
+- `poc/` — historical technical evidence.
 
-Experimental PoC code must not be treated as production code. See `repository/BRANCH-INVENTORY.md`.
+Render/NestJS/BullMQ/Valkey references in superseded ADRs or historical QA remain audit evidence only. The current backend runtime is Supabase per ADR-016.

@@ -1,5 +1,10 @@
 # Codex Task Packet — EPIC-01-SLICE-01
 
+## Supersession — backend runtime
+
+ADR-016 supersedes the NestJS/Render transport details in this completed Task Packet. The functional Slice 01 contract remains: authenticated Supabase user → server-side verification/reconciliation → minimal internal User response. Its current transport is Supabase Edge Function `identity-me`. Historical Render/NestJS steps below are evidence only and must not guide new work.
+
+
 - **Status:** APPROVED — Product Owner approved on 2026-09-25
 - **Epic:** Epic 1 — Identity / Workspace / Membership / Permissions
 - **Slice:** Authentication and server-side identity boundary

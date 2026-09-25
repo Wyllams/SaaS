@@ -6,30 +6,33 @@ import { createSupabaseBrowserClient } from "../../lib/supabase/browser";
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const configured = Boolean(createSupabaseBrowserClient() && apiBaseUrl);
+  const configured = Boolean(createSupabaseBrowserClient());
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const client = createSupabaseBrowserClient();
     if (!client) return;
-    setSubmitting(true); setError(null);
+
+    setSubmitting(true);
+    setError(null);
+
     const form = new FormData(event.currentTarget);
     const { data, error: signInError } = await client.auth.signInWithPassword({
-      email: String(form.get("email")), password: String(form.get("password")),
+      email: String(form.get("email")),
+      password: String(form.get("password")),
     });
-    if (signInError || !data.session?.access_token || !apiBaseUrl) {
+
+    if (signInError || !data.session?.access_token) {
       setError("Unable to sign in. Check your email and password.");
       setSubmitting(false);
       return;
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl.replace(/\/$/, "")}/identity/me`, {
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      const { error: identityError } = await client.functions.invoke("identity-me", {
+        method: "GET",
       });
-
-      if (!response.ok) setError("Unable to sign in. Check your email and password.");
+      if (identityError) setError("Unable to sign in. Check your email and password.");
     } catch {
       setError("Unable to sign in. Check your email and password.");
     } finally {

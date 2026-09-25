@@ -1,8 +1,11 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — Status
 
+> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+
+
 - **Date:** 2026-09-25
 - **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
-- **State:** Slice 01 is implemented; the Web is published on Vercel and the NestJS API is Live on Render Free. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.
+- **State:** Slice 01 identity handoff has been migrated to the active Supabase Edge Function `identity-me`; the Render API is historical/superseded. Successful authenticated reconciliation still requires a controlled account proof.
 - **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
 
 ## Scope of the Epic
@@ -69,7 +72,7 @@ Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It ca
 - [x] Confirmar no código os pontos exatos de integração Web/API/DB autorizados pelo Task Packet.
 - [x] Resolver a estratégia UUIDv7: geração na aplicação por dependência revisada, sem extensão nem alteração remota no PostgreSQL.
 - [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0; dependências restauradas com lockfile congelado.
-- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case, repositório e `GET /identity/me` estão implementados e a API NestJS está Live; falta exclusivamente a prova integrada com conta controlada e configuração server-side aprovada.
+- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, reconciliação e o handoff `identity-me` estão implementados em Supabase Edge Functions; falta exclusivamente a prova integrada com conta controlada.
 - [x] Definir estado/lifecycle inicial e a representação persistida de `User`, aprovado pelo Product Owner em 2026-09-25.
 - [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies públicas.
 - [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
@@ -103,8 +106,8 @@ Os itens abaixo são exigências do Implementation Plan. A ordem dos próximos s
 
 - [x] Executar exclusivamente a migration remota revisada de identidade, autorizada pelo Product Owner em 2026-09-25; incluir RLS default-deny e validar tabelas/RLS após a aplicação.
 - [x] Publicar em GitHub `main` e Vercel Production, explicitamente autorizado pelo Product Owner em 2026-09-25.
-- [x] Provisionar e publicar o backend NestJS no Render, autorizado posteriormente pelo Product Owner em 2026-09-25: serviço `saas-api`, Virginia (US East), plano Free, origem pública e comandos de build/start ajustados para as dependências de runtime. Nenhum plano pago, secret ou migration foi criado/alterado.
-- [ ] **Não executar sem nova decisão específica:** alteração de Supabase Auth, transmissão de `DATABASE_URL`/credenciais de verificação para o Render ou criação de conta Auth controlada.
+- [x] Evidência histórica: o backend NestJS chegou a ser publicado no Render. **Superseded:** ADR-016 migrou o handoff para Supabase Edge Functions; Render não é mais runtime atual.
+- [ ] **Não executar sem nova decisão específica:** criação/alteração de conta Auth controlada ou qualquer mudança privilegiada fora do contrato aprovado.
 
 ## Required next artifact
 
@@ -231,3 +234,12 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - [x] **API deploy:** Render publicou `4f912b1` como `dep-darfav142hec73agseng`, com estado `Deploy succeeded | Live`.
 - [x] **CORS proof:** preflight de `https://saas-pi-one-31.vercel.app` para `/identity/me` retornou `204`, `Access-Control-Allow-Origin` exato, `Access-Control-Allow-Headers: authorization` e `Access-Control-Allow-Methods: GET`. Um Origin externo recebeu o cabeçalho da origem oficial e, por não corresponder à própria origem, é bloqueado pelo navegador.
 - [-] **Live successful reconciliation:** pendente apenas de um novo submit da conta controlada na Web publicada e posterior inspeção de request/log/mapeamento. Nenhuma senha, token ou secret será solicitado, exibido ou registrado.
+
+## Migração Supabase-only — 2026-09-25
+
+- Edge Function `identity-me` versão 1: ACTIVE no projeto Supabase `obpncbnzwrocvgngtodg`.
+- `pgmq`, `pg_cron` e `pg_net` habilitados.
+- Web atualizado para invocar `identity-me` pelo cliente Supabase; `NEXT_PUBLIC_API_BASE_URL` removida.
+- `apps/api` e `apps/worker` removidos como unidades de runtime/workspace.
+- ADR-016 passa a ser a autoridade de backend.
+- Antiga evidência Render permanece abaixo apenas como histórico.

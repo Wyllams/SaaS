@@ -1,9 +1,13 @@
 # ADR-015 — Deployment Topology and Environment Boundaries
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-016
 - **Date:** 2026-09-25
 - **Scope:** Epic 0 infrastructure topology
 - **Branding:** neutral; no final product name assumed
+
+## Supersession notice
+
+This decision remains historical evidence of what was validated. It is no longer the active production architecture after the Product Owner decision of 2026-09-25. The current backend runtime is defined by **ADR-016**: Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, with no Render runtime dependency.
 
 ## Context
 

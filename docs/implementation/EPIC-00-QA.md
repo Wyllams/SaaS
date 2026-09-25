@@ -1,5 +1,8 @@
 # Epic 0 — Foundation — QA e Evidências
 
+> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+
+
 - **Data:** 2026-09-25
 - **Branch:** `epic/00-foundation`
 - **Resultado final:** PASS
@@ -122,3 +125,7 @@ A fundação atende ao gate técnico do Epic 0 na branch.
 O resultado ainda precisa de revisão/merge antes de autorizar o Epic 1.
 
 Não houve provisionamento de Production nem uso de dados reais.
+
+## Post-migration QA status — 2026-09-25
+
+The Valkey/API/Worker smoke evidence in this document belongs to the superseded foundation. The current branch removes those runtime units and replaces them with versioned Supabase Edge Functions and the async-infrastructure migration. Current CI evidence is recorded on the Supabase migration PR.

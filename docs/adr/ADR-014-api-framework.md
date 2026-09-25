@@ -1,10 +1,14 @@
 # ADR-014 — API Framework
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-016
 - **Date:** 2026-09-25
 - **Scope:** `apps/api`
 - **Validated by:** Epic 0 API framework validation
 - **Branding:** neutral for production implementation
+
+## Supersession notice
+
+This decision remains historical evidence of what was validated. It is no longer the active production architecture after the Product Owner decision of 2026-09-25. The current backend runtime is defined by **ADR-016**: Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, with no Render runtime dependency.
 
 ## Context
 

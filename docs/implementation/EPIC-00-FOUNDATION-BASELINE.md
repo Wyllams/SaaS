@@ -1,11 +1,10 @@
 # Epic 0 — Foundation Baseline
 
 - **Date:** 2026-09-25
-- **Branch:** `epic/00-foundation`
-- **Status:** implementation in progress
-- **Business features:** not started
+- **Status:** current baseline after Supabase backend migration
+- **Authority:** ADR-016
 
-## Approved runtime/tooling baseline
+## Runtime/tooling baseline
 
 | Area | Baseline |
 |---|---|
@@ -13,50 +12,32 @@
 | pnpm | 12.6.0 |
 | Turborepo | 2.11.4 |
 | TypeScript | 6.0.3 |
-| Web | Next.js 16.3.6 + React 19.2.0 |
-| Web styling | Tailwind CSS 4.3.3 + semantic CSS variables |
-| API | NestJS 12.1.0 + Fastify 5.12.5 |
-| Queue | BullMQ 6.3.4 + ioredis 6.0.0 + Valkey-compatible service |
-| Mobile | Expo 57 + Expo Router 57 + React Native 0.86.3 |
-| Realtime | Supabase Realtime Broadcast (ADR-006) |
-| Observability | OpenTelemetry contracts + Sentry 11.0.0 server baseline |
-| Lint | Oxlint 1.85.0 |
+| Web | Next.js 16 + React 19 / Vercel |
+| Styling | Tailwind CSS 4 + semantic CSS variables |
+| Backend HTTP | Supabase Edge Functions |
+| Database/Auth/Storage/Realtime | Supabase |
+| Queue | Supabase Queues / PGMQ |
+| Scheduling | Supabase Cron / pg_cron |
+| Mobile | Expo 57 + Expo Router |
+| Observability | OpenTelemetry contracts + Sentry where supported |
+| Lint | Oxlint |
 
-## Why TypeScript 6.0.3
-
-Some isolated PoCs used TypeScript 7.x while testing libraries in isolation.
-
-The deployable application validations provide a stronger cross-application compatibility signal:
-
-- validated Next.js candidate: TypeScript 6.0.3;
-- validated NestJS/Fastify candidate: TypeScript 6.0.3;
-- validated Expo mobile foundation: TypeScript ~6.0.3.
-
-Therefore the initial definitive monorepo standardizes on TypeScript 6.0.3.
-
-A future TypeScript-major upgrade requires a repository-wide compatibility pass rather than independent package drift.
-
-## Naming
-
-Production scaffold names are neutral:
-
-- root: `saas-platform`;
-- workspace scope: `@saas/*`.
-
-The historical working product name remains only in source evidence/legacy documents.
-
-## Current package boundaries
+## Current structure
 
 ```text
 apps/
   web/
-  api/
-  worker/
   mobile/
+
+supabase/
+  functions/
+    identity-me/
+  migrations/
 
 packages/
   api-client/
   config/
+  db/
   design-tokens/
   domain-types/
   observability/
@@ -64,46 +45,21 @@ packages/
   validation/
 ```
 
-The observability package is an additional shared boundary justified by ADR-012 and cross-process trace/log requirements.
+`apps/api` and `apps/worker` are no longer deployable units. Their former NestJS/Fastify and BullMQ/Valkey foundation is superseded by ADR-016.
 
-## Environment variable contract
+## Environment contract
 
-No values or secrets are committed.
+Web:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-### Shared
+Hosted Edge Functions receive Supabase runtime variables such as `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_DB_URL`. Additional provider secrets are added only by the owning Epic.
 
-- `APP_ENV` = development | staging | production
-- `LOG_LEVEL`
+## Foundation rules
 
-### Web
-
-- `NEXT_PUBLIC_API_BASE_URL`
-
-Only values intentionally safe for browser exposure may use `NEXT_PUBLIC_*`.
-
-### API
-
-- `PORT`
-- `HOST`
-- `DATABASE_URL`
-
-### Worker / queue
-
-- `REDIS_URL`
-
-### Observability
-
-- `SENTRY_DSN`
-- `SENTRY_TRACES_SAMPLE_RATE`
-
-The Production trace sample rate is deliberately **not** chosen in this baseline. It remains an explicit operations/capacity decision.
-
-## Rules
-
-- Development, Staging and Production use separate provider resources/secrets.
-- Production secrets never enter Git.
-- PoC/Sandbox IDs are never promoted into Production configuration.
-- API and Worker are independently deployable.
-- Worker contains no business job handlers in Epic 0.
-- Web/Mobile contain only foundation validation surfaces in Epic 0.
-- Domain schemas and feature contracts enter through their owning Epics.
+- separate Development/Staging/Production projects and secrets;
+- no production secret in Git/client bundles;
+- Edge Functions are bounded invocations, not persistent workers;
+- Queues/PGMQ is server-side by default;
+- jobs are idempotent and use PostgreSQL as authoritative state;
+- no Render, Redis/Valkey or BullMQ dependency without a new ADR.

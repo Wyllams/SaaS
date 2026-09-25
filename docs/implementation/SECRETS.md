@@ -1,37 +1,37 @@
 # Secrets Policy
 
 - **Date:** 2026-09-25
-- **Status:** approved Epic 0 baseline
+- **Status:** current baseline
+- **Authority:** ADR-016
 
 ## Rules
 
 1. No secret is committed to Git.
-2. No secret is placed in `NEXT_PUBLIC_*` or another client-exposed variable.
+2. No secret is placed in `NEXT_PUBLIC_*`.
 3. Development, Staging and Production use different credentials.
-4. Provider dashboards/secret stores and GitHub Actions secrets are the storage surfaces for hosted credentials.
-5. Logs, traces, screenshots and test evidence must not expose secrets.
-6. PoC/Sandbox credentials are never promoted to Production.
-7. Rotation/revocation is preferred over editing a leaked secret in history.
+4. Provider/Supabase secret stores and GitHub Actions secrets hold hosted credentials.
+5. Logs/traces/screenshots/test evidence must not expose secrets.
+6. Rotate/revoke leaked credentials rather than relying on history edits.
 
-## Current server-only secrets
+## Browser-safe configuration
 
-- `DATABASE_URL`
-- `REDIS_URL`
-- `SENTRY_DSN` when configured server-side
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
-Future provider secrets (Stripe, QuickBooks, Resend and others) are added only when their owning Epic is implemented.
+These are configuration/public publishable values, not server secrets.
 
-## Public configuration
+## Server-only Supabase runtime
 
-`NEXT_PUBLIC_API_BASE_URL` is intentionally browser-visible and must contain no credential.
+Hosted Edge Functions receive server runtime variables including:
 
-## Repository enforcement
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_DB_URL`
 
-The Foundation CI:
+Do not mirror `SUPABASE_DB_URL` or service/secret keys into browser/mobile configuration.
 
-- rejects tracked `.env*` files except `.env.example`;
-- scans implementation/configuration files for selected high-risk secret patterns;
-- uses a committed lockfile;
-- runs with read-only repository permissions after bootstrap.
+## Future provider secrets
 
-This is a baseline, not a replacement for provider/GitHub secret scanning or later security hardening.
+Stripe, QuickBooks, Resend, Sentry and future provider secrets are introduced only by their owning Epic and stored in the appropriate environment secret store.
+
+The former `DATABASE_URL`/Render and `REDIS_URL`/Valkey contracts are not part of the current runtime.

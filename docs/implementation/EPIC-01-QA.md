@@ -1,7 +1,10 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — QA
 
+> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+
+
 - **Date:** 2026-09-25
-- **State:** local, remote schema/RLS, Production Web error-path and Render API health evidence recorded. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.
+- **State:** current backend handoff is Supabase Edge Function `identity-me`; Render QA below is historical evidence only. Successful authenticated reconciliation still needs a controlled account proof.
 - **Scope recorded:** `EPIC-01-SLICE-01 — Authentication and server-side identity boundary`
 
 ## QA rule
@@ -88,3 +91,16 @@ The following are not Slice 01 PASS criteria and must not be represented as test
 ## Current blockers
 
 - `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: the controlled account and server-side configuration now exist, but the Product Owner must submit the controlled credentials once in Production after the `4f912b1` deployment. The Codex does not request, receive or store the password. Afterwards, request/log/database mapping evidence can be recorded.
+
+## Supabase migration QA
+
+| Check | Result |
+|---|---|
+| Supabase project | ACTIVE_HEALTHY in `us-east-1` |
+| Edge Function `identity-me` | ACTIVE, version 1 |
+| Async infrastructure migration | PASS — `pgmq`, `pg_cron`, `pg_net` enabled |
+| Web transport | Updated to `supabase.functions.invoke("identity-me")` |
+| Render dependency | Removed from current code/workspace/CI contract |
+| Successful authenticated reconciliation | PENDING controlled-account proof |
+
+Old Render deployment checks remain historical and do not represent the current runtime.

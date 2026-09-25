@@ -1,622 +1,157 @@
 # Arquitetura Técnica Consolidada do SaaS
 
-- **Status:** baseline técnico consolidado para implementação
+- **Status:** baseline técnico vigente
 - **Data:** 2026-09-25
-- **Fonte:** POCs 01–12 e ADRs associados do repositório `Wyllams/SaaS`
-- **Marca do produto:** não definida
-- **Regra de naming:** nenhum novo namespace, pacote, domínio, variável ou documento deve assumir uma marca definitiva até decisão explícita
+- **Autoridade atual:** CURRENT-DECISIONS + ADR-016
+- **Marca:** indefinida
 
-## 1. Objetivo
+## 1. Topologia vigente
 
-Este documento consolida as decisões técnicas comprovadas pelos POCs em uma única fonte de verdade para a próxima etapa de implementação do SaaS.
+```text
+Web (Next.js / Vercel)       Mobile (Expo/EAS)
+          \                   /
+           \                 /
+            Supabase Edge Functions
+                     |
+          application/domain rules
+                     |
+      +--------------+--------------+
+      |              |              |
+  PostgreSQL      Queues/PGMQ    Storage
+      |              |
+     RLS         Cron/pg_cron
+      |
+ Auth / Realtime
+```
 
-Ele não transforma código experimental em código de produção automaticamente.
+Supabase é a plataforma única do backend atual. Render não faz parte da topologia vigente.
 
-A regra é:
+## 2. Responsabilidades do Supabase
 
-`POC validado → decisão arquitetural → implementação limpa e revisável`
+- PostgreSQL: fonte de verdade transacional;
+- Auth: autenticação;
+- Storage: objetos/arquivos;
+- Realtime Broadcast: atualização de UX, nunca fonte de verdade;
+- Edge Functions: endpoints server-side, webhooks e casos de uso;
+- Queues/PGMQ: trabalho assíncrono durável;
+- Cron/pg_cron: schedules e despacho periódico;
+- pg_net: invocação HTTP assíncrona a partir do banco quando explicitamente necessária.
 
-Código em `packages/*-poc` existe como evidência técnica. A implementação definitiva deve adotar as decisões comprovadas, não copiar cegamente os artefatos experimentais.
-
-## 2. Estado consolidado dos POCs
-
-| POC | Tema | Estado consolidado | Decisão para a arquitetura |
-| --- | --- | --- | --- |
-| 01 | ORM / Query Layer | **PASS** | Drizzle ORM + Drizzle Kit |
-| 02 | PostgreSQL Pooling / Supabase | **PASS** | Direct quando viável; Supavisor Session para serviços persistentes; Transaction para workloads curtos |
-| 03 | Design System em código | **PASS** | Tailwind CSS 4 + CSS variables semânticas |
-| 04 | Monorepo pnpm + Turborepo | **PASS** | pnpm workspace + Turborepo |
-| 05 | BullMQ + Valkey | **PASS** | BullMQ + serviço Redis-compatible/Valkey |
-| 06 | Supabase Realtime | **PASS** | Realtime Broadcast privado, com PostgreSQL como fonte de verdade |
-| 07 | Stripe Connect | **PASS** | Stripe Connect Accounts v2 + Direct Charges |
-| 08 | QuickBooks Online | **PASS** | QBO via adapter de accounting e reconciliação |
-| 09 | SMS / Twilio | **CANCELADO / FORA DO ESCOPO** | Não integrar SMS no produto atual |
-| 10 | Resend Email | **PARCIAL** | Resend permanece candidato; outbound/inbound/anexos comprovados, webhook público real ainda pendente |
-| 11 | Expo Mobile | **PASS** | React Native + Expo + Expo Router |
-| 12 | Observabilidade E2E | **PASS** | OpenTelemetry + logs estruturados + Sentry para Error Monitoring e Tracing |
-
-### Regra de interpretação
-
-- **PASS**: hipótese técnica aceita como baseline.
-- **PARCIAL**: parte da hipótese foi comprovada, mas existe gate técnico explícito pendente.
-- **CANCELADO / FORA DO ESCOPO**: não entra na arquitetura atual.
-
-## 3. Topologia do repositório
-
-A arquitetura adota um único monorepo TypeScript:
+## 3. Repositório
 
 ```text
 apps/
   web/
-  api/
-  worker/
   mobile/
+
+supabase/
+  functions/
+  migrations/
 
 packages/
   api-client/
-  design-tokens/
-  types/
-  validation/
   config/
+  db/
+  design-tokens/
+  domain-types/
+  observability/
+  ui-web/
+  validation/
 ```
 
-Regras:
-
-1. aplicações executáveis ficam em `apps/*`;
-2. código reutilizável fica em `packages/*`;
-3. dependências internas usam `workspace:*`;
-4. dependências circulares são proibidas;
-5. pnpm é o único package manager;
-6. Web e Mobile podem compartilhar contratos e tokens, sem serem obrigados a compartilhar implementação de UI;
-7. código de POC não é automaticamente promovido a package definitivo.
-
-### Ferramentas de fundação validadas
-
-- Node.js 24.21.0;
-- pnpm 12.6.0;
-- Turborepo 2.11.4;
-- lockfile versionado;
-- CI com `--frozen-lockfile`.
+`apps/api` e `apps/worker` deixaram de ser unidades de deploy. NestJS/Fastify e BullMQ/Valkey permanecem apenas no histórico superseded.
 
 ## 4. Banco e acesso a dados
 
-### Banco autoritativo
+PostgreSQL continua autoritativo. Drizzle ORM + Drizzle Kit permanecem aprovados para schema/migrations/tooling quando apropriado, com SQL PostgreSQL explícito permitido.
 
-PostgreSQL é a fonte de verdade dos dados de negócio.
+RLS é defesa em profundidade. Workloads Edge/serverless não dependem de estado de sessão ou prepared statements nomeados. Conexões são pequenas/bounded e transações não ficam abertas durante chamadas externas lentas.
 
-Supabase fornece a infraestrutura PostgreSQL e serviços associados validados pelos POCs.
+## 5. HTTP e casos de uso
 
-### Query layer
+Endpoints server-side são Supabase Edge Functions:
 
-Usar:
+1. autenticação e autorização server-side;
+2. UI nunca é boundary de autorização;
+3. erros estáveis sem vazamento de detalhes;
+4. funções pequenas e orientadas ao domínio;
+5. efeitos externos idempotentes;
+6. sem pressuposto de processo persistente;
+7. workloads grandes divididos em jobs/lotes.
 
-- **Drizzle ORM** para queries tipadas;
-- **Drizzle Kit** para migrations;
-- SQL PostgreSQL explícito quando necessário.
+O primeiro endpoint migrado é `identity-me`.
 
-RLS, JSONB, Full-Text Search, `pg_trgm` e outras capacidades nativas do PostgreSQL permanecem first-class.
+## 6. Background jobs
 
-A arquitetura não deve deformar o schema para acomodar limitações do ORM.
+A implementação vigente é **Supabase Queues (PGMQ)**.
 
-### RLS
+- mensagens duráveis;
+- visibility timeout;
+- retry por reentrega;
+- delete/archive após sucesso;
+- backlog/falhas observáveis;
+- payload mínimo com IDs;
+- idempotency keys para side effects.
 
-Isolamento multi-tenant permanece protegido por:
+Supabase Cron agenda consumidores/manutenções quando houver handler de negócio. Não criar polling infinito nem schedules sem owner.
 
-1. autorização backend;
-2. PostgreSQL Row-Level Security como defesa em profundidade.
+POC-05 continua evidência histórica dos requisitos de retry/idempotência; BullMQ/Valkey foi superseded.
 
-Policies e grants devem permanecer explícitos e revisáveis.
+## 7. Realtime
 
-### Connection policy
+Usar Supabase Realtime Broadcast privado:
 
-#### Serviços persistentes — API e Worker
+`persistir PostgreSQL → publicar sinal → atualizar UX → refetch/reconnect recupera estado`.
 
-Preferência:
+Tópicos são tenant/resource scoped e autorização é obrigatória.
 
-1. Direct Postgres quando o ambiente de deploy tiver conectividade IPv6 validada e orçamento de conexões adequado;
-2. Supavisor **Session Pooler** como caminho persistente compatível com IPv4.
+## 8. Web
 
-#### Workloads serverless / curtos
+- Next.js 16 App Router;
+- React;
+- Tailwind CSS 4 + semantic tokens;
+- Vercel;
+- somente configuração browser-safe em `NEXT_PUBLIC_*`.
 
-Usar Supavisor **Transaction Pooler** quando a característica do workload justificar.
+O Web chama Supabase Auth/Functions diretamente conforme contratos autorizados; não existe API base URL do Render.
 
-Nesses caminhos:
+## 9. Mobile
 
-- não depender de prepared statements nomeados;
-- não depender de estado de sessão;
-- não depender de afinidade da conexão;
-- contexto do tenant deve ser aplicado dentro da transação com estado transaction-local.
+React Native + Expo SDK 57 + Expo Router, distribuído via EAS. Secrets nunca entram em configuração pública.
 
-### Connection budget
+## 10. Integrações
 
-Pools devem ser pequenos e explícitos.
+Mantêm-se as decisões vigentes: Stripe Connect, QuickBooks Online atrás de adapter e Resend dentro do escopo validado/deferido. SMS/Twilio segue fora do escopo.
 
-Escala horizontal deve considerar a soma:
+Webhooks e chamadas externas executam em Edge Functions ou jobs Supabase conforme duração/retry.
 
-`réplicas × pool por réplica + conexões da plataforma <= orçamento seguro do PostgreSQL`
+## 11. Observabilidade
 
-## 5. Background jobs
+OpenTelemetry, logs estruturados correlacionados e Sentry continuam aprovados conforme suporte do runtime. Nunca logar Authorization, cookies, passwords, API keys, tokens ou PII não aprovada.
 
-Usar:
+O antigo trace `API → BullMQ → Worker → provider` é histórico. O caminho vigente é `Edge Function → PostgreSQL/Queue → Edge Function/provider`.
 
-- **BullMQ**;
-- serviço Redis-compatible, com **Valkey** explicitamente validado.
+## 12. Segurança
 
-### Papel da fila
+PostgreSQL é autoritativo; tenant isolation não depende do navegador; RLS é defesa em profundidade; secrets não entram no Git; webhooks validam assinatura/raw body quando aplicável; side effects são idempotentes; queues/realtime não substituem persistência.
 
-A fila é infraestrutura de execução, não banco de negócio.
+## 13. Limites de runtime
 
-PostgreSQL continua autoritativo.
+Edge Functions têm limites de CPU, memória e wall-clock. Processamento assíncrono é bounded, em batches, sem loops eternos. Necessidade futura de processo persistente exige nova ADR explícita.
 
-### Regras
+## 14. Deployment
 
-- payloads preferem IDs e contexto imutável mínimo;
-- jobs devem tolerar entrega repetida;
-- efeitos externos precisam de idempotency keys;
-- retry/backoff é finito e explícito por categoria;
-- falhas permanentes permanecem observáveis;
-- operações críticas devem ser reconstruíveis a partir do estado persistido quando necessário;
-- hosted queue deve usar autenticação e TLS.
+- Web: Vercel;
+- Backend/data: Supabase;
+- Mobile: Expo/EAS;
+- CI: GitHub Actions.
 
-## 6. Realtime
+Development, Staging e Production permanecem isolados.
 
-Usar **Supabase Realtime Broadcast com canais privados**.
+## 15. Histórico superseded
 
-### Regra central
+ADR-005, ADR-014 e ADR-015 permanecem para auditabilidade, mas ADR-016 é a decisão vigente.
 
-> Realtime é sinal de entrega, não fonte de verdade.
+## 16. Regra de promoção
 
-Fluxo conceitual:
-
-```text
-persistir estado no PostgreSQL
-→ publicar sinal Realtime quando apropriado
-→ cliente atualiza UX
-→ reconnect/refetch recupera estado autoritativo
-```
-
-Uso adequado:
-
-- notificações;
-- chat/mensagens;
-- alterações de aprovação/status;
-- atualizações operacionais selecionadas.
-
-Não assinar indiscriminadamente alterações brutas de todas as tabelas.
-
-### Autorização
-
-Tópicos devem ser tenant/resource scoped e protegidos por Realtime Authorization/RLS.
-
-Conhecer o nome de um tópico nunca concede acesso.
-
-## 7. Design System Web
-
-Usar:
-
-- **CSS custom properties semânticas** como fonte de tokens;
-- **Tailwind CSS 4** como camada padrão de composição;
-- componentes React reutilizáveis para comportamento e acessibilidade.
-
-Regras:
-
-- componentes consomem tokens semânticos, não valores de marca hard-coded;
-- status nunca depende apenas de cor;
-- tokens ficam independentes das telas;
-- CSS Modules são exceção permitida, não padrão;
-- Mobile pode consumir conceitos/tokens, sem compartilhar obrigatoriamente os componentes Web.
-
-A marca final não está definida. Tokens de marca históricos dos POCs não constituem decisão de branding.
-
-## 8. Pagamentos — Stripe
-
-Usar **Stripe Connect** com:
-
-- Accounts v2;
-- Direct Charges;
-- onboarding hospedado pelo Stripe.
-
-### Modelo financeiro
-
-A empresa cliente conectada é merchant of record dos pagamentos de seus próprios clientes.
-
-A plataforma SaaS não recebe primeiro o dinheiro do consumidor para depois transferi-lo ao prestador.
-
-### V1
-
-- sem `application_fee_amount` por padrão;
-- Stripe gerencia o fluxo de onboarding/KYC;
-- estado de pagamento é provider-authoritative;
-- browser redirect não é prova final de pagamento;
-- criação de pagamento é idempotente;
-- processamento de webhook é idempotente;
-- assinatura do webhook deve ser validada sobre o raw body;
-- duplicidade e ordem de eventos devem ser toleradas.
-
-### Dados sensíveis
-
-Não armazenar:
-
-- PAN;
-- CVC;
-- credenciais bancárias;
-- material de autenticação de pagamento restrito.
-
-### ACH
-
-ACH continua uma capacidade de pagamento que exige testes próprios de comportamento assíncrono antes de produção.
-
-### Abstração
-
-A camada de domínio usa adapter de payment provider.
-
-Objetos do SDK Stripe não devem vazar como modelo central do produto.
-
-## 9. Accounting — QuickBooks Online
-
-Usar **QuickBooks Online Accounting API** atrás de adapter próprio.
-
-### Autoridade
-
-O SaaS permanece fonte de verdade operacional.
-
-QuickBooks é autoridade do estado contábil provider-side para objetos sincronizados.
-
-### Entidades iniciais
-
-- Customer;
-- Invoice;
-- Payment;
-- Item/Service mappings necessários às linhas de Invoice.
-
-### Integration mapping
-
-Cada objeto sincronizado precisa de mapeamento persistente contendo, no mínimo:
-
-- tenant/workspace;
-- conexão do provider;
-- entidade/tipo interno;
-- ID interno;
-- tipo/ID QBO;
-- SyncToken relevante;
-- status de sync;
-- timestamp de último sucesso;
-- último erro seguro, quando aplicável.
-
-### Concorrência
-
-QBO `SyncToken` é obrigatório nas atualizações que o utilizam.
-
-Ao detectar stale token:
-
-1. refetch;
-2. reconciliar;
-3. expor conflito quando necessário;
-4. nunca sobrescrever cegamente estado mais novo.
-
-### Webhooks
-
-Webhook QBO é change hint.
-
-Fluxo:
-
-```text
-raw body
-→ verificar assinatura
-→ identificar conexão/tenant
-→ deduplicar
-→ enfileirar reconciliação
-→ refetch no QBO
-→ reconciliar mapping/estado
-```
-
-Chamadas externas QBO não devem permanecer dentro de transações PostgreSQL abertas.
-
-Falha do QBO não deve bloquear CRM/Jobs/operação principal.
-
-## 10. Email — Resend
-
-### Estado atual
-
-Resend permanece **provisório**, porque o POC-10 ainda não fechou todo o gate.
-
-Comprovado:
-
-- envio;
-- recebimento em endereço gerenciado pelo Resend;
-- leitura da mensagem recebida pela API;
-- detecção/consulta de anexos;
-- contrato local de validação de webhook;
-- assinatura, tamper rejection, replay window e deduplicação testados localmente.
-
-Pendente:
-
-- endpoint HTTPS público do novo SaaS;
-- webhook real entregue pelo Resend ao endpoint;
-- prova provider-side de assinatura e correlação de `email.received`.
-
-### Regra arquitetural até fechamento do POC
-
-Não promover Resend para decisão definitiva de inbound/webhook enquanto o gate externo estiver pendente.
-
-Qualquer implementação deve:
-
-- tratar inbound email como input não confiável;
-- verificar assinatura antes de processar conteúdo;
-- usar raw body;
-- aplicar replay protection;
-- deduplicar eventos;
-- usar allowlist estrita durante o POC;
-- manter chaves e signing secrets fora do Git.
-
-### SMS
-
-SMS/Twilio está fora do escopo atual.
-
-A existência da branch histórica de POC-09 não autoriza:
-
-- envio/recebimento SMS;
-- A2P/10DLC;
-- sender pool;
-- delivery callback;
-- webhook Twilio;
-- credenciais Twilio no runtime.
-
-Retorno futuro de SMS exige nova decisão explícita e novo POC.
-
-## 11. Mobile
-
-Usar:
-
-- **React Native**;
-- **Expo SDK 57 stable line**;
-- **Expo Router**;
-- módulos Expo para capacidades nativas validadas.
-
-O app fica em:
-
-`apps/mobile`
-
-### Capacidades validadas
-
-- file-based routing;
-- deep-link-compatible routes;
-- câmera;
-- captura de foto;
-- acesso a arquivo local;
-- fluxo de upload HTTPS;
-- bundle Android;
-- bundle iOS.
-
-### Regras
-
-- não colocar secrets em `EXPO_PUBLIC_*`;
-- upload real deve receber autorização/signed URL do backend;
-- servidor valida tipo/tamanho do arquivo;
-- MIME/filename enviados pelo cliente não são fronteira de segurança;
-- `ios/` e `android/` não são commitados por padrão;
-- usar geração/prebuild quando necessário.
-
-Ainda ficam para a etapa de distribuição:
-
-- Apple Developer;
-- Google Play Console;
-- signing;
-- bundle identifiers definitivos;
-- Universal Links/App Links de produção;
-- testes físicos finais.
-
-## 12. Observabilidade
-
-Usar:
-
-- **OpenTelemetry** para tracing e propagação;
-- **W3C Trace Context** entre processos/mensagens;
-- logs estruturados com `trace_id` e `span_id`;
-- **Sentry** como backend inicial de Error Monitoring + Tracing.
-
-### Evidência validada
-
-Fluxo E2E:
-
-`API → queue → worker → provider`
-
-Foi comprovado:
-
-- um trace compartilhado;
-- propagação de contexto;
-- parent/child spans;
-- exception event;
-- error span;
-- correlação de logs;
-- redaction de secrets;
-- ingestão real de erro no Sentry;
-- tracing habilitado no SDK;
-- DSN armazenado fora do Git.
-
-### Produtos Sentry aprovados
-
-- Error Monitoring;
-- Tracing.
-
-Não aprovados implicitamente:
-
-- Sentry Logs;
-- Profiling;
-- Application Metrics.
-
-### Logs
-
-O contrato de aplicação é log estruturado correlacionado.
-
-A arquitetura não exige o OpenTelemetry Logs SDK neste momento.
-
-### Segurança
-
-Não registrar por padrão:
-
-- Authorization;
-- cookies;
-- passwords;
-- API keys;
-- secrets;
-- access/refresh tokens;
-- request/response bodies completos;
-- PII sem política explícita.
-
-## 13. Segurança transversal
-
-As decisões dos POCs estabelecem estas regras mínimas:
-
-1. PostgreSQL é autoritativo para estado de negócio.
-2. Tenant isolation não depende do navegador.
-3. RLS é defesa em profundidade e deve ser testável.
-4. Secrets nunca entram no Git.
-5. Raw webhook body deve ser preservado onde a assinatura exigir.
-6. Webhooks precisam de assinatura, dedupe e replay protection quando aplicável.
-7. Side effects externos precisam de idempotência.
-8. Queue, Realtime e webhooks não substituem persistência de negócio.
-9. Provider-side state deve ser reconsultado/reconciliado quando for a autoridade.
-10. Logs e traces não podem ser usados como depósito de payload sensível.
-11. Ambientes Sandbox/Development e Production devem permanecer separados.
-12. Credenciais de pagamento/accounting ficam exclusivamente server-side.
-
-## 14. Fronteiras entre camadas
-
-A direção arquitetural consolidada é:
-
-```text
-Web / Mobile
-    ↓
-contratos de aplicação
-    ↓
-API / casos de uso
-    ↓
-domínio
-    ↓
-adapters / infraestrutura
-    ├── PostgreSQL / Supabase
-    ├── BullMQ / Valkey
-    ├── Supabase Realtime
-    ├── Stripe
-    ├── QuickBooks
-    ├── Resend (provisório)
-    └── Sentry / OpenTelemetry
-```
-
-Regras:
-
-- integração externa fica atrás de adapter;
-- domínio não expõe objetos SDK de provider;
-- business rules não pertencem a páginas/componentes;
-- jobs assíncronos recebem contexto mínimo e IDs;
-- componentes não são autoridade de autorização;
-- Mobile/Web compartilham contratos quando útil, não detalhes internos de UI.
-
-## 15. Decisões ainda abertas
-
-Este documento não deve esconder o que os POCs não provaram.
-
-### 15.1 POC-10 — Resend
-
-Falta o webhook externo real.
-
-Até esse teste, Resend não é considerado completamente aprovado para o fluxo inbound/webhook.
-
-### 15.2 Web framework definitivo — RESOLVIDO
-
-**ADR-013 Accepted:** usar Next.js 16 App Router para `apps/web`.
-
-A decisão foi reconciliada com o TRD aprovado e validada tecnicamente em `validation/web-nextjs`.
-
-### 15.3 API framework definitivo — RESOLVIDO
-
-**ADR-014 Accepted:** usar NestJS 12 + FastifyAdapter para `apps/api`.
-
-A escolha aprovada no TRD foi revalidada em `validation/api-nest-fastify`, incluindo build e smoke HTTP com lockfile congelado.
-
-### 15.4 Deployment topology definitiva — RESOLVIDA
-
-**ADR-015 Accepted:** Vercel para Web; Render Virginia para API/Worker/Key Value; Supabase North Virginia (`us-east-1`) para PostgreSQL/Auth/Storage/Realtime; Expo/EAS para Mobile; GitHub Actions para CI; Sentry + OpenTelemetry para observabilidade.
-
-Development, Staging e Production permanecem separados.
-
-Sizing, autoscaling, budgets, custom domains e retenção final de backup continuam como decisões de capacity/release e não foram congelados por esta ADR.
-
-### 15.5 Branding / package scope
-
-A marca final do SaaS não está definida.
-
-Identificadores históricos presentes nos POCs não devem ser propagados para novos packages, apps, domínios, namespaces ou documentação.
-
-## 16. O que entra na implementação definitiva
-
-### Adotar
-
-- Drizzle + Drizzle Kit;
-- PostgreSQL/Supabase;
-- política de pooling validada;
-- Tailwind 4 + semantic tokens;
-- pnpm + Turborepo;
-- BullMQ + Valkey/Redis-compatible;
-- Supabase Realtime Broadcast privado;
-- Stripe Connect Direct Charges;
-- QBO accounting adapter;
-- Expo Mobile;
-- OpenTelemetry;
-- Sentry Error Monitoring + Tracing.
-
-### Adotar somente após gate pendente
-
-- Resend inbound/webhooks.
-
-### Não adotar no escopo atual
-
-- SMS/Twilio.
-
-## 17. Regra de promoção dos POCs
-
-POC não é production code.
-
-Antes da implementação real:
-
-1. escolher o domínio/app responsável;
-2. criar contrato de produção;
-3. aplicar naming neutro enquanto a marca estiver indefinida;
-4. mover apenas a decisão e o comportamento necessário;
-5. reimplementar com testes do produto;
-6. aplicar segurança/observabilidade desde o início;
-7. usar secrets do ambiente, nunca valores do POC;
-8. não transportar fixtures ou IDs de sandbox para produção;
-9. preservar branches de POC como evidência histórica;
-10. registrar qualquer mudança de decisão em ADR novo, sem reescrever silenciosamente o POC histórico.
-
-## 18. Fontes de evidência no Git
-
-| Tema | Branch | Documento principal |
-| --- | --- | --- |
-| ORM | `poc/01-orm-query-layer` | `docs/poc/POC-01.md` |
-| Pooling | `poc/02-supabase-pooling` | `docs/poc/POC-02.md` |
-| Design System | `poc/03-design-system-code` | `docs/poc/POC-03.md` |
-| Monorepo | `poc/04-monorepo-foundation` | `docs/poc/POC-04.md` |
-| Background Jobs | `poc/05-bullmq-valkey` | `docs/poc/POC-05.md` |
-| Realtime | `poc/06-supabase-realtime` | `docs/poc/POC-06.md` |
-| Stripe | `poc/07-stripe-connect` | `docs/poc/POC-07.md` |
-| QuickBooks | `poc/08-quickbooks-online` | `docs/poc/POC-08.md` |
-| SMS | `poc/09-twilio-messaging` | histórico; fora do escopo atual |
-| Email | `poc/10-resend-email` | `docs/poc/POC-10.md` |
-| Mobile | `poc/11-expo-mobile` | `docs/poc/POC-11.md` |
-| Observabilidade | `poc/12-observability-e2e` | `docs/poc/POC-12.md` |
-
-## 19. Autoridade deste documento
-
-Este arquivo é a visão consolidada das decisões técnicas provenientes dos POCs.
-
-Em caso de dúvida:
-
-1. este documento define o baseline integrado;
-2. a ADR específica define o detalhe da decisão aceita;
-3. o POC correspondente contém a evidência experimental;
-4. qualquer alteração futura exige nova decisão explícita e atualização desta arquitetura.
-
-Este documento não substitui o histórico dos POCs e ADRs; ele os consolida para orientar a implementação real.
+POC não é production code. Implementação parte das decisões vigentes, contratos atuais, segurança, testes e documentação.

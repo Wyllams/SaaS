@@ -1,94 +1,57 @@
 # Environments — Development, Staging and Production
 
-- **Authority:** ADR-015
+- **Authority:** ADR-016
 - **Date:** 2026-09-25
-- **Status:** approved contract
-- **External Staging provisioning:** not executed by this document
+- **Status:** approved current contract
 
 ## Principles
 
 1. Development, Staging and Production are separate security boundaries.
-2. Production credentials are never reused in Development or Staging.
-3. Sandbox/Test provider identities are never promoted to Production.
-4. Stateful region changes require an explicit migration plan.
-5. Final product branding is not encoded in infrastructure names until branding is approved.
+2. Production credentials are never reused elsewhere.
+3. PostgreSQL remains authoritative.
+4. Supabase is the backend/data platform in every hosted environment.
+5. Web remains on Vercel and Mobile on Expo/EAS.
+6. Render is not part of the current topology.
 
 ## Development
 
-Purpose:
-
-- local implementation;
-- automated tests;
-- synthetic data;
-- provider Sandbox/Test use when needed.
-
-Expected execution:
-
-- Web, API and Worker may run locally;
-- PostgreSQL/Valkey may be local or dedicated Development resources;
-- no real customer data;
-- no Production financial credentials.
+- Web may run locally.
+- Supabase may run locally through Supabase tooling or use a dedicated Development project.
+- Edge Functions are developed under `supabase/functions`.
+- Queues/Cron are PostgreSQL modules, not external Redis/worker services.
+- Use synthetic data and Sandbox/Test provider modes.
 
 ## Staging
-
-Purpose:
-
-- production-like integration;
-- end-to-end validation;
-- release gate before Production.
-
-Topology from ADR-015:
 
 | Capability | Provider / region |
 |---|---|
 | Web | Vercel / US East |
-| API | Render Web Service / Virginia |
-| Worker | Render Background Worker / Virginia |
-| Queue | Render Key Value / Virginia |
-| PostgreSQL/Auth/Storage/Realtime | Supabase / North Virginia `us-east-1` |
+| PostgreSQL/Auth/Storage/Realtime | Supabase / `us-east-1` |
+| HTTP/backend | Supabase Edge Functions |
+| Queue | Supabase Queues / PGMQ |
+| Schedules | Supabase Cron / pg_cron |
 | Mobile preview | Expo EAS |
 | CI | GitHub Actions |
-| Error Monitoring / Tracing | Sentry + OpenTelemetry |
-
-Staging uses provider Sandbox/Test modes and does not process real customer payments.
+| Error monitoring/tracing | Sentry + OpenTelemetry where supported |
 
 ## Production
 
-Production is a fully separate environment with:
-
-- separate provider resources;
-- separate secrets;
-- separate database/storage/queue;
-- Production payment/accounting credentials only after their release gates;
-- monitoring/alerts;
-- backup/restore policy;
-- runbooks and incident response.
+Production uses separate Supabase/Vercel/provider resources, secrets, backup/restore configuration, monitoring and runbooks. No Staging/Sandbox credential is promoted.
 
 ## Variable contract
 
 | Variable | Surface | Classification |
 |---|---|---|
-| `APP_ENV` | API / Worker | non-secret |
-| `LOG_LEVEL` | API / Worker | non-secret |
-| `NEXT_PUBLIC_API_BASE_URL` | Web | public browser configuration |
-| `PORT` | API | non-secret/runtime |
-| `HOST` | API | non-secret/runtime |
-| `DATABASE_URL` | API / migrations | secret |
-| `REDIS_URL` | Worker / queue clients | secret |
-| `SENTRY_DSN` | server observability | environment configuration; store as secret/config, never hard-code |
-| `SENTRY_TRACES_SAMPLE_RATE` | observability | non-secret, explicit per environment |
+| `NEXT_PUBLIC_SUPABASE_URL` | Web | public configuration |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Web | public/publishable configuration |
+| `SUPABASE_URL` | Edge Functions | provided by Supabase runtime |
+| `SUPABASE_ANON_KEY` | Edge Functions | provided by Supabase runtime |
+| `SUPABASE_DB_URL` | Edge Functions | server-only, provided by Supabase runtime |
+| `SENTRY_DSN` | server/runtime when enabled | secret/config |
+| `SENTRY_TRACES_SAMPLE_RATE` | observability | non-secret explicit per environment |
 
-Future provider credentials are added only by the Epic that owns the integration.
+There is no current `NEXT_PUBLIC_API_BASE_URL`, `REDIS_URL`, Render `PORT` or Render `HOST` contract.
 
-## Production values deliberately not decided in Epic 0
+## Capacity decisions still open
 
-- instance sizes;
-- autoscaling thresholds;
-- HA counts;
-- monthly budgets;
-- custom domains;
-- backup retention tiers;
-- final mobile bundle identifiers;
-- Production tracing sample rate.
-
-These require measured capacity/release decisions, as defined by the TRD.
+Instance/compute sizing, budgets, custom domains, backup retention, mobile bundle IDs and final tracing sample rates remain release/capacity decisions.
