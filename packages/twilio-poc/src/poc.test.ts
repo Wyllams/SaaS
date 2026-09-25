@@ -4,12 +4,33 @@ import { parseInboundSms } from "./inbound.js";
 import { expectedSignature, validateTwilioWebhook } from "./signature.js";
 import { reconcileStatus } from "./status.js";
 import { meterSmsUsage } from "./usage.js";
+import { planWorkspaceMessagingTopology } from "./topology.js";
 
 const messagingServiceId = "MG_POC_SERVICE";
 const accountId = "AC_POC_ACCOUNT";
 const messageId = "SM_POC_MESSAGE";
 
 describe("CrewCommand Twilio Messaging contract", () => {
+  it("models CrewCommand as an ISV with a dedicated Twilio subaccount per Workspace", () => {
+    const topology = planWorkspaceMessagingTopology({
+      workspaceId: "workspace-poc",
+      useCases: [
+        "TRANSACTIONAL_OPERATIONS",
+        "CUSTOMER_SUPPORT",
+        "MARKETING",
+        "TRANSACTIONAL_OPERATIONS",
+      ],
+    });
+
+    expect(topology.twilioSubaccountStrategy).toBe("DEDICATED_PER_WORKSPACE");
+    expect(topology.services).toHaveLength(3);
+    expect(topology.services.map((item) => item.useCase)).toEqual([
+      "TRANSACTIONAL_OPERATIONS",
+      "CUSTOMER_SUPPORT",
+      "MARKETING",
+    ]);
+  });
+
   it("builds outbound SMS using a Messaging Service and status callback", () => {
     const payload = buildOutboundSms({
       to: "+13055550123",
