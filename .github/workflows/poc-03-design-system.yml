@@ -1,0 +1,70 @@
+name: POC-03 Design System in Code
+
+on:
+  push:
+    branches:
+      - poc/03-design-system-code
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Install dependencies and update lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Persist dependency lockfile once
+        if: github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml pnpm-workspace.yaml
+            git commit -m "chore: persist POC-03 dependency lockfile"
+            git push
+          fi
+
+      - name: Type-check tokens
+        run: pnpm --filter @crewcommand/design-tokens check
+
+      - name: Compile Tailwind design-system CSS
+        run: pnpm --filter @crewcommand/ui-web-poc build
+
+      - name: Run component tests
+        run: pnpm --filter @crewcommand/ui-web-poc check
+
+      - name: Enforce tokenized brand/status colors
+        run: |
+          if grep -R -E "#2563EB|#1D4ED8|#0F172A|#DCFCE7|#BBF7D0|#FEE2E2" packages/ui-web-poc/src --include="*.tsx" --include="*.ts"; then
+            echo "Direct approved design-token hex value found inside a component."
+            exit 1
+          fi
+
+      - name: Verify compiled CSS contains semantic brand token
+        run: grep -q -- "--cc-brand-primary" packages/ui-web-poc/.poc/design-system.css
+
+      - name: Upload compiled CSS evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: poc-03-design-system-evidence
+          path: packages/ui-web-poc/.poc/design-system.css
+          if-no-files-found: error

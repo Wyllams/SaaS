@@ -1,0 +1,26 @@
+{
+  "name": "@crewcommand/ui-web-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm run css && tsc -p tsconfig.json --noEmit",
+    "check": "tsc -p tsconfig.json --noEmit && vitest run",
+    "css": "mkdir -p .poc && tailwindcss -i ./src/styles.css -o ./.poc/design-system.css --minify"
+  },
+  "dependencies": {
+    "@crewcommand/design-tokens": "workspace:*",
+    "lucide-react": "0.545.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}

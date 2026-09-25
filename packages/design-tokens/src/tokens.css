@@ -1,0 +1,42 @@
+:root {
+  --cc-brand-primary: #2563EB;
+  --cc-brand-primary-hover: #1D4ED8;
+  --cc-brand-primary-soft: #DBEAFE;
+  --cc-sidebar: #0F172A;
+  --cc-background: #F8FAFC;
+  --cc-surface: #FFFFFF;
+  --cc-border: #E2E8F0;
+  --cc-text: #0F172A;
+  --cc-text-muted: #64748B;
+
+  --cc-status-new-bg: #F3F4F6;
+  --cc-status-new-text: #4B5563;
+  --cc-status-scheduled-bg: #DBEAFE;
+  --cc-status-scheduled-text: #1D4ED8;
+  --cc-status-in-progress-bg: #DCFCE7;
+  --cc-status-in-progress-text: #15803D;
+  --cc-status-waiting-bg: #FEF3C7;
+  --cc-status-waiting-text: #B45309;
+  --cc-status-completed-bg: #BBF7D0;
+  --cc-status-completed-text: #166534;
+  --cc-status-delayed-bg: #FEE2E2;
+  --cc-status-delayed-text: #B91C1C;
+
+  --cc-radius-input: 8px;
+  --cc-radius-button: 8px;
+  --cc-radius-card: 12px;
+  --cc-radius-modal: 12px;
+
+  --cc-space-1: 4px;
+  --cc-space-2: 8px;
+  --cc-space-3: 12px;
+  --cc-space-4: 16px;
+  --cc-space-5: 20px;
+  --cc-space-6: 24px;
+  --cc-space-8: 32px;
+  --cc-space-10: 40px;
+  --cc-space-12: 48px;
+  --cc-space-16: 64px;
+
+  --cc-font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}

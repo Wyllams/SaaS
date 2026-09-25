@@ -1,0 +1,27 @@
+@import "tailwindcss";
+@import "@crewcommand/design-tokens/tokens.css";
+
+@theme inline {
+  --color-brand-primary: var(--cc-brand-primary);
+  --color-brand-primary-hover: var(--cc-brand-primary-hover);
+  --color-brand-primary-soft: var(--cc-brand-primary-soft);
+  --color-surface: var(--cc-surface);
+  --color-border: var(--cc-border);
+  --color-text: var(--cc-text);
+  --color-text-muted: var(--cc-text-muted);
+  --font-sans: var(--cc-font-sans);
+}
+
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  * {
+    border-color: var(--cc-border);
+  }
+
+  body {
+    font-family: var(--cc-font-sans);
+    color: var(--cc-text);
+    background: var(--cc-background);
+  }
+}
