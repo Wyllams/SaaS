@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-25
 - **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
-- **State:** Slice 01 implemented and published to Vercel Production; successful authenticated reconciliation remains pending a controlled account plus the separately deployed NestJS API boundary.
+- **State:** Slice 01 is implemented; the Web is published on Vercel and the NestJS API is Live on Render Free. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.
 - **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
 
 ## Scope of the Epic
@@ -43,7 +43,7 @@ Primary product surfaces are `SCR-AUTH-001..008`, `SCR-ONB-001..002`, and user/w
 - RLS for tenant-owned data;
 - onboarding, consent flow and invites;
 - portal access;
-- remote Supabase/Auth configuration, migrations, deploys, commits, pushes and merges.
+- remote Supabase/Auth configuration and privileged credentials.
 
 Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It cannot enter this slice without a later approved Task Packet.
 
@@ -69,17 +69,17 @@ Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It ca
 - [x] Confirmar no código os pontos exatos de integração Web/API/DB autorizados pelo Task Packet.
 - [x] Resolver a estratégia UUIDv7: geração na aplicação por dependência revisada, sem extensão nem alteração remota no PostgreSQL.
 - [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0; dependências restauradas com lockfile congelado.
-- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case, repositório e `GET /identity/me` estão implementados; falta exclusivamente a prova integrada com conta controlada e API NestJS publicada.
+- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case, repositório e `GET /identity/me` estão implementados e a API NestJS está Live; falta exclusivamente a prova integrada com conta controlada e configuração server-side aprovada.
 - [x] Definir estado/lifecycle inicial e a representação persistida de `User`, aprovado pelo Product Owner em 2026-09-25.
 - [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies públicas.
 - [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
 - [x] Criar boundary autenticada: token ausente/inválido é rejeitado antes da reconciliação; token verificado entrega somente sujeito e e-mail ao use case.
 - [x] Implementar repositório transacional local para `subject → User`, com conflito de concorrência tratado pela chave única do mapping; typecheck do pacote de banco PASS.
-- [-] Integrar `SCR-AUTH-001` à configuração Vercel/Supabase publicada: Production e Preview agora possuem URL e publishable key; erro seguro de credencial inválida foi comprovado. O caminho de sucesso permanece pendente de conta controlada e API publicada.
+- [-] Integrar `SCR-AUTH-001` à configuração Vercel/Supabase publicada: Production e Preview agora possuem URL e publishable key; erro seguro de credencial inválida foi comprovado. O caminho de sucesso permanece pendente de conta controlada e configuração server-side de identidade/database.
 - [x] Definir e implementar o contrato de transporte autorizado para `GET /identity/me`: somente Bearer token, verificação server-side e retorno mínimo do User interno; sem Workspace/RBAC. O contrato está registrado no Task Packet e a API compilada devolveu 401/`UNAUTHENTICATED` para uma chamada sem credencial.
 - [x] Criar e executar os testes unitários inicialmente possíveis do Slice 01: 12/12 PASS (token negativo, identidade verificada, criação, repetição, concorrência, campos não confiáveis ignorados, token vazio, parsing do Bearer e respostas HTTP 401/503/200); typecheck e build da API PASS. Web typecheck e build PASS.
 - [x] Executar QA de navegador do estado seguro sem configuração: 320, 375, 768, 1024 e 1440 px sem overflow horizontal; campos e botão indisponíveis; console sem warnings/errors.
-- [-] Executar QA de navegador autenticado, console e rede: Production foi verificado para configuração, erro seguro, console e responsividade; login bem-sucedido e reconciliação persistida exigem conta controlada e API NestJS publicada.
+- [-] Executar QA de navegador autenticado, console e rede: Production foi verificado para configuração, erro seguro, console e responsividade; login bem-sucedido e reconciliação persistida exigem conta controlada e configuração server-side de identidade/database.
 - [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. Diff sem erros de whitespace, baseline de secrets e alterações revisadas antes dos commits publicados em `main`.
 - [x] Publicar o Web SaaS no Vercel Production após gates locais, usando o projeto `saas` e commit `105012c`.
 
@@ -103,7 +103,8 @@ Os itens abaixo são exigências do Implementation Plan. A ordem dos próximos s
 
 - [x] Executar exclusivamente a migration remota revisada de identidade, autorizada pelo Product Owner em 2026-09-25; incluir RLS default-deny e validar tabelas/RLS após a aplicação.
 - [x] Publicar em GitHub `main` e Vercel Production, explicitamente autorizado pelo Product Owner em 2026-09-25.
-- [ ] **Não executar sem nova decisão:** alteração de Supabase Auth, provisionamento/alteração do backend NestJS no Render ou criação de conta Auth controlada.
+- [x] Provisionar e publicar o backend NestJS no Render, autorizado posteriormente pelo Product Owner em 2026-09-25: serviço `saas-api`, Virginia (US East), plano Free, origem pública e comandos de build/start ajustados para as dependências de runtime. Nenhum plano pago, secret ou migration foi criado/alterado.
+- [ ] **Não executar sem nova decisão específica:** alteração de Supabase Auth, transmissão de `DATABASE_URL`/credenciais de verificação para o Render ou criação de conta Auth controlada.
 
 ## Required next artifact
 
@@ -178,7 +179,7 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 ## Current blockers
 
 - `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: não existe uma conta controlada aprovada para autenticação bem-sucedida. Uma tentativa controlada inválida foi usada exclusivamente para confirmar que a produção retorna erro genérico.
-- `BLOCKED — BACKEND DEPLOYMENT BOUNDARY REQUIRED`: a arquitetura aprovada hospeda NestJS no Render, não Vercel. O Web está publicado, mas nenhuma URL/serviço Render da API foi indicado ou criado; logo a reconciliação persistida não pode ser chamada nem comprovada em produção.
+- `BLOCKED — SERVER IDENTITY/DATABASE CONFIGURATION REQUIRED`: a API NestJS está Live no Render, mas a reconciliação persistida requer `DATABASE_URL` e a verificação de token requer a configuração server-side Supabase. A transmissão de credenciais para o Render não foi autorizada de forma específica e não foi executada.
 
 ## Remote migration evidence
 
@@ -205,6 +206,14 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - **Deployment:** `https://saas-pi-one-31.vercel.app`, Ready; deployment `dpl_85kkG2rPrYRZeqhjD8idV1n6Dzk3`.
 - **Live QA:** `/login` rendered configured e-mail/password inputs and enabled submit. One controlled non-existent account returned the generic message `Unable to sign in. Check your email and password.`; no console warnings/errors were captured.
 - **Responsive QA:** Production `/login` had no horizontal overflow at 320×640, 375×812, 768×900, 1024×900 and 1440×1000.
+
+## Render API deployment evidence
+
+- **Service:** `saas-api`, Render Virginia (US East), plano Free; aviso da plataforma: instâncias Free hibernam por inatividade e podem atrasar uma solicitação por 50 segundos ou mais.
+- **Source / runtime:** `Wyllams/SaaS` em `main`, commit `a8ac097`; Node 24.21.0; `APP_ENV=production`; nenhum secret foi inserido.
+- **Runtime build:** os pacotes internos de runtime `@saas/config`, `@saas/db` e `@saas/observability` são compilados antes de `@saas/api`; a inicialização chama diretamente `node apps/api/dist/main.js`, evitando o consumo de memória do pnpm no boot Free.
+- **Live deployment:** `dep-darek8gjo6nc73flk0eg`, `Deploy succeeded | Live`; origem `https://saas-api-0jkv.onrender.com`.
+- **External checks:** `GET /health` retornou 200 `{"status":"ok","service":"api"}`; `GET /ready` retornou 503 com `database: missing` e `queue: missing`; `GET /identity/me` sem Bearer retornou 401 `UNAUTHENTICATED`. Não houve token, banco, secret ou reconciliação positiva nessas verificações.
 
 ## Final local gate evidence
 

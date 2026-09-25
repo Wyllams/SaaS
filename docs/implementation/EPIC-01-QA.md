@@ -1,7 +1,7 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — QA
 
 - **Date:** 2026-09-25
-- **State:** local, remote schema/RLS and Production Web error-path evidence recorded. Successful authenticated reconciliation remains pending a controlled account and deployed NestJS API.
+- **State:** local, remote schema/RLS, Production Web error-path and Render API health evidence recorded. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.
 - **Scope recorded:** `EPIC-01-SLICE-01 — Authentication and server-side identity boundary`
 
 ## QA rule
@@ -28,6 +28,10 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 | Browser — safe unavailable-configuration state | `http://localhost:3000/login` at 320×640, 375×812, 768×900, 1024×900 and 1440×1000 | PASS: SCR-AUTH-001 renders labels, fields, unavailable-configuration feedback and disabled submit with no horizontal overflow. Console captured zero warnings/errors. |
 | Production Web — configured error path | `https://saas-pi-one-31.vercel.app/login` | PASS: published form had enabled submit and returned the approved generic invalid-credentials message for one controlled non-existent account. Console captured zero warnings/errors. |
 | Production Web — responsive | Production `/login` at 320×640, 375×812, 768×900, 1024×900 and 1440×1000 | PASS: no horizontal overflow at any required viewport. |
+| Render API — deployment | Render `saas-api`, Virginia (US East), Free; deployment `dep-darek8gjo6nc73flk0eg` | PASS: Render reports `Deploy succeeded | Live`; Node 24.21.0 listened on Render `PORT=10000`. No paid plan was selected. |
+| Render API — public health | `GET https://saas-api-0jkv.onrender.com/health` | PASS: HTTP 200 with `{"status":"ok","service":"api"}`. |
+| Render API — negative readiness | `GET https://saas-api-0jkv.onrender.com/ready` | PASS: HTTP 503 with explicit `database: missing` and `queue: missing`; no false-ready result with dependencies absent. |
+| Render API — unauthenticated identity | `GET https://saas-api-0jkv.onrender.com/identity/me` without Authorization | PASS: HTTP 401 `UNAUTHENTICATED`; no identity or database reconciliation occurred. |
 | Full local gates | `verify:structure`, `verify:secrets`, `lint`, `test`, `check`, `build` | PASS: all executable gates passed. Lint warnings remaining are confined to the historical wireframe archive, which is intentionally preserved unchanged. |
 
 ## Slice 01 — planned acceptance evidence
@@ -36,8 +40,8 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 |---|---|---|
 | `SCR-AUTH-001` is real | Login does not use fixtures or simulated persistence | PARTIAL PASS — route and client call are implemented against Supabase Auth; a configured Development environment is required for a real sign-in proof. |
 | Email/password sign-in | Successful authenticated session through the approved Supabase Auth contract | PARTIAL PASS — real Production invalid-credential response verified; successful account flow requires a controlled account. |
-| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — `GET /identity/me` is implemented and its missing/invalid/configuration/success branches pass locally; Web is published but NestJS belongs to a separately deployed Render service that has not been provisioned/identified. |
-| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof requires a controlled account and deployed NestJS API. |
+| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — `GET /identity/me` is Live on Render and rejects an absent Bearer token with 401; a successful verified-token branch awaits approved server-side Supabase configuration and controlled account. |
+| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof requires a controlled account and approved server-side identity/database configuration. |
 | Unauthenticated negative case | Protected behavior rejects an absent/invalid session safely | PARTIAL PASS — unit tests reject absent, invalid and empty token inputs before reconciliation; live expired/malformed token proof awaits Development configuration. |
 | Error safety | Authentication failure does not expose secrets, stack traces, or account-existence details beyond the approved contract | PARTIAL PASS — implemented browser message is generic and no console errors occurred in unavailable configuration; live invalid-credentials response awaits Development configuration. |
 | UI states | Loading, invalid credentials/error, disabled/submitting and accessible feedback are verified for the implemented screen | PARTIAL PASS — unavailable and disabled state verified; submit/success/error require Development Auth configuration. |
@@ -56,7 +60,7 @@ The following are not Slice 01 PASS criteria and must not be represented as test
 - onboarding/consent/invitation lifecycle;
 - billing/trial states;
 - remote Supabase Auth configuration;
-- deployment, staging or production validation.
+- Supabase Auth configuration and full authenticated production validation.
 
 ## Epic-level negative-test ledger
 
@@ -82,4 +86,4 @@ The following are not Slice 01 PASS criteria and must not be represented as test
 ## Current blockers
 
 - `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: no approved controlled account exists for a success-path test. The production error path was verified with an intentionally invalid account; no Auth configuration was changed.
-- `BLOCKED — BACKEND DEPLOYMENT BOUNDARY REQUIRED`: NestJS is architecturally assigned to Render. No Render service/URL is available for production reconciliation proof.
+- `BLOCKED — SERVER IDENTITY/DATABASE CONFIGURATION REQUIRED`: NestJS is Live on Render, but `DATABASE_URL` and server-side Supabase verification configuration are deliberately absent. Their transmission to Render is a credential-handling action requiring specific approval and has not occurred.
