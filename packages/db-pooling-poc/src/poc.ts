@@ -24,6 +24,7 @@ type Result = {
   errorCode?: string;
   errorCodes?: string[];
   errorClass?: string;
+  errorStage?: string;
 };
 
 const urls: Record<Mode, string | undefined> = {
@@ -81,6 +82,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     ssl: { rejectUnauthorized: false },
   });
   const db = drizzle(pool);
+  let stage = "base-query";
 
   try {
     const started = performance.now();
@@ -93,6 +95,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     const first = base.rows[0];
     assert.ok(first?.server_version);
 
+    stage = "client-tls";
     const tlsClient = await pool.connect();
     let clientTlsEncrypted = false;
     try {
@@ -104,6 +107,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
       tlsClient.release();
     }
 
+    stage = "tenant-context";
     const contextValue = "11111111-1111-7111-8111-111111111111";
     const transactionLocalContext = await db.transaction(async (tx) => {
       await tx.execute(sql`select set_config('app.workspace_id', ${contextValue}, true)`);
@@ -114,6 +118,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     });
     assert.equal(transactionLocalContext, "PASS");
 
+    stage = "concurrency";
     const concurrencyStarted = performance.now();
     const operations = 24;
     await Promise.all(
@@ -126,6 +131,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     );
     const elapsedMs = Math.round((performance.now() - concurrencyStarted) * 100) / 100;
 
+    stage = "session-capabilities";
     let namedPreparedStatement: Result["namedPreparedStatement"] = "NOT_TESTED";
     let sessionStateProbe: Result["sessionStateProbe"] = "NOT_TESTED";
 
@@ -188,6 +194,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
       mode,
       reachable: false,
       ...safeError(error),
+      errorStage: stage,
     };
   } finally {
     await pool.end();
@@ -207,6 +214,8 @@ async function main() {
   const direct = results.find((item) => item.mode === "direct")!;
   const session = results.find((item) => item.mode === "session")!;
   const transaction = results.find((item) => item.mode === "transaction")!;
+
+  console.log(JSON.stringify({ poc: "POC-02-PROBE", results }));
 
   assert.equal(session.reachable, true, "Session pooler must be reachable");
   assert.equal(transaction.reachable, true, "Transaction pooler must be reachable");
