@@ -125,3 +125,7 @@ A fundação atende ao gate técnico do Epic 0 na branch.
 O resultado ainda precisa de revisão/merge antes de autorizar o Epic 1.
 
 Não houve provisionamento de Production nem uso de dados reais.
+
+## Post-migration QA status — 2026-09-25
+
+The Valkey/API/Worker smoke evidence in this document belongs to the superseded foundation. The current branch removes those runtime units and replaces them with versioned Supabase Edge Functions and the async-infrastructure migration. Current CI evidence is recorded on the Supabase migration PR.

@@ -168,3 +168,7 @@ Após revisão e merge do Epic 0, a próxima etapa documental/técnica é:
 **Epic 1 — Identity / Workspace / Membership / Permissions**
 
 Não iniciar Epic 1 antes do merge/aprovação da fundação.
+
+## Supabase-only foundation update — 2026-09-25
+
+ADR-016 replaces the former Render API/Worker/Key Value topology. Current foundation uses Vercel for Web, Supabase for the entire backend/data plane, Expo/EAS for Mobile and GitHub Actions for CI. The old API/Worker/Valkey CI evidence above remains historical only.
