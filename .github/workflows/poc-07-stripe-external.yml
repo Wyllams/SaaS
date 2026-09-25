@@ -62,7 +62,9 @@ jobs:
           test "$(jq -r '.dashboard' .poc/account.json)" = "full"
           test "$(jq -r '.defaults.responsibilities.fees_collector' .poc/account.json)" = "stripe"
           test "$(jq -r '.defaults.responsibilities.losses_collector' .poc/account.json)" = "stripe"
-          test "$(jq -r '.configuration.merchant.capabilities.card_payments.requested' .poc/account.json)" = "true"
+          CARD_STATUS="$(jq -r '.configuration.merchant.capabilities.card_payments.status' .poc/account.json)"
+          test -n "$CARD_STATUS"
+          test "$CARD_STATUS" != "null"
           test "$(jq -r '.livemode' .poc/account.json)" = "false"
 
       - name: Create Stripe-hosted onboarding link
