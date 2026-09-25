@@ -3,12 +3,13 @@
 - **Data:** 2026-09-25
 - **Branch:** `epic/00-foundation`
 - **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
-- **Estado:** em execução
+- **Estado:** implementação técnica concluída; aguardando revisão/merge da branch
 - **Feature implementation:** ainda não iniciada
+- **CI final:** PASS — GitHub Actions run `36161167515`
 
 ## Autoridade documental obrigatória
 
-Antes de qualquer decisão ou código deste Epic, consultar:
+Antes de qualquer decisão ou código posterior, consultar:
 
 1. `docs/source-of-truth/README.md`
 2. `docs/source-of-truth/CURRENT-DECISIONS.md`
@@ -20,44 +21,133 @@ Antes de qualquer decisão ou código deste Epic, consultar:
 8. `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
 9. `docs/architecture/TECHNICAL-ARCHITECTURE.md`
 10. `docs/adr/README.md` + ADRs aplicáveis
+11. este arquivo e `EPIC-00-QA.md`
 
 ## Decisões vigentes importantes
 
 - marca final do produto ainda não definida; novos nomes devem ser neutros;
-- SMS/Twilio fora do escopo atual;
+- scaffold definitivo usa root `saas-platform` e scope `@saas/*`;
+- SMS/Twilio está fora do escopo atual;
 - webhook público real do Resend está deferido e não bloqueia o Epic 0;
 - código de PoC é evidência, não código de produção;
-- nenhuma feature de negócio começa antes do gate de saída do Epic 0.
+- nenhuma feature de negócio foi criada no Epic 0.
 
-## Sequência do Epic 0
+## Gates arquiteturais
+
+- [x] G0.1 — Framework Web: **Next.js 16 App Router / ADR-013 Accepted**.
+- [x] G0.2 — Framework API: **NestJS 12 + FastifyAdapter / ADR-014 Accepted**.
+- [x] G0.3 — Topologia de deploy/ambientes: **ADR-015 Accepted**.
+- [x] G0.4 — Naming neutro preservado enquanto a marca final não é definida.
+
+## Checklist do Epic 0
 
 - [x] Implementation Plan v1.0 aprovado e mergeado na `main`.
 - [x] Branch `epic/00-foundation` criada a partir da `main` aprovada.
-- [x] G0.1 — reconciliar e fechar autoridade do framework Web — **Next.js 16 App Router / ADR-013 Accepted**.
-- [x] G0.2 — criar/fechar ADR do framework da API — **NestJS 12 + FastifyAdapter / ADR-014 Accepted**.
-- [x] G0.3 — documentar topologia definitiva de deploy antes de Staging — **ADR-015 Accepted**.
-- [ ] Criar estrutura definitiva `apps/web`, `apps/api`, `apps/worker`, `apps/mobile`.
-- [ ] Criar packages compartilhados aprovados.
-- [ ] Fixar runtime/package manager/versões validadas.
-- [ ] Configurar CI baseline.
-- [ ] Configurar contrato de ambientes Development/Staging/Production.
-- [ ] Configurar política de secrets.
-- [ ] Instalar baseline de observabilidade.
-- [ ] Criar health/readiness contracts de API/Worker.
-- [ ] Documentar bootstrap local e Staging.
-- [ ] Executar gates finais do Epic 0.
+- [x] Estrutura definitiva `apps/web`, `apps/api`, `apps/worker`, `apps/mobile`.
+- [x] Packages compartilhados aprovados criados.
+- [x] Boundary de migrations `@saas/db` criado com Drizzle ORM + Drizzle Kit, sem antecipar tabelas de domínio.
+- [x] Runtime/package manager/versões validadas fixadas.
+- [x] Lockfile versionado.
+- [x] CI baseline configurada em modo read-only + `--frozen-lockfile`.
+- [x] Contrato Development/Staging/Production documentado.
+- [x] Política de secrets documentada + verificação automática baseline.
+- [x] Baseline de observabilidade instalado.
+- [x] Health/readiness contracts de API/Worker criados.
+- [x] Bootstrap local documentado.
+- [x] Bootstrap de Staging documentado antes de provisionar Staging.
+- [x] Testes unitários mínimos da fundação criados.
+- [x] Smoke real da API executado em CI.
+- [x] Smoke real do Worker contra Valkey 8 executado em CI.
+- [x] Build deixa o repositório limpo.
+- [x] Gates finais do Epic 0 executados.
 
-## Evidência já disponível
+## Estrutura definitiva criada
 
-- POCs 01–12 preservados nas branches `poc/*`;
-- ADRs aceitos 001–008, 011 e 012 na `main`;
-- validação Web de Next.js disponível em `validation/web-nextjs`;
-- arquitetura pós-PoCs em `docs/architecture/TECHNICAL-ARCHITECTURE.md`.
+```text
+apps/
+  web/       Next.js 16 App Router
+  api/       NestJS 12 + Fastify
+  worker/    Node + BullMQ/Valkey foundation
+  mobile/    Expo 57 + Expo Router
 
-## Última ação executada
+packages/
+  api-client/
+  config/
+  db/
+  design-tokens/
+  domain-types/
+  observability/
+  ui-web/
+  validation/
+```
 
-G0.3 fechado: ADR-015 reconciliou a topologia aprovada no TRD e definiu limites Development/Staging/Production sem congelar sizing/custos.
+## Baseline técnico
 
-## Próxima ação
+- Node.js 24.21.0
+- pnpm 12.6.0
+- Turborepo 2.11.4
+- TypeScript 6.0.3
+- Oxlint 1.85.0
+- Next.js 16.3.6
+- React 19.2.x conforme app validado
+- Tailwind CSS 4.3.3
+- NestJS 12.1.0
+- Fastify 5.12.5
+- Drizzle ORM 0.45.3
+- Drizzle Kit 0.31.11
+- BullMQ 6.3.4
+- ioredis 6.0.0
+- Expo SDK 57
+- OpenTelemetry contracts validados no POC-12
+- Sentry Node 11.0.0
 
-Criar o scaffold definitivo e brand-neutral do monorepo em `apps/*` e `packages/*`, promovendo somente decisões aceitas — não copiando código de PoC cegamente.
+## CI final — evidência
+
+GitHub Actions run:
+
+`36161167515`
+
+Resultado:
+
+- committed dependencies / frozen lockfile: PASS
+- foundation structure: PASS
+- secret baseline: PASS
+- lint: PASS
+- unit tests: PASS
+- TypeScript: PASS
+- build: PASS
+- API `/health`: PASS
+- API readiness-negative contract: PASS
+- Worker readiness contra Valkey 8: PASS
+- zero business handlers no Worker: confirmado
+- repository clean after build/tests: PASS
+
+## Documentos operacionais produzidos
+
+- `docs/implementation/EPIC-00-FOUNDATION-BASELINE.md`
+- `docs/implementation/ENVIRONMENTS.md`
+- `docs/implementation/SECRETS.md`
+- `docs/implementation/LOCAL-BOOTSTRAP.md`
+- `docs/implementation/STAGING-BOOTSTRAP.md`
+- `docs/implementation/EPIC-00-QA.md`
+
+## O que NÃO foi feito
+
+- nenhuma feature de negócio;
+- nenhuma tabela de domínio;
+- nenhuma migration de domínio;
+- nenhum ambiente Staging/Production foi provisionado;
+- nenhum secret de Production foi criado ou copiado;
+- nenhum bundle ID/mobile store signing definitivo;
+- nenhum custom domain;
+- nenhum sizing/autoscaling/budget de Production;
+- nenhum SMS/Twilio;
+- nenhum webhook público real do Resend.
+
+## Próximo passo conforme Implementation Plan
+
+Após revisão e merge do Epic 0, a próxima etapa documental/técnica é:
+
+**Epic 1 — Identity / Workspace / Membership / Permissions**
+
+Não iniciar Epic 1 antes do merge/aprovação da fundação.
