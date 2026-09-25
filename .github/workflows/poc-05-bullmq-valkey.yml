@@ -1,0 +1,69 @@
+name: POC-05 BullMQ Valkey
+
+on:
+  push:
+    branches:
+      - poc/05-bullmq-valkey
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      valkey:
+        image: valkey/valkey:8.1.10-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="valkey-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      VALKEY_HOST: 127.0.0.1
+      VALKEY_PORT: 6379
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Install dependencies and update lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Persist dependency lockfile once
+        if: github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml pnpm-workspace.yaml
+            git commit -m "chore: persist POC-05 dependency lockfile"
+            git push
+          fi
+
+      - name: Verify Valkey
+        run: |
+          docker exec $(docker ps -q --filter ancestor=valkey/valkey:8.1.10-alpine) valkey-cli INFO server | head -30
+
+      - name: Type-check queue PoC
+        run: pnpm --filter @crewcommand/queue-poc check
+
+      - name: Run queue PoC
+        run: pnpm --filter @crewcommand/queue-poc poc:test
