@@ -141,7 +141,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     return {
       mode,
       reachable: true,
-      serverVersion: first.server_version,
+      serverVersion: String(first.server_version),
       ssl: Boolean(first.ssl),
       simpleQueryMs,
       transactionLocalContext,
