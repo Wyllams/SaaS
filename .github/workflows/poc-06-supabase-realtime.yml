@@ -54,34 +54,34 @@ jobs:
           PGSSLMODE: require
         run: |
           psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-          drop policy if exists "poc06_receive_authorized_topic" on realtime.messages;
-          drop policy if exists "poc06_send_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_final_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_final_send_authorized_topic" on realtime.messages;
 
-          create policy "poc06_receive_authorized_topic"
+          create policy "poc06_final_receive_authorized_topic"
           on realtime.messages
           for select
           to anon
           using (
-            (select realtime.topic()) = 'poc06:authorized'
+            (select realtime.topic()) = 'poc06:final:authorized'
             and realtime.messages.extension = 'broadcast'
           );
 
-          create policy "poc06_send_authorized_topic"
+          create policy "poc06_final_send_authorized_topic"
           on realtime.messages
           for insert
           to anon
           with check (
-            (select realtime.topic()) = 'poc06:authorized'
+            (select realtime.topic()) = 'poc06:final:authorized'
             and realtime.messages.extension = 'broadcast'
           );
 
-          create table if not exists public.poc06_events (
+          create table if not exists public.poc06_final_events (
             id uuid primary key,
             payload jsonb not null,
             created_at timestamptz not null default now()
           );
 
-          alter table public.poc06_events enable row level security;
+          alter table public.poc06_final_events enable row level security;
           SQL
 
       - name: Type-check Realtime PoC
@@ -96,7 +96,7 @@ jobs:
           PGSSLMODE: require
         run: |
           psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-          drop policy if exists "poc06_receive_authorized_topic" on realtime.messages;
-          drop policy if exists "poc06_send_authorized_topic" on realtime.messages;
-          drop table if exists public.poc06_events;
+          drop policy if exists "poc06_final_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_final_send_authorized_topic" on realtime.messages;
+          drop table if exists public.poc06_final_events;
           SQL

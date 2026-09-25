@@ -71,7 +71,7 @@ async function main() {
   const event2 = randomUUID();
 
   await db.query(
-    "insert into public.poc06_events(id, payload) values ($1::uuid, $2::jsonb)",
+    "insert into public.poc06_final_events(id, payload) values ($1::uuid, $2::jsonb)",
     [event1, JSON.stringify({ kind: "job.updated", sequence: 1 })],
   );
 
@@ -86,13 +86,13 @@ async function main() {
   });
 
   const subscriberChannel = subscriber
-    .channel("poc06:authorized", { config: { private: true } })
+    .channel("poc06:final:authorized", { config: { private: true } })
     .on("broadcast", { event: "job.updated" }, ({ payload }) => {
       received.push(payload as Record<string, unknown>);
       resolveReceived?.(payload as Record<string, unknown>);
     });
 
-  const publisherChannel = publisher.channel("poc06:authorized", {
+  const publisherChannel = publisher.channel("poc06:final:authorized", {
     config: { private: true },
   });
 
@@ -125,7 +125,7 @@ async function main() {
   assert.equal(firstReceived.eventId, event1);
   assert.equal(firstReceived.sequence, 1);
 
-  const forbiddenChannel = unauthorized.channel("poc06:forbidden", {
+  const forbiddenChannel = unauthorized.channel("poc06:final:forbidden", {
     config: { private: true },
   });
   const forbiddenStatus = await subscribe(forbiddenChannel, 5_000);
@@ -138,7 +138,7 @@ async function main() {
   await subscriber.removeChannel(subscriberChannel);
 
   await db.query(
-    "insert into public.poc06_events(id, payload) values ($1::uuid, $2::jsonb)",
+    "insert into public.poc06_final_events(id, payload) values ($1::uuid, $2::jsonb)",
     [event2, JSON.stringify({ kind: "job.updated", sequence: 2 })],
   );
 
@@ -163,7 +163,7 @@ async function main() {
     `
       select id::text,
              (payload->>'sequence')::int as sequence
-      from public.poc06_events
+      from public.poc06_final_events
       where id = any($1::uuid[])
       order by (payload->>'sequence')::int
     `,
@@ -184,6 +184,10 @@ async function main() {
     publisher.removeChannel(publisherChannel),
     unauthorized.removeChannel(forbiddenChannel),
   ]);
+
+  subscriber.realtime.disconnect();
+  publisher.realtime.disconnect();
+  unauthorized.realtime.disconnect();
 
   console.log(
     JSON.stringify({
