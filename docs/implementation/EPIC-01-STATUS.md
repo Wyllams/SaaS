@@ -1,0 +1,207 @@
+# Epic 1 — Identity / Workspace / Membership / Permissions — Status
+
+- **Date:** 2026-09-25
+- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- **State:** Slice 01 in progress; the Product Owner authorized one reviewed remote identity migration on 2026-09-25. Live-auth/browser gates remain blocked by unavailable Development configuration.
+- **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
+
+## Scope of the Epic
+
+Epic 1 establishes the tenancy and authorization foundation required by all later tenant-owned domains:
+
+- User / external identity separation;
+- Workspace, Location and Membership;
+- Role, Permission and scopes;
+- Invite lifecycle;
+- portal-access separation;
+- consent/onboarding state;
+- backend/database authorization and RLS;
+- privileged-change security/audit events.
+
+Primary product surfaces are `SCR-AUTH-001..008`, `SCR-ONB-001..002`, and user/workspace/location controls used by Settings and the global shell.
+
+## Approved decomposition — first slice
+
+### EPIC-01-SLICE-01 — Authentication and server-side identity boundary
+
+**Objective:** implement a real email/password authentication entry point for `SCR-AUTH-001`, backed by Supabase Auth and a server-side global User identity reconciliation boundary.
+
+**Included:**
+
+- email/password authentication only;
+- server-side session validation;
+- external identity kept separate from the business User identity;
+- `SCR-AUTH-001` connected to the real contract, not fixture state;
+- approved authentication error behavior and tests appropriate to the implemented contract.
+
+**Explicitly excluded:**
+
+- Google OAuth;
+- password recovery;
+- trial/plan selection and billing;
+- Workspace, Location, Membership, Role, Permission and scope implementation;
+- RLS for tenant-owned data;
+- onboarding, consent flow and invites;
+- portal access;
+- remote Supabase/Auth configuration, migrations, deploys, commits, pushes and merges.
+
+Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It cannot enter this slice without a later approved Task Packet.
+
+## Checklist de acompanhamento
+
+**Legenda:** `[x]` concluído com evidência registrada; `[-]` em andamento; `[ ]` ainda não iniciado; `BLOCKED` depende de decisão ou autorização externa.
+
+### Governança e planejamento
+
+- [x] Confirmar o Epic 1 como próximo passo pelo Implementation Plan aprovado.
+- [x] Cruzar as fontes oficiais aplicáveis e registrar a precedência documental.
+- [x] Criar `EPIC-01-STATUS.md`.
+- [x] Criar `EPIC-01-QA.md` sem declarar testes não executados como aprovados.
+- [x] Definir `EPIC-01-SLICE-01` e registrar Google OAuth como adiado.
+- [x] Inicializar o repositório Git local a pedido do Product Owner, sem commit, branch remota ou histórico importado.
+- [x] Aprovar o contrato de identidade: User interno separado e mapeamento dedicado para a identidade externa Supabase Auth.
+- [x] Preparar o rascunho do Task Packet para `EPIC-01-SLICE-01`.
+- [x] Obter aprovação explícita do Task Packet antes de implementar.
+
+### Slice 01 — Authentication and server-side identity boundary
+
+- [x] Arquivar os wireframes fornecidos pelo Product Owner em `docs/reference/wireframes/historical/2026-09-25/`, com manifesto e hashes de integridade; referência histórica, não fonte de autoridade.
+- [x] Confirmar no código os pontos exatos de integração Web/API/DB autorizados pelo Task Packet.
+- [x] Resolver a estratégia UUIDv7: geração na aplicação por dependência revisada, sem extensão nem alteração remota no PostgreSQL.
+- [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0; dependências restauradas com lockfile congelado.
+- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case e repositório estão implementados; a prova de integração real depende da configuração de Development ainda bloqueada.
+- [x] Definir estado/lifecycle inicial e a representação persistida de `User`, aprovado pelo Product Owner em 2026-09-25.
+- [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies públicas.
+- [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
+- [x] Criar boundary autenticada: token ausente/inválido é rejeitado antes da reconciliação; token verificado entrega somente sujeito e e-mail ao use case.
+- [x] Implementar repositório transacional local para `subject → User`, com conflito de concorrência tratado pela chave única do mapping; typecheck do pacote de banco PASS.
+- [ ] `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: integrar `SCR-AUTH-001` e a verificação real do token exige contrato/configuração Development do Supabase, que não pode ser criado ou alterado neste slice.
+- [ ] `BLOCKED — API TRANSPORT CONTRACT REQUIRED`: as fontes consultadas não definem endpoint, request/response ou fluxo de handoff autenticado para expor a identidade reconciliada. A API atual só declara `/health` e `/ready`; criar uma rota de identidade por inferência violaria a regra de não inventar.
+- [x] Criar e executar os testes unitários inicialmente possíveis do Slice 01: 7/7 PASS (token negativo, identidade verificada, criação, repetição, concorrência, campos não confiáveis ignorados e token vazio); typecheck e build da API PASS. Web typecheck e build PASS.
+- [x] Executar QA de navegador do estado seguro sem configuração: 320, 375, 768, 1024 e 1440 px sem overflow horizontal; campos e botão indisponíveis; console sem warnings/errors.
+- [ ] `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: executar QA de navegador autenticado, console e rede do sign-in real requer URL e publishable key reais no ambiente Development.
+- [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. A revisão de diff Git permanece indisponível porque o repositório local inteiro segue não rastreado.
+- [ ] Submeter para revisão do Product Owner.
+
+### Obrigações restantes do Epic 1
+
+Os itens abaixo são exigências do Implementation Plan. A ordem dos próximos slices será definida somente depois de cada Task Packet aprovado.
+
+- [ ] Implementar métodos de autenticação aprovados restantes, quando cada um receber seu slice e autorização.
+- [ ] Criar contratos de Workspace, Membership e Location scope.
+- [ ] Implementar Roles, Permissions e scopes granulares.
+- [ ] Implementar ciclo de vida de Invite.
+- [ ] Implementar seleção e troca segura de múltiplos Workspaces.
+- [ ] Aplicar RLS e autorização no backend/banco.
+- [ ] Estabelecer a invariante de Primary Owner.
+- [ ] Implementar resolução segura de deep links.
+- [ ] Emitir eventos de segurança/auditoria para alterações privilegiadas.
+- [ ] Executar e registrar todos os testes negativos obrigatórios do Epic.
+- [ ] Confirmar o gate de saída: testes cross-tenant e de permissões negativas aprovados antes de qualquer mutação tenant-owned posterior.
+
+### Ações explicitamente não autorizadas neste momento
+
+- [x] Executar exclusivamente a migration remota revisada de identidade, autorizada pelo Product Owner em 2026-09-25; incluir RLS default-deny e validar tabelas/RLS após a aplicação.
+- [ ] **Não executar:** alteração de Supabase Auth, deploy, push, merge, criação de PR ou mudança de Vercel.
+
+## Required next artifact
+
+The Task Packet draft is `docs/implementation/EPIC-01-SLICE-01-TASK-PACKET.md`. It requires Product Owner approval before Codex edits product code, schema, Auth configuration or a remote environment.
+
+## Identity mapping decision
+
+**Confirmed:** `packages/db/src/schema.ts` intentionally contains no physical domain tables, and the foundation has no Supabase Auth SDK/adapter. The Domain Model specifies a global business `User`; the TRD requires business relationships to use the internal `user.id`, not the authentication-provider ID.
+
+**Approved by Product Owner on 2026-09-25:** Slice 01 may introduce a dedicated external-identity mapping owned by the identity domain. The internal business User remains distinct from the Supabase Auth UUID. The corresponding migration was initially local/Git only; the Product Owner subsequently authorized its one-time remote execution after review. It created only `users` and `user_supabase_identities`, enabled RLS on both, created no policy and changed no existing records. The Supabase SQL editor confirmed both tables have `rls_enabled = true` and `policy_count = 0`.
+
+**Task Packet approval:** received from the Product Owner on 2026-09-25. Codex must not infer identity lifecycle, schema-state or provider details absent from the approved documents.
+
+## UUIDv7 implementation blocker
+
+The approved internal-ID direction is UUIDv7. The registered Supabase PostgreSQL version is 17.6; PostgreSQL 17 documentation does not provide native `uuidv7()`, while PostgreSQL 18 does. The Task Packet therefore blocks implementation rather than silently using UUIDv4.
+
+**Decision required:** authorize either (a) a reviewed application-level UUIDv7 dependency for the identity domain, or (b) a reviewed PostgreSQL extension/function available in the Development environment. No remote database change is authorized by either option.
+
+**Resolved by Product Owner on 2026-09-25:** use a reviewed application-level UUIDv7 dependency. No PostgreSQL extension/function or remote change is authorized.
+
+## Runtime blocker — resolved
+
+The foundation pins Node.js `>=24.21.0 <25` and pnpm `12.6.0`. The active system pnpm 12.6 wrapper fails before executing commands; the available fallback uses Node 24.19.0 and pnpm 11.19.0. The first TDD test therefore did not reach the expected missing-feature failure.
+
+Resolved on 2026-09-25 with an isolated local Node 24.21.0 runtime and Corepack pnpm 12.6.0. Existing dependencies were restored using `pnpm install --frozen-lockfile`. This did not alter Supabase, Vercel, Git remotes or repository runtime configuration.
+
+## Schema documentation blocker — resolved
+
+Resolved by Product Owner on 2026-09-25: `User` has required `id` and `email`, optional `name` and `photo`, and global `status` restricted to `active` and `suspended` with `active` as initial state. The provider identity remains only in the dedicated Supabase mapping. This decision was added to the Task Packet before the schema was created.
+
+## Mandatory Epic tests tracked for later slices
+
+- unauthenticated;
+- authenticated without membership;
+- one and multiple workspaces;
+- suspended membership;
+- cross-workspace direct-ID attempt;
+- location-scope violation;
+- self-elevation;
+- invite replay/expiry;
+- Primary Owner transfer invariant;
+- permission change during an active session.
+
+These remain Epic-level obligations; Slice 01 covers only the authentication/identity tests supported by its approved scope.
+
+## Boundaries and decisions
+
+- Supabase Auth is the approved authentication provider for V1.
+- The login screen is implemented at `/login`; its browser client uses only the publishable-key boundary and the API verifier uses server-only environment variables plus `auth.getUser(token)`.
+- Historical wireframes are searchable in `docs/reference/wireframes/`, but must be reconciled with current decisions and the Task Packet before any visual implementation.
+- Workspace remains the tenant boundary.
+- Authentication is not authorization: later slices must enforce Membership, Permission and Location scope at backend/database boundaries.
+- UI visibility and deep links never grant authorization.
+- No Stripe, QuickBooks, Resend, SMS/Twilio, provider billing, or business domain work belongs to Epic 1 Slice 01.
+
+## Documentation consulted
+
+- `docs/source-of-truth/README.md`
+- `docs/source-of-truth/CURRENT-DECISIONS.md`
+- `docs/source-of-truth/canonical/01-PRD.md`
+- `docs/source-of-truth/canonical/02-TRD-OFICIAL.md`
+- `docs/source-of-truth/canonical/03-APP-FLOW-OFICIAL.md`
+- `docs/source-of-truth/canonical/04-UI-UX-DESIGN.md`
+- `docs/source-of-truth/canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md`
+- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- `docs/architecture/TECHNICAL-ARCHITECTURE.md`
+- `docs/adr/README.md` and applicable ADRs
+- `docs/implementation/CHATGPT-CODEX-OPERATING-MODEL.md`
+- `docs/implementation/CODEX-TASK-TEMPLATE.md`
+
+## Current blockers
+
+- `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: a tela e a boundary estão implementadas, mas a execução real de sign-in, validação de token, console/rede e QA responsivo exige URL e publishable key do ambiente Development. Nenhuma configuração de Auth foi alterada.
+- `BLOCKED — API TRANSPORT CONTRACT REQUIRED`: o Task Packet exige uma boundary de API, mas as fontes oficiais não determinam uma rota/contrato para ela. Foram consultados App Flow, TRD, Implementation Plan, Architecture e ADRs aplicáveis; a busca por `identity`, `current user`, `access token`, `bearer` e `server-side session` não encontrou endpoint aplicável. Arquivos bloqueados: `apps/api/src/app.module.ts` e qualquer controller/guard novo.
+
+## Remote migration evidence
+
+- **Target:** Supabase project `obpncbnzwrocvgngtodg` (SaaS), main/Production branch selected in the dashboard.
+- **Applied:** 2026-09-25 through the Supabase SQL editor, after explicit Product Owner authorization.
+- **Objects created:** `public.users`, `public.user_supabase_identities`.
+- **Integrity verified:** `users_pkey`, `users_status_check`, `user_supabase_identities_subject_pk`, and `user_supabase_identities_user_id_users_id_fk` are present.
+- **RLS verified:** both tables report `true`; public policy count is `0` for each table.
+- **Correction recorded:** the initially generated local `CHECK` incorrectly qualified `users.status`; PostgreSQL rejected it and no tables were created. The source schema and local migration were corrected to `CHECK ("status" IN (...))`; the final remote execution used one atomic transaction and succeeded.
+
+## Browser evidence — safe unavailable-configuration state
+
+- **URL:** `http://localhost:3000/login`.
+- **Viewports:** 320×640, 375×812, 768×900, 1024×900 and 1440×1000.
+- **Observed:** `SCR-AUTH-001`, e-mail and senha labels/fields, explanatory unavailable-configuration feedback, and disabled sign-in button rendered at every viewport without horizontal overflow.
+- **Console:** zero warnings and errors captured.
+- **Not proved:** successful authentication, request response behavior and authenticated redirect; these require a configured Development environment.
+
+## Final local gate evidence
+
+- **Structure:** PASS — 12 workspaces brand-neutral verified.
+- **Secrets baseline:** PASS — zero tracked implementation files scanned; no secret reported.
+- **Lint:** PASS with warnings only. One warning in code novo foi corrigido; os avisos restantes pertencem ao acervo histórico imutável de wireframes.
+- **Tests:** PASS — Turbo executou 7 testes da API, 3 de config e 1 de observability; todos passaram.
+- **Typecheck:** PASS — 12 workspaces.
+- **Build:** PASS — 12 workspaces; Next.js gerou `/login`.
+- **Git review limitation:** o repositório foi inicializado localmente sem histórico e todos os arquivos continuam não rastreados. Nenhum arquivo foi staged, committed, pushed ou merged.

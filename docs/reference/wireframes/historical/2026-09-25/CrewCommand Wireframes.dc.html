@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Kalam:wght@400;700&display=swap" rel="stylesheet"><style>
+body{margin:0;background:#f0eee9;font-family:'Architects Daughter',cursive;color:#22222c}
+a{color:#2563EB}a:hover{color:#1D4ED8}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:700 15px/1.2 'Kalam',cursive;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 'Kalam',cursive;color:rgba(0,0,0,.6)}
+.dv-olabel em{font-style:normal;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#8a8a92}
+.dv-card{max-width:100%;background:#fff;border:2px solid #22222c;border-radius:10px;box-shadow:3px 3px 0 rgba(0,0,0,.12);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 'Kalam',cursive;color:rgba(0,0,0,.55)}
+.sh{display:flex;min-height:420px}
+.sb{background:#2b2b33;color:#e8e8ea;padding:12px 10px;width:142px;flex:none;font-size:11.5px;display:flex;flex-direction:column;gap:7px}
+.sb i{font-style:normal;opacity:.6}
+.sb b{background:#3c4a63;padding:4px 6px;border-radius:5px;font-weight:400;color:#fff}
+.sb hr{border:0;border-top:1px solid #4a4a55;width:100%;margin:6px 0}
+.mn{flex:1;min-width:0;display:flex;flex-direction:column}
+.tb{height:42px;border-bottom:2px solid #22222c;display:flex;align-items:center;gap:8px;padding:0 12px;font-size:11px;color:#444;flex:none}
+.bd{padding:14px;display:flex;flex-direction:column;gap:12px;background:#fafaf8;flex:1}
+.pill{border:1.5px solid #9a9aa2;border-radius:999px;padding:3px 9px;font-size:10.5px;background:#fff;white-space:nowrap}
+.btn{background:#2563EB;color:#fff;border-radius:6px;padding:5px 11px;font-size:11px;white-space:nowrap}
+.btn2{border:1.5px solid #22222c;border-radius:6px;padding:4px 10px;font-size:11px;background:#fff;white-space:nowrap}
+.card{border:1.5px solid #22222c;border-radius:8px;padding:10px;background:#fff}
+.dash{border:1.5px dashed #9a9aa2;border-radius:8px;background:#f2f2ef;display:flex;align-items:center;justify-content:center;color:#83838c;font-size:10.5px;text-align:center;padding:6px}
+.ln{height:7px;border-radius:4px;background:#e2e2e2}
+.ttl{font-size:16px;font-weight:700;color:#111;font-family:'Kalam',cursive}
+.lbl{font-size:10.5px;color:#6b6b73}
+.tabs{display:flex;gap:12px;font-size:10.5px;color:#6b6b73;border-bottom:1.5px solid #ddd;padding-bottom:6px;flex-wrap:wrap}
+.tabs span.on{color:#2563EB;border-bottom:2px solid #2563EB;padding-bottom:5px;margin-bottom:-7.5px}
+.row{display:flex;gap:10px;align-items:center}
+.st{font-size:9.5px;border-radius:999px;padding:2px 7px;border:1px solid #bbb;background:#f3f4f6;white-space:nowrap}
+.note{font-size:10px;color:#8a8a92;font-family:'Kalam',cursive}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mob{width:292px;border:2px solid #22222c;border-radius:22px;overflow:hidden;background:#fff;display:flex;flex-direction:column;min-height:560px}
+.mtb{height:36px;background:#2b2b33;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex:none}
+.mbn{height:46px;border-top:2px solid #22222c;display:flex;font-size:9.5px;color:#6b6b73;flex:none}
+.mbn div{flex:1;display:flex;align-items:center;justify-content:center;border-right:1px solid #eee}
+.kan{display:flex;gap:9px;align-items:flex-start}
+.kcol{width:150px;flex:none;background:#f1f1ee;border:1.5px dashed #b6b6bd;border-radius:8px;padding:7px;display:flex;flex-direction:column;gap:7px}
+.jc{border:1.5px solid #22222c;border-radius:7px;background:#fff;padding:7px;display:flex;flex-direction:column;gap:5px;font-size:10px}
+.tr{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:10.5px}
+.tr>*{flex:1;min-width:0}
+</style></helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Primeira leva de wireframes low-fi — UI/UX Doc §8.1 (Screen IDs do App Flow §14)</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Cadastro / Trial + escolha de plano <em>SCR-AUTH-002 / 004</em></div>
+<div class="dv-card" style="width:640px">
+<div style="display:flex">
+<div style="flex:1;padding:22px;display:flex;flex-direction:column;gap:12px;border-right:2px solid #22222c">
+<div class="ttl">Start Free Trial</div>
+<div class="note">14 dias · exige cartão · sem cobrança antes do fim do trial</div>
+<div class="row" style="gap:8px"><div class="dash" style="flex:1;height:30px">First name</div><div class="dash" style="flex:1;height:30px">Last name</div></div>
+<div class="dash" style="height:30px">Company</div>
+<div class="dash" style="height:30px">Email — aviso: e-mail válido é necessário</div>
+<div class="row" style="gap:8px"><div class="dash" style="flex:1;height:30px">Phone</div><div class="dash" style="flex:1;height:30px">Password</div></div>
+<div class="row"><div class="btn" style="padding:8px 16px">Create account</div><span class="note">→ SCR-AUTH-003 verificação</span></div>
+<hr style="border:0;border-top:1px dashed #bbb;width:100%">
+<div class="note">Já tem conta? Log in (Email/Senha ou Google) · Esqueci minha senha</div>
+</div>
+<div style="width:250px;padding:22px;display:flex;flex-direction:column;gap:9px;background:#fafaf8">
+<div class="lbl">Escolha do plano (antes do trial)</div>
+<div class="card" style="border-color:#2563EB"><div class="row hd"><b style="font-size:12px">Growth</b><span class="st">Selecionado</span></div><div class="ln" style="margin-top:7px"></div></div>
+<div class="card"><b style="font-size:12px">Starter</b><div class="ln" style="margin-top:7px"></div></div>
+<div class="card"><b style="font-size:12px">Pro</b><div class="ln" style="margin-top:7px"></div></div>
+<div class="card"><b style="font-size:12px">Enterprise</b><div class="ln" style="margin-top:7px"></div></div>
+<div class="note">Trial libera só recursos do plano escolhido</div>
+<div class="dash" style="height:44px">Estados: Loading · Validation Error · Email já usado</div>
+</div>
+</div>
+</div></div>
+
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Onboarding / Setup Wizard <em>SCR-ONB-001 / 002</em></div>
+<div class="dv-card" style="width:640px">
+<div class="tb"><span class="pill">Workspace</span><span class="pill">Main Location</span><div style="flex:1"></div><span class="note">Trial: 12 dias restantes</span></div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:12px;background:#fafaf8">
+<div class="hd"><div class="ttl">Setup do Workspace</div><div class="btn2">Fazer depois</div></div>
+<div class="row" style="gap:6px;flex-wrap:wrap"><span class="st" style="background:#DBEAFE;border-color:#2563EB">1 Empresa</span><span class="st">2 Filiais</span><span class="st">3 Serviços</span><span class="st">4 Crews</span><span class="st">5 Usuários</span><span class="st">6 Pagamentos</span><span class="st">7 Integrações</span><span class="st">8 Templates</span><span class="st">9 Pronto</span></div>
+<div class="card" style="display:flex;flex-direction:column;gap:10px">
+<b style="font-size:13px">Company Info</b>
+<div class="row" style="gap:10px;align-items:flex-start"><div class="dash" style="width:80px;height:80px">Logo<br>upload</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="dash" style="height:28px">Nome</div><div class="dash" style="height:28px">Telefone</div><div class="dash" style="height:28px">E-mail</div><div class="dash" style="height:28px">Site</div><div class="dash" style="height:28px;grid-column:span 2">Endereço → cria "Main Location"</div><div class="dash" style="height:28px">Timezone</div><div class="dash" style="height:28px">Idioma / Moeda</div><div class="dash" style="height:28px;grid-column:span 2">Tipo de negócio (opcional, múltiplo) → sugere serviços/templates</div></div></div>
+<div class="row"><div style="flex:1"></div><div class="btn2">Voltar</div><div class="btn">Continuar</div></div>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:7px"><div class="hd"><b style="font-size:12px">Guia de Configuração (persistente)</b><span class="st">35% concluído</span></div><div style="height:9px;border-radius:5px;background:#e2e2e2;overflow:hidden"><div style="width:35%;height:100%;background:#2563EB"></div></div><div class="note">Pendências listadas · sempre acessível em Settings › Setup Guide · recursos dependentes avisam "Configurar agora"</div></div>
+<div class="dash" style="height:40px">Importação CSV/Excel: Upload → Preview → Mapping → Duplicados → Resumo &nbsp;·&nbsp; Demo Data marcado como demonstração</div>
+</div>
+</div></div>
+
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Dashboard / Command Center (Owner/Admin) <em>SCR-DASH-001</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><b>Dashboard</b><i>CRM</i><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox &nbsp;•3</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help &amp; Support</i></div>
+<div class="mn">
+<div class="tb"><span class="pill">Workspace ▾</span><span class="pill">All Locations ▾</span><div class="dash" style="flex:1;height:26px;max-width:230px">Search ⌘K</div><div style="flex:1"></div><div class="btn">+ New</div><span class="pill">🔔 5</span><span class="pill">?</span><span class="pill">Profile ▾</span></div>
+<div class="bd">
+<div class="card" style="border-color:#B45309;background:#FEF3C7;padding:8px"><div class="row"><span class="st" style="background:#fff">Trial</span><span style="font-size:11px">12 dias restantes · Setup 35% incompleto</span><div style="flex:1"></div><div class="btn2">Concluir setup</div></div></div>
+<div class="hd"><div><div class="ttl">Good morning, Mike</div><div class="note">Main Location · Thursday, Mar 14</div></div><div class="row"><span class="pill">Hoje</span><span class="pill">Semana</span><span class="pill">Mês</span><span class="pill">Custom</span><div class="btn2">Editar widgets</div></div></div>
+<div class="card" style="display:flex;flex-direction:column;gap:8px"><div class="hd"><b style="font-size:13px">Command Center</b><span class="note">Ver tudo →</span></div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+<div class="card" style="border-color:#B91C1C;padding:8px"><div class="lbl">Requer Atenção</div><b style="font-size:18px">7</b><div class="note">abre Drawer</div></div>
+<div class="card" style="padding:8px"><div class="lbl">Aprovações</div><b style="font-size:18px">3</b></div>
+<div class="card" style="padding:8px"><div class="lbl">Tarefas atrasadas</div><b style="font-size:18px">4</b></div>
+<div class="card" style="padding:8px"><div class="lbl">Jobs do dia</div><b style="font-size:18px">6</b></div>
+<div class="card" style="padding:8px"><div class="lbl">Compromissos</div><b style="font-size:18px">2</b></div>
+<div class="card" style="padding:8px"><div class="lbl">Próximos prazos</div><b style="font-size:18px">5</b></div>
+</div></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+<div class="card"><div class="lbl">Revenue (mês)</div><b style="font-size:17px">$ ——</b><div class="note">oculto sem permissão financeira</div></div>
+<div class="card"><div class="lbl">Jobs ativos</div><b style="font-size:17px">18</b></div>
+<div class="card"><div class="lbl">Estimates aguardando</div><b style="font-size:17px">9</b></div>
+<div class="card"><div class="lbl">Open balance</div><b style="font-size:17px">$ ——</b></div>
+</div>
+<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px">
+<div class="card" style="display:flex;flex-direction:column;gap:7px"><div class="hd"><b style="font-size:12px">Today's Jobs</b><span class="note">status resumido · sem Crew no card</span></div>
+<div class="tr"><span>Job #1042 · Anderson</span><span>12 Oak St</span><span class="st" style="background:#DCFCE7">In Progress</span></div>
+<div class="tr"><span>Job #1039 · Carter</span><span>88 Pine Ave</span><span class="st" style="background:#FEE2E2">Conflito de agenda</span></div>
+<div class="tr" style="border:0"><span>Job #1051 · Diaz</span><span>4 Elm Rd</span><span class="st" style="background:#DBEAFE">Scheduled</span></div>
+</div>
+<div class="card" style="display:flex;flex-direction:column;gap:7px"><b style="font-size:12px">Agenda compacta</b><div class="note">Hoje / Próximos 7 dias</div><div class="dash" style="height:100px">lista de compromissos</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+<div class="card"><b style="font-size:12px">Sales Summary</b><div class="dash" style="height:70px;margin-top:7px">gráfico simples</div></div>
+<div class="card"><b style="font-size:12px">My Tasks</b><div style="margin-top:7px" class="note">☐ concluir direto no widget</div><div class="ln" style="margin-top:6px"></div><div class="ln" style="margin-top:6px;width:70%"></div></div>
+<div class="card"><b style="font-size:12px">Recent Activity</b><div class="note">respeita permissões · filtrável</div><div class="ln" style="margin-top:6px"></div><div class="ln" style="margin-top:6px;width:80%"></div></div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>CRM — Lista / Table <em>SCR-CRM-001</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><b>CRM</b><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">Workspace ▾</span><span class="pill">Main Location ▾</span><div class="dash" style="flex:1;height:26px;max-width:200px">Search ⌘K</div><div style="flex:1"></div><div class="btn">+ New</div><span class="pill">🔔</span><span class="pill">Profile</span></div>
+<div class="bd">
+<div class="hd"><div class="ttl">Contacts</div><div class="row"><div class="btn2">Import</div><div class="btn">+ Novo Contato</div></div></div>
+<div class="row" style="flex-wrap:wrap"><span class="pill" style="border-color:#2563EB">Saved View: Leads ativos ▾</span><span class="pill">All Customers</span><span class="pill">Past Customers</span><div style="flex:1"></div><div class="dash" style="height:26px;width:170px">Buscar contatos</div></div>
+<div class="row" style="flex-wrap:wrap"><span class="st">Lifecycle: Lead ✕</span><span class="st">Vendedor: Sara ✕</span><span class="st">Tag: Roofing ✕</span><span class="pill">+ More Filters</span><span class="note">Clear all</span><div style="flex:1"></div><span class="pill">Columns ⚙</span></div>
+<div class="card" style="padding:0">
+<div class="tr" style="padding:8px 10px;background:#f1f5f9;font-weight:700"><span style="flex:0 0 18px">☐</span><span>Name</span><span>Lifecycle</span><span>Phone / Email</span><span>Property</span><span>Lead Source</span><span>Vendedor</span><span>Follow-up</span><span>Total Contract</span></div>
+<div class="tr" style="padding:8px 10px"><span style="flex:0 0 18px">☐</span><span>Anderson, Paul</span><span class="st" style="background:#DBEAFE">Customer</span><span>(214) ··· / p@···</span><span>12 Oak St +2</span><span>Referral</span><span>Sara</span><span>—</span><span>$ ——</span></div>
+<div class="tr" style="padding:8px 10px"><span style="flex:0 0 18px">☐</span><span>Carter, Lisa</span><span class="st">Lead</span><span>(469) ··· / l@···</span><span>88 Pine Ave</span><span>Google Ads</span><span>Mike</span><span class="st" style="background:#FEE2E2">Atrasado</span><span>—</span></div>
+<div class="tr" style="padding:8px 10px;border:0"><span style="flex:0 0 18px">☑</span><span>Diaz, Ana</span><span class="st">Lead</span><span>(972) ···</span><span>4 Elm Rd</span><span>Website</span><span>Sara</span><span>Mar 18</span><span>—</span></div>
+</div>
+<div class="row"><div class="card" style="padding:6px 10px;font-size:10.5px">1 selecionado · Bulk: atribuir vendedor, tag, exportar, excluir</div><div style="flex:1"></div><span class="note">1–25 de 412 &nbsp; ‹ ›</span></div>
+<div class="row" style="gap:10px;align-items:stretch"><div class="dash" style="flex:1;height:44px">Estado Empty: "Nenhum contato ainda" + CTA Importar / Criar</div><div class="dash" style="flex:1;height:44px">Aviso de duplicidade por e-mail / telefone / endereço antes de salvar</div></div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Lead / Client Detail <em>SCR-CRM-003</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><b>CRM</b><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="note">CRM › Contacts › Paul Anderson</span><div style="flex:1"></div><div class="btn2">Actions ▾</div><div class="btn">+ Create Estimate</div></div>
+<div class="bd">
+<div class="card" style="padding:10px"><div class="hd"><div class="row"><div class="dash" style="width:38px;height:38px;border-radius:50%">PA</div><div><div class="ttl">Paul Anderson</div><div class="note">Customer · Referral · Vendedor: Sara · 3 Properties</div></div></div><div class="row"><span class="st" style="background:#BBF7D0">Customer</span><span class="st">Roofing</span><div class="btn2">Call</div><div class="btn2">Message</div></div></div></div>
+<div class="tabs"><span class="on">Overview</span><span>Properties</span><span>Sales</span><span>Tasks</span><span>Messages</span><span>Documents</span><span>Activity</span></div>
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><b style="font-size:12px">Contato &amp; comercial</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div class="dash" style="height:26px">Telefone</div><div class="dash" style="height:26px">E-mail</div><div class="dash" style="height:26px">Serviço de interesse</div><div class="dash" style="height:26px">Lead Source</div><div class="dash" style="height:26px">Lifecycle (editável c/ permissão)</div><div class="dash" style="height:26px">Próximo follow-up</div><div class="dash" style="height:26px;grid-column:span 2">Campos customizados</div></div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Properties (3)</b><div class="btn2">+ Property</div></div><div class="tr" style="margin-top:6px"><span>12 Oak St · Primary</span><span class="st">2 Jobs</span><span class="note">Abrir no mapa ↗</span></div><div class="tr" style="border:0"><span>40 Cedar Ln</span><span class="st">1 Estimate</span><span class="note">Abrir no mapa ↗</span></div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Notes (permanentes, ≠ Chat)</b><div class="btn2">+ Note</div></div><div class="note" style="margin-top:6px">@mentions · anexos · pin</div><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:75%"></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><div class="lbl">Total Contract Value</div><b style="font-size:17px">$ ——</b><div class="note">só Estimates aprovados/Won · oculto sem permissão</div></div>
+<div class="card"><b style="font-size:12px">Open Estimates / Jobs</b><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:60%"></div></div>
+<div class="card"><b style="font-size:12px">Tasks &amp; Follow-ups</b><div class="note">troca de vendedor pergunta se transfere</div><div class="ln" style="margin-top:7px"></div></div>
+<div class="card"><b style="font-size:12px">Recent Activity</b><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:80%"></div></div>
+</div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Sales Pipeline (Kanban) <em>SCR-SALES-001</em></div>
+<div class="dv-card" style="width:1240px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><b>Sales</b><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">Main Location ▾</span><div style="flex:1"></div><div class="btn">+ New Estimate</div></div>
+<div class="bd">
+<div class="hd"><div class="ttl">Sales</div><div class="row"><span class="pill">Pipeline ▾</span><span class="pill">Kanban</span><span class="pill">List</span></div></div>
+<div class="tabs"><span class="on">Pipeline</span><span>Orçamentos</span><span>Compromissos</span><span>Follow-ups</span></div>
+<div class="row" style="flex-wrap:wrap"><span class="st">Vendedor: todos ✕</span><span class="st">Período: 30d ✕</span><span class="pill">+ More Filters</span><span class="pill">Saved Views ▾</span></div>
+<div class="kan">
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>New Lead</b><span>4</span></div><div class="jc"><b>Carter, Lisa</b><span>88 Pine Ave</span><span class="lbl">Roof replacement</span><div class="row"><span class="st">Sara</span><span class="st" style="background:#FEE2E2">Follow-up atrasado</span></div></div><div class="jc"><b>Diaz, Ana</b><span>4 Elm Rd</span><div class="row"><span class="st">Mike</span></div></div><div class="dash" style="height:34px">arrastar p/ mudar estágio</div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Contacted</b><span>6</span></div><div class="jc"><b>Nguyen, T.</b><span>17 Maple Dr</span><span class="st">Sara</span></div><div class="jc"><b>Ortiz, R.</b><span>209 Birch</span><span class="st">Mike</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Appointment</b><span>3</span></div><div class="jc"><b>Silva, J.</b><span>Mar 16 · 10:00</span><span class="lbl">Sales Appointment</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Estimate Sent</b><span>5</span></div><div class="jc"><b>Anderson, P.</b><span>EST-1042</span><div class="row"><span class="st" style="background:#DBEAFE">Viewed 2×</span></div></div><div class="jc"><b>Kim, S.</b><span>EST-1048</span><span class="st" style="background:#FEF3C7">Expira em 2d</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Won</b><span>2</span></div><div class="jc"><b>Brooks, D.</b><span>Job #1051 criado</span><span class="st" style="background:#BBF7D0">Approved</span></div></div>
+<div class="kcol" style="border-color:#B91C1C"><div class="row hd" style="font-size:10.5px"><b>Lost</b><span>1</span></div><div class="dash" style="height:50px">Mover p/ Lost exige<br>Lost Reason (modal)</div></div>
+</div>
+<div class="note">Cards configuráveis · Won pode vir da aprovação do Estimate ou manual (usuário autorizado)</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Estimate Editor (full page) <em>SCR-SALES-004 / 005</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><b>Sales</b><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="note">Sales › Estimates › EST-1042</span><span class="st">Draft · autosave</span><div style="flex:1"></div><div class="btn2">Duplicar</div><div class="btn2">Salvar como Template</div><div class="btn">Preview (obrigatório) →</div></div>
+<div class="bd"><div style="display:grid;grid-template-columns:1fr 250px;gap:12px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><div class="dash" style="height:26px">Nº EST-1042 (prefixo config.)</div><div class="dash" style="height:26px">Cliente: Paul Anderson</div><div class="dash" style="height:26px">Property: 12 Oak St ▾ (obrigatória)</div><div class="dash" style="height:26px">Vendedor</div><div class="dash" style="height:26px">Filial</div><div class="dash" style="height:26px">Criado / Expira</div></div><div class="note" style="margin-top:6px">Início: Property → Template ou Em branco</div></div>
+<div class="card" style="padding:0"><div class="tr" style="padding:8px 10px;background:#f1f5f9;font-weight:700"><span style="flex:2">Service</span><span>Qty</span><span>Unit</span><span>Unit price</span><span>Disc.</span><span>Tax</span><span>Total</span><span style="flex:0 0 40px">📷</span></div>
+<div class="tr" style="padding:8px 10px"><span style="flex:2">Roof replacement<div class="note">descrição editável sem alterar catálogo</div></span><span>1</span><span>job</span><span>$ —</span><span>—</span><span>—</span><span>$ —</span><span style="flex:0 0 40px" class="st">3</span></div>
+<div class="tr" style="padding:8px 10px"><span style="flex:2">Gutter install</span><span>120</span><span>lf</span><span>$ —</span><span>—</span><span>—</span><span>$ —</span><span style="flex:0 0 40px" class="st">0</span></div>
+<div class="tr" style="padding:8px 10px;border:0"><span style="flex:2" class="note">+ Add service (catálogo, busca) &nbsp;·&nbsp; + Serviço ad hoc (opcional salvar no catálogo)</span></div></div>
+<div class="row" style="align-items:stretch;gap:10px"><div class="card" style="flex:1"><b style="font-size:11.5px">Customer Notes</b><div class="dash" style="height:40px;margin-top:6px">texto visível ao cliente</div></div><div class="card" style="flex:1"><b style="font-size:11.5px">Terms &amp; Conditions</b><div class="dash" style="height:40px;margin-top:6px">template selecionável</div></div><div class="card" style="flex:1;border-color:#B45309"><b style="font-size:11.5px">Internal Notes</b><div class="dash" style="height:40px;margin-top:6px">nunca visível ao cliente</div></div></div>
+<div class="card"><div class="hd"><b style="font-size:11.5px">Photos &amp; Documents</b><span class="note">por Estimate e por line item · templates não carregam fotos</span></div><div class="row" style="margin-top:7px"><div class="dash" style="width:56px;height:46px">img</div><div class="dash" style="width:56px;height:46px">img</div><div class="dash" style="width:110px;height:46px">Drag &amp; Drop / Browse</div></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;position:sticky;top:0">
+<div class="card" style="border-color:#2563EB"><b style="font-size:12px">Financeiro (sticky)</b>
+<div class="tr" style="margin-top:6px"><span>Subtotal</span><span style="text-align:right">$ —</span></div>
+<div class="tr"><span>Discount</span><span style="text-align:right">$ —</span></div>
+<div class="tr"><span>Tax</span><span style="text-align:right">$ —</span></div>
+<div class="tr" style="font-weight:700"><span>Total Contract Value</span><span style="text-align:right">$ —</span></div>
+<div class="tr"><span>Deposit Required</span><span style="text-align:right">$ —</span></div>
+<div class="tr" style="border:0"><span>Remaining Balance</span><span style="text-align:right">$ —</span></div>
+</div>
+<div class="card"><b style="font-size:11.5px">Payment Terms</b><div class="dash" style="height:26px;margin-top:6px">Termo cadastrado ▾</div><div class="dash" style="height:26px;margin-top:6px">Financing (se disponível)</div></div>
+<div class="card"><b style="font-size:11.5px">Enviar</b><div class="row" style="margin-top:6px;flex-wrap:wrap"><span class="pill">Email</span><span class="pill">SMS</span><span class="pill">Ambos</span></div><div class="note" style="margin-top:6px">escolher contatos · mensagem personalizável · PDF / Print</div><div class="btn" style="margin-top:7px;text-align:center">Preview &amp; Send</div></div>
+<div class="dash" style="height:56px">Status: Draft · Sent · Viewed · Awaiting Approval · Approved · Rejected · Expired · Cancelled</div>
+</div>
+</div></div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Jobs — Kanban (padrão) <em>SCR-JOB-001</em></div>
+<div class="dv-card" style="width:1240px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><b>Jobs</b><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">All Locations ▾</span><div style="flex:1"></div><div class="btn">+ New Job</div></div>
+<div class="bd">
+<div class="hd"><div class="ttl">Projects</div><div class="row"><span class="pill" style="border-color:#2563EB">Pipeline</span><span class="pill">List</span><span class="pill">Saved Views ▾</span><span class="pill">Filters</span></div></div>
+<div class="kan">
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>New</b><span>3</span></div><div class="jc"><b>Anderson, Paul</b><span>12 Oak St</span><span>Job #1042 · $ ——</span><div class="row"><span class="st">Sara</span></div></div><div class="jc"><b>Kim, S.</b><span>77 Ash Ct</span><span>Job #1045</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Scheduled</b><span>5</span></div><div class="jc"><b>Diaz, Ana</b><span>4 Elm Rd</span><span>Job #1051</span><div class="row"><span class="st" style="background:#DBEAFE">Mar 18</span></div></div><div class="jc"><b>Brooks, D.</b><span>9 Cedar</span><span class="st" style="background:#FEE2E2">Conflito</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>In Progress</b><span>6</span></div><div class="jc"><b>Carter, Lisa</b><span>88 Pine Ave</span><span>Job #1039</span><div class="row"><span class="st" style="background:#DCFCE7">3/5 services</span><span class="st" style="background:#FEE2E2">2d atraso</span></div></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Waiting</b><span>2</span></div><div class="dash" style="height:44px">mover p/ Waiting pede motivo (opcional)</div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Completed</b><span>4</span></div><div class="jc"><b>Ortiz, R.</b><span>209 Birch</span><div class="row"><span class="st" style="background:#BBF7D0">Completed</span></div><span class="note">Progress Report · Create Invoice</span></div></div>
+<div class="kcol"><div class="row hd" style="font-size:10.5px"><b>Paid</b><span>7</span></div><div class="dash" style="height:44px">automático quando todos os invoices pagos · "Closed" opcional</div></div>
+</div>
+<div class="note">Card padrão: Cliente · Property · Total Contract Value (se permitido) · Status · Vendedor · Alertas — campos personalizáveis pela empresa</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Job Detail — Overview <em>SCR-JOB-003</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><b>Jobs</b><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="note">Jobs › Job #1039</span><div style="flex:1"></div><div class="btn2">★</div><div class="btn2">Copiar link</div><div class="btn2">Actions ▾</div><div class="btn">Schedule Service</div></div>
+<div class="bd">
+<div class="card" style="padding:10px"><div class="hd"><div><div class="ttl">Job #1039 — Roof replacement</div><div class="note">Lisa Carter · 88 Pine Ave, Dallas TX · Vendedor: Mike · PM: Jen</div></div><div class="row"><span class="st" style="background:#DCFCE7">In Progress</span><span class="st" style="background:#FEE2E2">2 dias de atraso</span><span class="st">3 de 5 serviços</span></div></div><div class="note" style="margin-top:6px">Header não exibe Total Contract Value</div></div>
+<div class="tabs"><span class="on">Overview</span><span>Services</span><span>Schedule</span><span>Tasks</span><span>Financial</span><span>Change Orders</span><span>Materials</span><span>Daily Logs</span><span>Photos</span><span>Documents</span><span>Messages</span><span>Activity</span></div>
+<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><div class="hd"><b style="font-size:12px">Progresso</b><span class="st">62%</span></div><div style="height:9px;border-radius:5px;background:#e2e2e2;overflow:hidden;margin-top:7px"><div style="width:62%;height:100%;background:#2563EB"></div></div><div class="note" style="margin-top:6px">3 de 5 serviços concluídos · Próximo serviço: Gutter install (Mar 18)</div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Services</b><span class="note">Ver todos →</span></div>
+<div class="tr" style="margin-top:6px"><span>Tear-off</span><span class="st" style="background:#BBF7D0">Done</span><span>Crew A</span><span>Mar 10–11</span></div>
+<div class="tr"><span>Underlayment</span><span class="st" style="background:#BBF7D0">Done</span><span>Crew A</span><span>Mar 12</span></div>
+<div class="tr"><span>Shingles</span><span class="st" style="background:#DCFCE7">In Progress</span><span>Crew A + Sub</span><span>Mar 14–17</span></div>
+<div class="tr" style="border:0"><span>Gutter install</span><span class="st" style="background:#DBEAFE">Scheduled</span><span>Crew B</span><span>Mar 18</span></div>
+</div>
+<div class="card"><div class="hd"><b style="font-size:12px">Milestones</b><span class="note">Ver tudo → (sem tab própria)</span></div><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:70%"></div></div>
+<div class="card"><b style="font-size:12px">Next Actions</b><div class="note" style="margin-top:5px">☐ Precificar Change Order CO-03 · ☐ Aprovar material request · ☐ Agendar Gutter install</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card" style="border-color:#B91C1C"><b style="font-size:12px">Needs Attention (3)</b><div class="note" style="margin-top:5px">motivo concreto + ação rápida</div><div class="tr" style="margin-top:6px"><span>CO aguardando preço</span><span class="btn2">Abrir</span></div><div class="tr" style="border:0"><span>Daily Log ausente (Mar 13)</span><span class="btn2">Ver</span></div></div>
+<div class="card"><b style="font-size:12px">Project Team</b><div class="row" style="margin-top:7px"><div class="dash" style="width:26px;height:26px;border-radius:50%">JN</div><div class="dash" style="width:26px;height:26px;border-radius:50%">MK</div><div class="dash" style="width:26px;height:26px;border-radius:50%">CrA</div></div></div>
+<div class="card"><b style="font-size:12px">Financial</b><div class="tr" style="margin-top:6px"><span>Contract</span><span style="text-align:right">$ ——</span></div><div class="tr"><span>Invoiced</span><span style="text-align:right">$ ——</span></div><div class="tr" style="border:0"><span>Open balance</span><span style="text-align:right">$ ——</span></div><div class="note">oculto sem permissão financeira</div></div>
+<div class="card"><b style="font-size:12px">Recent Activity</b><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:80%"></div></div>
+</div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1j"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Service Detail <em>SCR-JOB-005</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><b>Jobs</b><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="note">Jobs › Job #1039 · Lisa Carter · 88 Pine Ave › Shingles</span><div style="flex:1"></div><div class="btn2">Reagendar</div><div class="btn">Mark Complete</div></div>
+<div class="bd">
+<div class="card" style="padding:10px"><div class="hd"><div><div class="ttl">Shingle installation</div><div class="note">Serviço 3 de 5 ▾ · contexto Customer + Property + Job sempre visível</div></div><div class="row"><span class="st" style="background:#DCFCE7">In Progress</span><span class="st">Crew A + Subcontractor</span><span class="st">Mar 14 → Mar 17</span><span class="st">70%</span></div></div></div>
+<div class="tabs"><span class="on">Overview</span><span>Schedule</span><span>Checklist</span><span>Daily Logs</span><span>Materials</span><span>Photos</span><span>Documents</span><span>Activity</span></div>
+<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:12px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><b style="font-size:12px">Produção &amp; capacidade</b><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:7px"><div class="dash" style="height:26px">Quantidade: 3.200</div><div class="dash" style="height:26px">Unidade: sq ft</div><div class="dash" style="height:26px">Capacidade Crew: 1.100/dia</div><div class="dash" style="height:26px">Duração calculada: 3 dias</div><div class="dash" style="height:26px">Datas planejadas</div><div class="dash" style="height:26px">Datas reais</div></div><div class="note" style="margin-top:6px">Editar quantidade (c/ permissão + Audit Log) → dispara Escadinha e pergunta se serviços seguintes mudam de data. Override manual exige motivo.</div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Checklist</b><span class="st">6 de 9 · pesos opcionais</span></div><div class="tr" style="margin-top:6px"><span>☑ Safety setup</span><span class="note">Crew A · Mar 14</span></div><div class="tr"><span>☑ Starter course</span><span class="note">Crew A · Mar 15</span></div><div class="tr" style="border:0"><span>☐ Ridge cap</span><span class="note">—</span></div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Daily Logs</b><span class="note">1 por Service por dia</span></div><div class="tr" style="margin-top:6px"><span>Mar 15 · Crew A</span><span class="st">4 fotos</span><span class="note">Ver</span></div><div class="tr" style="border:0"><span>Mar 14 · Crew A</span><span class="st">2 fotos</span><span class="note">Ver</span></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="card"><b style="font-size:12px">Progresso</b><div style="height:9px;border-radius:5px;background:#e2e2e2;overflow:hidden;margin-top:7px"><div style="width:70%;height:100%;background:#2563EB"></div></div><div class="note" style="margin-top:5px">manual ou automático por template · ajuste de Manager/Admin auditado</div></div>
+<div class="card"><b style="font-size:12px">Responsáveis</b><div class="note" style="margin-top:5px">Primary Crew + Additional Workers · Subcontractor = recurso externo</div></div>
+<div class="card"><b style="font-size:12px">Materials &amp; Change Orders</b><div class="tr" style="margin-top:6px"><span>MR-08 Extra shingles</span><span class="st" style="background:#FEF3C7">Pending</span></div><div class="tr" style="border:0"><span>CO-03 Deck repair</span><span class="st" style="background:#FEF3C7">Aguardando preço</span></div></div>
+<div class="dash" style="height:50px">Antes de Complete: valida Checklist · Daily Log · COs · materiais (warning ou blocking)</div>
+</div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1k"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Schedule (Week) + conflito &amp; Escadinha <em>SCR-SCH-001 / 004 / 005</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><i>Jobs</i><b>Schedule</b><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">Main Location ▾</span><div style="flex:1"></div><div class="btn">+ Schedule Service</div></div>
+<div class="bd" style="gap:10px">
+<div class="row" style="flex-wrap:wrap"><div class="btn2">‹</div><b style="font-size:13px">Mar 10 – 16</b><div class="btn2">›</div><span class="pill">Today</span><span class="pill">Day</span><span class="pill" style="border-color:#2563EB">Week</span><span class="pill">Month</span><span class="pill">Agenda</span><span class="pill">Employee</span><span class="pill">Crew/Team</span><span class="pill">Salesperson</span><span class="pill">Service</span><span class="pill">Location</span><div style="flex:1"></div><span class="pill">Filters</span><span class="pill">Saved Views ▾</span></div>
+<div class="card" style="padding:0;overflow:hidden">
+<div class="tr" style="padding:7px 8px;background:#f1f5f9;font-weight:700"><span style="flex:0 0 96px">Crew / Team</span><span>Mon 10</span><span>Tue 11</span><span>Wed 12</span><span>Thu 13</span><span>Fri 14</span><span>Sat 15</span></div>
+<div class="tr" style="padding:8px;min-height:52px;align-items:stretch"><span style="flex:0 0 96px">Crew A<div class="note">Fully booked</div></span><span style="border-left:4px solid #2563EB;background:#EFF6FF;border-radius:5px;padding:4px;font-size:9.5px">#1039 Tear-off<br>88 Pine Ave</span><span style="border-left:4px solid #2563EB;background:#EFF6FF;border-radius:5px;padding:4px;font-size:9.5px">#1039 Tear-off</span><span style="border-left:4px solid #15803D;background:#DCFCE7;border-radius:5px;padding:4px;font-size:9.5px">#1039 Underlay</span><span class="dash" style="font-size:9px">livre</span><span style="border-left:4px solid #B91C1C;background:#FEE2E2;border-radius:5px;padding:4px;font-size:9.5px">#1039 Shingles<br>⚠ conflito</span><span class="dash" style="font-size:9px">bloqueio</span></div>
+<div class="tr" style="padding:8px;min-height:52px;align-items:stretch"><span style="flex:0 0 96px">Crew B<div class="note">Partially booked</div></span><span class="dash" style="font-size:9px"></span><span style="border-left:4px solid #B45309;background:#FEF3C7;border-radius:5px;padding:4px;font-size:9.5px">#1051 Gutter</span><span class="dash" style="font-size:9px"></span><span class="dash" style="font-size:9px"></span><span class="dash" style="font-size:9px"></span><span class="dash" style="font-size:9px"></span></div>
+<div class="tr" style="padding:8px;min-height:52px;align-items:stretch;border:0"><span style="flex:0 0 96px">Team North<div class="note">Crew C + D</div></span><span class="dash" style="font-size:9px"></span><span class="dash" style="font-size:9px"></span><span style="border-left:4px solid #2563EB;background:#EFF6FF;border-radius:5px;padding:4px;font-size:9.5px">#1045 Framing</span><span style="border-left:4px solid #2563EB;background:#EFF6FF;border-radius:5px;padding:4px;font-size:9.5px">#1045 Framing</span><span class="dash" style="font-size:9px"></span><span style="background:#f3f4f6;border-radius:5px;padding:4px;font-size:9px;text-align:center">Holiday</span></div>
+</div>
+<div class="note">Drag &amp; Drop muda data · resize muda duração · mover entre linhas muda atribuição · cor é indicador/borda, nunca bloco saturado · clique abre Drawer</div>
+<div class="row" style="align-items:flex-start;gap:10px">
+<div class="card" style="flex:1;border-color:#22222c"><b style="font-size:12px">Drawer do agendamento <span class="note">SCR-SCH-002</span></b><div class="dash" style="height:26px;margin-top:6px">Service + Job + Customer + Property</div><div class="row" style="margin-top:6px;gap:8px"><div class="dash" style="flex:1;height:26px">Date</div><div class="dash" style="flex:1;height:26px">Crew/Team ▾</div></div><div class="dash" style="height:26px;margin-top:6px">Qty × Unit ÷ Capacity → duração + End Date automáticos</div><div class="row" style="margin-top:7px"><div class="btn2">Abrir Service</div><div style="flex:1"></div><div class="btn">Salvar</div></div></div>
+<div class="card" style="flex:1;border-color:#B91C1C"><b style="font-size:12px">Modal de conflito <span class="note">SCR-SCH-004</span></b><div class="note" style="margin-top:6px">Mostra Job/Service conflitante e qual Crew está sobreposta. Não salva direto.</div><div class="row" style="margin-top:7px;flex-wrap:wrap"><div class="btn2">Outra data</div><div class="btn2">Outra Crew/Equipe</div><div class="btn2" style="border-color:#B91C1C;color:#B91C1C">Agendar mesmo assim (2ª confirmação)</div></div></div>
+<div class="card" style="flex:1;border-color:#2563EB"><b style="font-size:12px">Preview Escadinha <span class="note">SCR-SCH-005</span></b><div class="row" style="margin-top:6px;gap:8px;align-items:stretch"><div class="dash" style="flex:1;height:70px">BEFORE<br>lista de services futuros</div><div class="dash" style="flex:1;height:70px;border-color:#2563EB">AFTER<br>intervalos relativos preservados</div></div><div class="row" style="margin-top:7px"><span class="note">novos conflitos listados</span><div style="flex:1"></div><div class="btn2">Manter</div><div class="btn">Mover · Undo</div></div></div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1l"><div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Field Worker mobile: Hoje · Service · Daily Log · Assinatura <em>SCR-FIELD-001/002/003/007</em></div>
+<div class="dv-card" style="width:1000px;padding:16px;background:#fafaf8">
+<div class="row" style="align-items:flex-start;gap:14px">
+<div class="mob"><div class="mtb"><span>9:41</span><span>Hoje</span><span>🔔</span></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:10px;flex:1">
+<div class="ttl" style="font-size:15px">Thursday, Mar 14</div>
+<div class="card" style="padding:12px"><div class="hd"><b style="font-size:13px">8:00 AM</b><span class="st" style="background:#DCFCE7">In Progress</span></div><div style="font-size:12px;margin-top:5px">Shingle installation</div><div class="note">Lisa Carter · 88 Pine Ave, Dallas</div><div class="row" style="margin-top:8px;gap:6px"><div class="btn2" style="flex:1;text-align:center">Ligar</div><div class="btn2" style="flex:1;text-align:center">Msg</div><div class="btn2" style="flex:1;text-align:center">Mapa</div></div></div>
+<div class="card" style="padding:12px"><div class="hd"><b style="font-size:13px">1:00 PM</b><span class="st" style="background:#DBEAFE">Scheduled</span></div><div style="font-size:12px;margin-top:5px">Gutter install</div><div class="note">Ana Diaz · 4 Elm Rd</div></div>
+<div class="note">Sem valores financeiros · cards grandes, 1 mão</div>
+<div style="flex:1"></div></div>
+<div class="mbn"><div>Hoje</div><div>Projetos</div><div>Chat</div><div>Notif.</div><div style="border:0">Mais</div></div></div>
+
+<div class="mob"><div class="mtb"><span>‹ Hoje</span><span>Service 3 de 5 ▾</span><span>⋯</span></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:9px;flex:1">
+<div><b style="font-size:13px">Shingle installation</b><div class="note">Lisa Carter · 88 Pine Ave</div><div class="row" style="margin-top:6px"><span class="st" style="background:#DCFCE7">In Progress</span><span class="st">70%</span></div></div>
+<div class="row" style="gap:6px"><div class="btn2" style="flex:1;text-align:center">Ligar</div><div class="btn2" style="flex:1;text-align:center">Msg</div><div class="btn2" style="flex:1;text-align:center">Mapa</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Checklist</b><div class="note">6 de 9</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Daily Log de hoje</b><div class="note">não enviado</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Fotos</b><div class="note">12 · adicionar</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Materiais</b><div class="note">1 solicitação pendente</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Change Order</b><div class="note">CO-03 aguardando</div></div>
+<div class="card" style="padding:10px"><b style="font-size:12px">Reportar problema</b></div>
+<div class="note">seções/cards em vez de 8 tabs</div>
+<div style="flex:1"></div>
+<div class="btn" style="text-align:center;padding:12px;font-size:13px">Complete Service</div></div></div>
+
+<div class="mob"><div class="mtb"><span>✕</span><span>Daily Log</span><span>Salvar</span></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:9px;flex:1">
+<div class="card" style="padding:9px;background:#f1f5f9"><div class="note">Automático: Mar 14 · Job #1039 · Shingles · Crew A · 88 Pine Ave · Rick</div></div>
+<div class="lbl">Trabalho realizado *</div><div class="dash" style="height:54px">campo de texto</div>
+<div class="lbl">Progresso do dia</div><div class="dash" style="height:30px">slider / %</div>
+<div class="lbl">Fotos (destaque)</div>
+<div class="row" style="gap:6px"><div class="dash" style="flex:1;height:54px">Câmera</div><div class="dash" style="flex:1;height:54px">Galeria</div><div class="dash" style="flex:1;height:54px">thumb ↻ retry</div></div>
+<div class="card" style="padding:9px">+ Adicionar mais detalhes <span class="note">problemas · materiais · próximos passos · observações</span></div>
+<div class="card" style="padding:9px;border-color:#B91C1C;background:#FEE2E2"><div class="note" style="color:#B91C1C">Sem conexão — nada foi salvo. Tentar novamente.</div></div>
+<div style="flex:1"></div>
+<div class="btn" style="text-align:center;padding:12px;font-size:13px">Enviar Daily Log</div>
+<div class="note">Após Service DONE: bloqueado, só Add Photos</div></div></div>
+
+<div class="mob" style="min-height:560px"><div class="mtb"><span>‹</span><span>Complete Service</span><span></span></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:9px;flex:1">
+<div class="card" style="padding:10px;border-color:#B45309;background:#FEF3C7"><b style="font-size:12px">Pendências antes de concluir</b><div style="font-size:11px;margin-top:6px">⚠ Checklist: 3 itens abertos <span class="note">(warning)</span></div><div style="font-size:11px">⛔ Daily Log de hoje ausente <span class="note">(blocking)</span></div><div style="font-size:11px">⚠ CO-03 sem resposta</div><div style="font-size:11px">⛔ Fotos obrigatórias: 1 de 3</div><div class="row" style="margin-top:8px"><div class="btn2" style="flex:1;text-align:center">Resolver</div><div class="btn2" style="flex:1;text-align:center">Continue anyway</div></div></div>
+<div class="lbl">Assinatura do cliente</div>
+<div class="dash" style="height:120px">área limpa de desenho<br>Draw | Type Name</div>
+<div class="note">texto de assinatura configurável (template)</div>
+<div class="card" style="padding:9px">☐ Customer not available → cria pendência para Office/PM</div>
+<div style="flex:1"></div>
+<div class="btn" style="text-align:center;padding:12px;font-size:13px">Confirmar conclusão</div>
+<div class="note">Sucesso: "Service completed successfully" → volta para Hoje</div></div></div>
+</div>
+</div></div>
+
+<div class="dv-opt" id="1m"><div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Client Portal — Home + Estimate approval <em>SCR-PORT-002 / 005</em></div>
+<div class="dv-card" style="width:1000px;padding:16px;background:#fafaf8">
+<div class="row" style="align-items:flex-start;gap:14px">
+<div style="flex:1;border:2px solid #22222c;border-radius:10px;overflow:hidden;background:#fff">
+<div class="tb" style="gap:14px"><div class="dash" style="width:58px;height:22px">Logo</div><b style="font-size:11px">Início</b><span>Propriedades</span><span>Projetos</span><span>Documentos</span><span>Financeiro</span><div style="flex:1"></div><span class="pill">Profile</span></div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:11px;background:#fff">
+<div class="ttl">Hello, Lisa</div>
+<div class="card" style="border-color:#2563EB"><div class="hd"><div><b style="font-size:12px">Precisa da sua aprovação</b><div class="note">Change Order CO-03 · Deck repair</div></div><div class="btn">Revisar</div></div></div>
+<div class="card"><b style="font-size:12px">Próximo serviço</b><div class="note" style="margin-top:5px">Gutter install · Mar 18 · 88 Pine Ave</div></div>
+<div class="card"><div class="hd"><b style="font-size:12px">Projetos ativos</b><span class="note">Ativos | Concluídos</span></div><div class="tr" style="margin-top:6px"><span>Roof replacement · Job #1039</span><span>88 Pine Ave</span><span class="st" style="background:#DCFCE7">Em andamento</span></div><div class="note">progresso só se a empresa liberar · valor do contrato não aparece no card</div></div>
+<div class="row" style="gap:10px;align-items:stretch"><div class="card" style="flex:1"><b style="font-size:12px">Saldo em aberto</b><div style="font-size:16px">$ ——</div><div class="btn2" style="margin-top:6px;display:inline-block">Pay Now (só se provider disponível)</div></div><div class="card" style="flex:1"><b style="font-size:12px">Documentos recentes</b><div class="ln" style="margin-top:7px"></div><div class="ln" style="margin-top:6px;width:70%"></div></div></div>
+<div class="note">Mais espaço em branco, menos navegação · "Powered by CrewCommand" discreto · Bottom Nav no mobile: Início | Projetos | Documentos | Financeiro | Mais</div>
+</div>
+</div>
+<div class="mob"><div class="mtb"><span>‹</span><span>Estimate EST-1042</span><span>⤓</span></div>
+<div style="padding:12px;display:flex;flex-direction:column;gap:9px;flex:1">
+<div class="row" style="gap:6px;flex-wrap:wrap"><span class="st" style="background:#DBEAFE">1 Review</span><span class="st">2 Terms</span><span class="st">3 Payment</span><span class="st">4 Sign</span><span class="st">5 Confirm</span></div>
+<div class="card" style="padding:11px"><div class="note">Aparência de proposta, não de painel</div><div class="ttl" style="font-size:14px;margin-top:4px">Roof replacement</div><div class="note">88 Pine Ave · expira Mar 28</div><div class="tr" style="margin-top:8px"><span>Roof replacement</span><span style="text-align:right">$ —</span></div><div class="tr"><span>Gutter install</span><span style="text-align:right">$ —</span></div><div class="tr" style="font-weight:700;border:0"><span>Total</span><span style="text-align:right">$ —</span></div><div class="note">Deposit required · Remaining balance</div></div>
+<div class="card" style="padding:10px"><b style="font-size:11.5px">Payment Terms / Financing</b><div class="dash" style="height:26px;margin-top:6px">escolher (quando liberado)</div></div>
+<div class="dash" style="height:70px">Assinatura: Draw ou Type Name</div>
+<div style="flex:1"></div>
+<div class="btn" style="text-align:center;padding:12px;font-size:13px">Approve &amp; Sign</div>
+<div class="note" style="text-align:center">Reject (exige motivo) · linguagem nunca agressiva</div>
+<div class="card" style="padding:8px;background:#FEF3C7;border-color:#B45309"><div class="note">Se o pagamento falhar: Estimate continua Approved e Deposit fica Pending/Failed</div></div>
+</div></div>
+</div>
+</div></div>
+
+<div class="dv-opt" id="1n"><div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>Financial Overview <em>SCR-FIN-001 / 002 / 006</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><b>Financial</b><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">All Locations ▾</span><div style="flex:1"></div><div class="btn2">Export</div><div class="btn">+ Create Invoice</div></div>
+<div class="bd">
+<div class="hd"><div class="ttl">Financial</div><div class="row"><span class="pill">Este mês ▾</span><span class="pill">Saved Views ▾</span></div></div>
+<div class="tabs"><span class="on">Invoices</span><span>Payments</span><span>Accounts Receivable</span><span>Commissions</span><span>Financing</span></div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px"><div class="card"><div class="lbl">Invoiced</div><b>$ ——</b></div><div class="card"><div class="lbl">Paid</div><b>$ ——</b></div><div class="card"><div class="lbl">Open balance</div><b>$ ——</b></div><div class="card" style="border-color:#B91C1C"><div class="lbl">Overdue</div><b>$ ——</b></div><div class="card"><div class="lbl">Deposits pending</div><b>$ ——</b></div></div>
+<div class="note">Resumo curto no topo, sempre respeitando permissão financeira</div>
+<div class="card" style="padding:0">
+<div class="tr" style="padding:8px 10px;background:#f1f5f9;font-weight:700"><span>Invoice #</span><span>Cliente / Job</span><span>Label</span><span>Emitido</span><span>Vencimento</span><span>Valor</span><span>Status</span><span>Sync</span></div>
+<div class="tr" style="padding:8px 10px"><span>INV-2051</span><span>Carter · #1039</span><span class="st">Deposit</span><span>Mar 02</span><span>Mar 09</span><span>$ —</span><span class="st" style="background:#BBF7D0">Paid</span><span class="st">OK</span></div>
+<div class="tr" style="padding:8px 10px"><span>INV-2064</span><span>Carter · #1039</span><span class="st">Progress</span><span>Mar 12</span><span>Mar 19</span><span>$ —</span><span class="st" style="background:#DBEAFE">Open</span><span class="st">OK</span></div>
+<div class="tr" style="padding:8px 10px;border:0"><span>INV-2039</span><span>Ortiz · #1021</span><span class="st">Final</span><span>Feb 18</span><span>Feb 25</span><span>$ —</span><span class="st" style="background:#FEE2E2">Overdue 18d</span><span class="st" style="background:#FEE2E2">Sync failed · Retry</span></div>
+</div>
+<div class="row" style="gap:10px;align-items:stretch">
+<div class="card" style="flex:1"><b style="font-size:12px">Accounts Receivable — aging</b><div class="row" style="margin-top:7px;gap:6px"><span class="st">Current</span><span class="st">1–30</span><span class="st">31–60</span><span class="st">61–90</span><span class="st" style="background:#FEE2E2">90+</span></div><div class="dash" style="height:44px;margin-top:7px">drill-down por cliente/Job · reminders pausáveis</div></div>
+<div class="card" style="flex:1"><b style="font-size:12px">Job Finance</b><div class="tr" style="margin-top:6px"><span>Contract Total</span><span style="text-align:right">$ —</span></div><div class="tr"><span>Invoiced</span><span style="text-align:right">$ —</span></div><div class="tr" style="border:0"><span>Paid / Open</span><span style="text-align:right">$ —</span></div><div class="note">Overbilling e overpayment bloqueados por padrão</div></div>
+<div class="card" style="flex:1"><b style="font-size:12px">Commissions</b><div class="row" style="margin-top:7px;gap:6px;flex-wrap:wrap"><span class="st">Projected</span><span class="st">Earned</span><span class="st">Approved</span><span class="st" style="background:#BBF7D0">Paid (congelado)</span></div><div class="note" style="margin-top:6px">vendedor vê só as próprias</div></div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1o"><div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Inbox — 3 painéis <em>SCR-INB-001 / 003</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><b>Inbox</b><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><i>Settings</i><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="pill">Main Location ▾</span><div style="flex:1"></div><div class="btn">+ New Message</div></div>
+<div style="display:flex;flex:1;min-height:400px">
+<div style="width:230px;border-right:1.5px solid #ddd;padding:10px;display:flex;flex-direction:column;gap:8px;background:#fafaf8">
+<div class="row" style="gap:6px"><span class="pill" style="border-color:#2563EB">Customer</span><span class="pill">Internal</span></div>
+<div class="dash" style="height:26px">Buscar conversas</div>
+<div class="row" style="gap:5px;flex-wrap:wrap"><span class="st">SMS</span><span class="st">Email</span><span class="st">Portal</span><span class="st">Não lidas</span></div>
+<div class="card" style="border-color:#2563EB;padding:8px"><div class="hd"><b style="font-size:11px">Lisa Carter</b><span class="note">2m</span></div><div class="note">SMS · Job #1039</div><div class="ln" style="margin-top:5px"></div></div>
+<div class="card" style="padding:8px"><div class="hd"><b style="font-size:11px">Paul Anderson</b><span class="note">1h</span></div><div class="note">Email · EST-1042</div></div>
+<div class="card" style="padding:8px"><div class="hd"><b style="font-size:11px">Ana Diaz</b><span class="note">Mar 13</span></div><div class="note">Portal</div></div>
+<div class="note">responsável · transferência auditada · arquivar sem excluir</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;border-right:1.5px solid #ddd">
+<div class="tb" style="border-bottom:1.5px solid #ddd"><b style="font-size:12px">Lisa Carter</b><span class="st">SMS</span><span class="note">Responsável: Jen</span><div style="flex:1"></div><div class="btn2">Transferir</div><div class="btn2">Arquivar</div></div>
+<div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:9px;background:#fafaf8">
+<div class="card" style="max-width:70%;padding:8px"><div class="ln"></div><div class="ln" style="margin-top:5px;width:60%"></div><div class="note" style="margin-top:5px">Delivered · Read</div></div>
+<div class="card" style="max-width:70%;align-self:flex-end;padding:8px;background:#EFF6FF;border-color:#2563EB"><div class="ln"></div><div class="note" style="margin-top:5px">Enviado por Jen · template usado</div></div>
+<div class="card" style="max-width:70%;padding:8px;border-color:#B91C1C"><div class="note" style="color:#B91C1C">Falha no envio — motivo + Retry</div></div>
+</div>
+<div style="padding:10px;border-top:1.5px solid #ddd;display:flex;flex-direction:column;gap:7px"><div class="dash" style="height:40px">Escrever… · anexos quando o canal suportar</div><div class="row"><span class="pill">Templates ▾</span><span class="pill">Agendar envio</span><div style="flex:1"></div><div class="btn">Enviar</div></div><div class="note">Opt-out bloqueia envio com explicação</div></div>
+</div>
+<div style="width:210px;padding:10px;display:flex;flex-direction:column;gap:9px;background:#fafaf8">
+<div class="lbl">Contexto</div>
+<div class="card" style="padding:8px"><b style="font-size:11px">Lisa Carter</b><div class="note">Customer · Mike</div><div class="row" style="margin-top:6px;gap:6px"><div class="btn2">Abrir CRM</div></div></div>
+<div class="card" style="padding:8px"><b style="font-size:11px">Job #1039</b><div class="note">In Progress · 62%</div></div>
+<div class="card" style="padding:8px"><b style="font-size:11px">Property</b><div class="note">88 Pine Ave</div></div>
+<div class="card" style="padding:8px"><b style="font-size:11px">Consentimento</b><div class="note">SMS: opt-in · Email: opt-in</div></div>
+<div class="note">Mobile mostra uma tela por vez</div>
+</div>
+</div></div></div>
+</div></div>
+
+<div class="dv-opt" id="1p"><div class="dv-olabel"><a class="dv-oid" href="#1p">1p</a>Settings (nav secundária vertical) <em>SCR-SET-002 · estados globais</em></div>
+<div class="dv-card" style="width:1000px">
+<div class="sh"><div class="sb"><i>Dashboard</i><i>CRM</i><i>Sales</i><i>Jobs</i><i>Schedule</i><i>Tasks</i><i>Inbox</i><i>Team</i><i>Purchases</i><i>Financial</i><i>Reports</i><hr><b>Settings</b><i>Help</i></div>
+<div class="mn"><div class="tb"><span class="note">Settings › Empresa</span><div style="flex:1"></div><div class="btn2">Discard</div><div class="btn">Save</div></div>
+<div style="display:flex;flex:1">
+<div style="width:180px;border-right:1.5px solid #ddd;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:11px;background:#fafaf8">
+<span class="lbl">Workspace</span><b>Empresa</b><i style="font-style:normal">Filiais</i><i style="font-style:normal">Usuários &amp; Permissões</i><i style="font-style:normal">Serviços</i><i style="font-style:normal">Templates</i><i style="font-style:normal">Pipelines</i><i style="font-style:normal">Custom Fields</i><i style="font-style:normal">Financeiro</i><i style="font-style:normal">Comunicações</i><i style="font-style:normal">Automações</i><i style="font-style:normal">Integrações</i><i style="font-style:normal">Billing / Planos</i><i style="font-style:normal">Data &amp; Retention</i><hr style="border:0;border-top:1px solid #ddd;width:100%"><span class="lbl">Pessoal</span><i style="font-style:normal">Meu perfil</i><i style="font-style:normal">Preferências</i><i style="font-style:normal">Setup Guide · 35%</i>
+</div>
+<div class="bd" style="background:#fafaf8">
+<div class="card" style="border-color:#B45309;background:#FEF3C7;padding:8px"><div class="note">Read-only: banner persistente, ações de edição desabilitadas (Grace Period → Read-only → Suspended)</div></div>
+<div class="ttl">Empresa</div>
+<div class="card"><div class="row" style="gap:12px;align-items:flex-start"><div class="dash" style="width:80px;height:80px">Logo</div><div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="dash" style="height:28px">Nome</div><div class="dash" style="height:28px">Telefone</div><div class="dash" style="height:28px">E-mail</div><div class="dash" style="height:28px">Site</div><div class="dash" style="height:28px;grid-column:span 2">Endereço</div><div class="dash" style="height:28px">Timezone</div><div class="dash" style="height:28px">Idioma (EN / ES / PT-BR)</div><div class="dash" style="height:28px">Moeda (USD padrão)</div><div class="dash" style="height:28px">Unidades &amp; formatos</div></div></div></div>
+<div class="card"><b style="font-size:12px">Branding</b><div class="row" style="margin-top:7px;gap:8px"><div class="dash" style="flex:1;height:28px">Cor principal → sistema deriva variações seguras</div><div class="dash" style="flex:1;height:28px">Pontos de aplicação (Portal, documentos, e-mails)</div></div></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+<div class="card" style="border-color:#B91C1C"><b style="font-size:11.5px">Plan Limit</b><div class="note">limite, uso atual e CTA View Plans/Upgrade</div></div>
+<div class="card"><b style="font-size:11.5px">Missing Configuration</b><div class="note">explica dependência + "Configure"</div></div>
+<div class="card"><b style="font-size:11.5px">Integration Error</b><div class="note">provider + status + Retry / Reauthorize</div></div>
+<div class="card"><b style="font-size:11.5px">Unsaved Changes</b><div class="note">Discard Changes | Keep Editing</div></div>
+<div class="card"><b style="font-size:11.5px">Permission Denied</b><div class="note">ação não aparece; deep link nega sem detalhar</div></div>
+<div class="card"><b style="font-size:11.5px">Destructive Confirmation</b><div class="note">consequência concreta · bulk informa quantidade</div></div>
+</div>
+</div>
+</div></div></div>
+</div></div>
+
+</div>
+<p class="dv-next">Tente: "detalhe <a class="dv-oid" href="#1k">1k</a> com o wizard de agendamento e recorrência" · "adicione Tasks, Team, Purchases, Reports e Super Admin" · "aplicar o Design System e gerar hi-fi de <a class="dv-oid" href="#1c">1c</a> e <a class="dv-oid" href="#1i">1i</a>"</p>
+</section>
+</x-dc>
+</body>
+</html>
