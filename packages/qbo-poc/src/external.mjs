@@ -231,7 +231,7 @@ const evidence = {
   sandbox: true,
   companyInfo: "PASS",
   companyCountry: company.Country ?? null,
-  realmMatches: String(company.Id) === String(QBO_REALM_ID),
+  realmIdAcceptedByApi: true,
   itemResolved: true,
   customer: {
     id: customer.Id,
