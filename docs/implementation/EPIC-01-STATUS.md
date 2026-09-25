@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-25
 - **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
-- **State:** Slice 01 in progress; the Product Owner authorized one reviewed remote identity migration on 2026-09-25. Live-auth/browser gates remain blocked by unavailable Development configuration.
+- **State:** Slice 01 implemented and published to Vercel Production; successful authenticated reconciliation remains pending a controlled account plus the separately deployed NestJS API boundary.
 - **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
 
 ## Scope of the Epic
@@ -75,13 +75,13 @@ Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It ca
 - [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
 - [x] Criar boundary autenticada: token ausente/inválido é rejeitado antes da reconciliação; token verificado entrega somente sujeito e e-mail ao use case.
 - [x] Implementar repositório transacional local para `subject → User`, com conflito de concorrência tratado pela chave única do mapping; typecheck do pacote de banco PASS.
-- [ ] `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: integrar `SCR-AUTH-001` e a verificação real do token exige contrato/configuração Development do Supabase, que não pode ser criado ou alterado neste slice.
+- [-] Integrar `SCR-AUTH-001` à configuração Vercel/Supabase publicada: Production e Preview agora possuem URL e publishable key; erro seguro de credencial inválida foi comprovado. O caminho de sucesso permanece pendente de conta controlada e API publicada.
 - [ ] `BLOCKED — API TRANSPORT CONTRACT REQUIRED`: as fontes consultadas não definem endpoint, request/response ou fluxo de handoff autenticado para expor a identidade reconciliada. A API atual só declara `/health` e `/ready`; criar uma rota de identidade por inferência violaria a regra de não inventar.
 - [x] Criar e executar os testes unitários inicialmente possíveis do Slice 01: 7/7 PASS (token negativo, identidade verificada, criação, repetição, concorrência, campos não confiáveis ignorados e token vazio); typecheck e build da API PASS. Web typecheck e build PASS.
 - [x] Executar QA de navegador do estado seguro sem configuração: 320, 375, 768, 1024 e 1440 px sem overflow horizontal; campos e botão indisponíveis; console sem warnings/errors.
-- [ ] `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: executar QA de navegador autenticado, console e rede do sign-in real requer URL e publishable key reais no ambiente Development.
+- [-] Executar QA de navegador autenticado, console e rede: Production foi verificado para configuração, erro seguro, console e responsividade; login bem-sucedido e reconciliação persistida exigem conta controlada e API NestJS publicada.
 - [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. A revisão de diff Git permanece indisponível porque o repositório local inteiro segue não rastreado.
-- [ ] Submeter para revisão do Product Owner.
+- [x] Publicar o Web SaaS no Vercel Production após gates locais, usando o projeto `saas` e commit `105012c`.
 
 ### Obrigações restantes do Epic 1
 
@@ -102,7 +102,8 @@ Os itens abaixo são exigências do Implementation Plan. A ordem dos próximos s
 ### Ações explicitamente não autorizadas neste momento
 
 - [x] Executar exclusivamente a migration remota revisada de identidade, autorizada pelo Product Owner em 2026-09-25; incluir RLS default-deny e validar tabelas/RLS após a aplicação.
-- [ ] **Não executar:** alteração de Supabase Auth, deploy, push, merge, criação de PR ou mudança de Vercel.
+- [x] Publicar em GitHub `main` e Vercel Production, explicitamente autorizado pelo Product Owner em 2026-09-25.
+- [ ] **Não executar sem nova decisão:** alteração de Supabase Auth, provisionamento/alteração do backend NestJS no Render ou criação de conta Auth controlada.
 
 ## Required next artifact
 
@@ -176,8 +177,8 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 
 ## Current blockers
 
-- `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: a tela e a boundary estão implementadas, mas a execução real de sign-in, validação de token, console/rede e QA responsivo exige URL e publishable key do ambiente Development. Nenhuma configuração de Auth foi alterada.
-- `BLOCKED — API TRANSPORT CONTRACT REQUIRED`: o Task Packet exige uma boundary de API, mas as fontes oficiais não determinam uma rota/contrato para ela. Foram consultados App Flow, TRD, Implementation Plan, Architecture e ADRs aplicáveis; a busca por `identity`, `current user`, `access token`, `bearer` e `server-side session` não encontrou endpoint aplicável. Arquivos bloqueados: `apps/api/src/app.module.ts` e qualquer controller/guard novo.
+- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: não existe uma conta controlada aprovada para autenticação bem-sucedida. Uma tentativa controlada inválida foi usada exclusivamente para confirmar que a produção retorna erro genérico.
+- `BLOCKED — BACKEND DEPLOYMENT BOUNDARY REQUIRED`: a arquitetura aprovada hospeda NestJS no Render, não Vercel. O Web está publicado, mas nenhuma URL/serviço Render da API foi indicado ou criado; logo a reconciliação persistida não pode ser chamada nem comprovada em produção.
 
 ## Remote migration evidence
 
@@ -195,6 +196,15 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - **Observed:** `SCR-AUTH-001`, e-mail and senha labels/fields, explanatory unavailable-configuration feedback, and disabled sign-in button rendered at every viewport without horizontal overflow.
 - **Console:** zero warnings and errors captured.
 - **Not proved:** successful authentication, request response behavior and authenticated redirect; these require a configured Development environment.
+
+## Production publication evidence
+
+- **GitHub:** `main` advanced from `519cb3e` to `105012c` (`feat(epic-01): add email-password identity boundary`) by fast-forward, without force push.
+- **Vercel project:** `wyllams-projects/saas`, root directory `apps/web`, Node.js 24.x.
+- **Environment:** only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` were added for Production and Preview; no secret/service key was used.
+- **Deployment:** `https://saas-pi-one-31.vercel.app`, Ready; deployment `dpl_85kkG2rPrYRZeqhjD8idV1n6Dzk3`.
+- **Live QA:** `/login` rendered configured e-mail/password inputs and enabled submit. One controlled non-existent account returned the generic message `Unable to sign in. Check your email and password.`; no console warnings/errors were captured.
+- **Responsive QA:** Production `/login` had no horizontal overflow at 320×640, 375×812, 768×900, 1024×900 and 1440×1000.
 
 ## Final local gate evidence
 

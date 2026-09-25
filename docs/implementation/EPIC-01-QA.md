@@ -1,7 +1,7 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — QA
 
 - **Date:** 2026-09-25
-- **State:** local unit/type/build and remote schema/RLS evidence recorded. Token-validation and browser/live-auth evidence remain blocked by missing Development configuration.
+- **State:** local, remote schema/RLS and Production Web error-path evidence recorded. Successful authenticated reconciliation remains pending a controlled account and deployed NestJS API.
 - **Scope recorded:** `EPIC-01-SLICE-01 — Authentication and server-side identity boundary`
 
 ## QA rule
@@ -25,6 +25,8 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 | Remote migration and RLS | Supabase SQL Editor on project `obpncbnzwrocvgngtodg`; catalog queries | PASS: migration executed atomically. Both tables exist; `users_pkey`, `users_status_check`, mapping PK and restrictive FK exist. Both tables have RLS enabled and zero public policies. |
 | Web typecheck and optimized build | `pnpm@12.6.0 --filter @saas/web check` and `pnpm@12.6.0 --filter @saas/web build` | PASS: TypeScript completed and Next.js built `/login` successfully. |
 | Browser — safe unavailable-configuration state | `http://localhost:3000/login` at 320×640, 375×812, 768×900, 1024×900 and 1440×1000 | PASS: SCR-AUTH-001 renders labels, fields, unavailable-configuration feedback and disabled submit with no horizontal overflow. Console captured zero warnings/errors. |
+| Production Web — configured error path | `https://saas-pi-one-31.vercel.app/login` | PASS: published form had enabled submit and returned the approved generic invalid-credentials message for one controlled non-existent account. Console captured zero warnings/errors. |
+| Production Web — responsive | Production `/login` at 320×640, 375×812, 768×900, 1024×900 and 1440×1000 | PASS: no horizontal overflow at any required viewport. |
 | Full local gates | `verify:structure`, `verify:secrets`, `lint`, `test`, `check`, `build` | PASS: all executable gates passed. Lint warnings remaining are confined to the historical wireframe archive, which is intentionally preserved unchanged. |
 
 ## Slice 01 — planned acceptance evidence
@@ -32,9 +34,9 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 | Check | Required evidence | Current result |
 |---|---|---|
 | `SCR-AUTH-001` is real | Login does not use fixtures or simulated persistence | PARTIAL PASS — route and client call are implemented against Supabase Auth; a configured Development environment is required for a real sign-in proof. |
-| Email/password sign-in | Successful authenticated session through the approved Supabase Auth contract | BLOCKED — Development Auth configuration not supplied |
-| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — boundary unit tests pass; live Supabase token verification awaits Development configuration. |
-| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof awaits Development configuration. |
+| Email/password sign-in | Successful authenticated session through the approved Supabase Auth contract | PARTIAL PASS — real Production invalid-credential response verified; successful account flow requires a controlled account. |
+| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — boundary unit tests pass; Web is published but NestJS belongs to a separately deployed Render service that has not been provisioned/identified. |
+| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof requires a controlled account and deployed NestJS API. |
 | Unauthenticated negative case | Protected behavior rejects an absent/invalid session safely | PARTIAL PASS — unit tests reject absent, invalid and empty token inputs before reconciliation; live expired/malformed token proof awaits Development configuration. |
 | Error safety | Authentication failure does not expose secrets, stack traces, or account-existence details beyond the approved contract | PARTIAL PASS — implemented browser message is generic and no console errors occurred in unavailable configuration; live invalid-credentials response awaits Development configuration. |
 | UI states | Loading, invalid credentials/error, disabled/submitting and accessible feedback are verified for the implemented screen | PARTIAL PASS — unavailable and disabled state verified; submit/success/error require Development Auth configuration. |
@@ -78,5 +80,5 @@ The following are not Slice 01 PASS criteria and must not be represented as test
 
 ## Current blockers
 
-- `BLOCKED — DEVELOPMENT AUTH CONFIGURATION REQUIRED`: real sign-in, token rejection and browser QA cannot be performed without a preconfigured Development Supabase Auth environment. No remote Auth configuration was changed.
-- `BLOCKED — API TRANSPORT CONTRACT REQUIRED`: no documented API route/contract exists for an identity handoff. The tested boundary is an application use case only; a concrete NestJS controller or guard cannot be invented.
+- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: no approved controlled account exists for a success-path test. The production error path was verified with an intentionally invalid account; no Auth configuration was changed.
+- `BLOCKED — BACKEND DEPLOYMENT BOUNDARY REQUIRED`: NestJS is architecturally assigned to Render. No Render service/URL is available for production reconciliation proof.
