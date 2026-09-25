@@ -178,8 +178,7 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 
 ## Current blockers
 
-- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: não existe uma conta controlada aprovada para autenticação bem-sucedida. Uma tentativa controlada inválida foi usada exclusivamente para confirmar que a produção retorna erro genérico.
-- `BLOCKED — SERVER IDENTITY/DATABASE CONFIGURATION REQUIRED`: a API NestJS está Live no Render, mas a reconciliação persistida requer `DATABASE_URL` e a verificação de token requer a configuração server-side Supabase. A transmissão de credenciais para o Render não foi autorizada de forma específica e não foi executada.
+- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: a conta controlada e a configuração server-side já existem, mas a prova final requer que o Product Owner envie uma vez as credenciais controladas na Web Production depois do deploy `4f912b1`. O Codex não recebe nem solicita a senha.
 
 ## Remote migration evidence
 
@@ -224,3 +223,11 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - **Typecheck:** PASS — 12 workspaces.
 - **Build:** PASS — 12 workspaces; Next.js gerou `/login`.
 - **Git review:** diff sem whitespace errors, baseline de secrets aprovada e alterações do contrato de transporte revisadas antes do commit. `1e1cf9c` foi enviado a `origin/main`; não houve force push, merge de PR nem deploy de API.
+
+## Authenticated handoff completion — 2026-09-25
+
+- [x] **Web handoff:** depois de `signInWithPassword`, `SCR-AUTH-001` entrega somente o access token da sessão ao `GET /identity/me` por `Authorization: Bearer`; falha de transporte permanece no erro genérico aprovado.
+- [x] **CORS Production:** Render recebeu `WEB_ORIGIN` com a origem Production exata; não há wildcard nem cookies credenciados.
+- [x] **API deploy:** Render publicou `4f912b1` como `dep-darfav142hec73agseng`, com estado `Deploy succeeded | Live`.
+- [x] **CORS proof:** preflight de `https://saas-pi-one-31.vercel.app` para `/identity/me` retornou `204`, `Access-Control-Allow-Origin` exato, `Access-Control-Allow-Headers: authorization` e `Access-Control-Allow-Methods: GET`. Um Origin externo recebeu o cabeçalho da origem oficial e, por não corresponder à própria origem, é bloqueado pelo navegador.
+- [-] **Live successful reconciliation:** pendente apenas de um novo submit da conta controlada na Web publicada e posterior inspeção de request/log/mapeamento. Nenhuma senha, token ou secret será solicitado, exibido ou registrado.

@@ -32,6 +32,8 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 | Render API — public health | `GET https://saas-api-0jkv.onrender.com/health` | PASS: HTTP 200 with `{"status":"ok","service":"api"}`. |
 | Render API — negative readiness | `GET https://saas-api-0jkv.onrender.com/ready` | PASS: HTTP 503 with explicit `database: missing` and `queue: missing`; no false-ready result with dependencies absent. |
 | Render API — unauthenticated identity | `GET https://saas-api-0jkv.onrender.com/identity/me` without Authorization | PASS: HTTP 401 `UNAUTHENTICATED`; no identity or database reconciliation occurred. |
+| Render API — exact-origin CORS | Production preflight for `/identity/me` with `Origin: https://saas-pi-one-31.vercel.app`, `Access-Control-Request-Method: GET` and `Access-Control-Request-Headers: authorization` | PASS: HTTP 204; allowed origin matched Production exactly, allowed headers included `authorization`, and allowed methods were limited to `GET`. A preflight from an external origin did not receive a matching `Access-Control-Allow-Origin` value, so the browser will reject it. |
+| Authenticated handoff deployment | Commit `4f912b1`; Render deployment `dep-darfav142hec73agseng` | PASS: Render reports `Deploy succeeded | Live` for the commit containing the Web handoff and API CORS changes. |
 | Full local gates | `verify:structure`, `verify:secrets`, `lint`, `test`, `check`, `build` | PASS: all executable gates passed. Lint warnings remaining are confined to the historical wireframe archive, which is intentionally preserved unchanged. |
 
 ## Slice 01 — planned acceptance evidence
@@ -39,9 +41,9 @@ This file distinguishes planned acceptance evidence from executed evidence. A pl
 | Check | Required evidence | Current result |
 |---|---|---|
 | `SCR-AUTH-001` is real | Login does not use fixtures or simulated persistence | PARTIAL PASS — route and client call are implemented against Supabase Auth; a configured Development environment is required for a real sign-in proof. |
-| Email/password sign-in | Successful authenticated session through the approved Supabase Auth contract | PARTIAL PASS — real Production invalid-credential response verified; successful account flow requires a controlled account. |
-| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — `GET /identity/me` is Live on Render and rejects an absent Bearer token with 401; a successful verified-token branch awaits approved server-side Supabase configuration and controlled account. |
-| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof requires a controlled account and approved server-side identity/database configuration. |
+| Email/password sign-in | Successful authenticated session through the approved Supabase Auth contract | PARTIAL PASS — real Production invalid-credential response and deployed handoff are verified; the controlled account still needs one successful post-deploy submit. |
+| Server-side session boundary | Protected server/API boundary revalidates session; client state alone is insufficient | PARTIAL PASS — `GET /identity/me` is Live, rejects an absent Bearer token with 401, and Production exact-origin CORS is verified; the successful verified-token request awaits the controlled post-deploy submit. |
+| Global identity boundary | External identity is reconciled to the business User boundary without treating auth-provider identifiers as business authorization | PARTIAL PASS — unit boundary and database repository/migration are implemented; live verified-token-to-database proof awaits the controlled post-deploy submit. |
 | Unauthenticated negative case | Protected behavior rejects an absent/invalid session safely | PARTIAL PASS — unit tests reject absent, invalid and empty token inputs before reconciliation; live expired/malformed token proof awaits Development configuration. |
 | Error safety | Authentication failure does not expose secrets, stack traces, or account-existence details beyond the approved contract | PARTIAL PASS — implemented browser message is generic and no console errors occurred in unavailable configuration; live invalid-credentials response awaits Development configuration. |
 | UI states | Loading, invalid credentials/error, disabled/submitting and accessible feedback are verified for the implemented screen | PARTIAL PASS — unavailable and disabled state verified; submit/success/error require Development Auth configuration. |
@@ -85,5 +87,4 @@ The following are not Slice 01 PASS criteria and must not be represented as test
 
 ## Current blockers
 
-- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: no approved controlled account exists for a success-path test. The production error path was verified with an intentionally invalid account; no Auth configuration was changed.
-- `BLOCKED — SERVER IDENTITY/DATABASE CONFIGURATION REQUIRED`: NestJS is Live on Render, but `DATABASE_URL` and server-side Supabase verification configuration are deliberately absent. Their transmission to Render is a credential-handling action requiring specific approval and has not occurred.
+- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: the controlled account and server-side configuration now exist, but the Product Owner must submit the controlled credentials once in Production after the `4f912b1` deployment. The Codex does not request, receive or store the password. Afterwards, request/log/database mapping evidence can be recorded.
