@@ -1,3 +1,4 @@
+import { designTokens } from "@saas/design-tokens";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -19,21 +20,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: 24,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: designTokens.color.page,
     gap: 12,
   },
   eyebrow: {
-    color: "#64748B",
+    color: designTokens.color.textMuted,
     fontSize: 13,
     fontWeight: "500",
   },
   title: {
-    color: "#0F172A",
+    color: designTokens.color.textPrimary,
     fontSize: 28,
     fontWeight: "600",
   },
   body: {
-    color: "#475569",
+    color: designTokens.color.textSecondary,
     fontSize: 14,
     lineHeight: 20,
   },
