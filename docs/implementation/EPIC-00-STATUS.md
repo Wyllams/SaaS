@@ -35,7 +35,7 @@ Antes de qualquer decisão ou código deste Epic, consultar:
 - [x] Branch `epic/00-foundation` criada a partir da `main` aprovada.
 - [x] G0.1 — reconciliar e fechar autoridade do framework Web — **Next.js 16 App Router / ADR-013 Accepted**.
 - [x] G0.2 — criar/fechar ADR do framework da API — **NestJS 12 + FastifyAdapter / ADR-014 Accepted**.
-- [ ] G0.3 — documentar topologia definitiva de deploy antes de Staging.
+- [x] G0.3 — documentar topologia definitiva de deploy antes de Staging — **ADR-015 Accepted**.
 - [ ] Criar estrutura definitiva `apps/web`, `apps/api`, `apps/worker`, `apps/mobile`.
 - [ ] Criar packages compartilhados aprovados.
 - [ ] Fixar runtime/package manager/versões validadas.
@@ -56,8 +56,8 @@ Antes de qualquer decisão ou código deste Epic, consultar:
 
 ## Última ação executada
 
-G0.2 fechado: ADR-014 aceita após duas execuções verdes em `validation/api-nest-fastify`, incluindo instalação com `--frozen-lockfile`, build e smoke HTTP real.
+G0.3 fechado: ADR-015 reconciliou a topologia aprovada no TRD e definiu limites Development/Staging/Production sem congelar sizing/custos.
 
 ## Próxima ação
 
-Resolver G0.3: reconciliar e documentar a topologia definitiva de deploy/ambientes antes de criar Staging.
+Criar o scaffold definitivo e brand-neutral do monorepo em `apps/*` e `packages/*`, promovendo somente decisões aceitas — não copiando código de PoC cegamente.
