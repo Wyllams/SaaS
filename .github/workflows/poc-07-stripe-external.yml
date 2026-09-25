@@ -74,7 +74,23 @@ jobs:
         run: |
           set -euo pipefail
 
-          stripe v2 core account_links create             --confirm             --account="$ACCOUNT_ID"             --use-case.type=account_onboarding             -d "use_case[account_onboarding][configurations][]=merchant"             -d "use_case[account_onboarding][collection_options][fields]=eventually_due"             -d "use_case[account_onboarding][return_url]=https://example.com/stripe/return"             -d "use_case[account_onboarding][refresh_url]=https://example.com/stripe/refresh"             > .poc/account-link.json
+          ACCOUNT_LINK_DATA="$(jq -nc --arg account "$ACCOUNT_ID" '{
+            account: $account,
+            use_case: {
+              type: "account_onboarding",
+              account_onboarding: {
+                configurations: ["merchant"],
+                collection_options: { fields: "eventually_due" },
+                return_url: "https://example.com/stripe/return",
+                refresh_url: "https://example.com/stripe/refresh"
+              }
+            }
+          }')"
+
+          stripe v2 core account_links create \
+            --confirm \
+            --data "$ACCOUNT_LINK_DATA" \
+            > .poc/account-link.json
 
           jq '{
             object,
