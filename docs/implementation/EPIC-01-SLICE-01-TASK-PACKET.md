@@ -91,6 +91,12 @@ Deliver `SCR-AUTH-001` as an email/password sign-in surface connected to Supabas
 - A missing API database configuration returns HTTP 503 with `IDENTITY_SERVICE_UNAVAILABLE`; implementation detail is not exposed.
 - This route is an identity handoff only. It does not establish Workspace context, Membership, Role, Permission, scope or access to tenant-owned data.
 
+## Approved handoff completion — 2026-09-25
+
+- After a successful e-mail/password sign-in, `SCR-AUTH-001` must send the Supabase access token only as the Bearer credential to the approved `GET /identity/me` operation.
+- The API may accept browser requests only from the published Production Web origin supplied through the server-only `WEB_ORIGIN` environment variable. No wildcard origin, credentialed cookie mode, tenant context, role, permission or business-data access is authorized.
+- A failed handoff retains the existing generic sign-in error and must not expose token, database, verifier or transport detail.
+
 ## Acceptance criteria
 
 1. A configured Development email/password account can sign in through `SCR-AUTH-001` without fixture authentication.

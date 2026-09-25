@@ -54,6 +54,14 @@ const app = await NestFactory.create<NestFastifyApplication>(
   { logger: false },
 );
 
+const webOrigin = process.env.WEB_ORIGIN;
+if (webOrigin) {
+  app.enableCors({
+    origin: webOrigin,
+    methods: ["GET"],
+  });
+}
+
 app.enableShutdownHooks();
 
 process.once("beforeExit", () => traceContext.shutdown());
