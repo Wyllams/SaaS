@@ -120,8 +120,10 @@ jobs:
           set -e
 
           if [ "$FIRST_EXIT" -ne 0 ]; then
+            sed -E 's/(sk|rk)_[A-Za-z0-9_]+/[REDACTED_KEY]/g' .poc/payment-error.txt | head -20 > .poc/payment-error-sanitized.txt
             printf '{"external_payment_status":"BLOCKED","cli_exit_code":%s}\n' "$FIRST_EXIT" > .poc/payment-sanitized.json
             cat .poc/payment-sanitized.json
+            cat .poc/payment-error-sanitized.txt
             echo "payment_blocked=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -204,6 +206,7 @@ jobs:
             .poc/account-sanitized.json
             .poc/account-link-sanitized.json
             .poc/payment-sanitized.json
+            .poc/payment-error-sanitized.txt
             .poc/payment-retrieved-sanitized.json
             .poc/provider-event-sanitized.json
           if-no-files-found: warn
