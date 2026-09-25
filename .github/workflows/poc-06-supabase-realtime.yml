@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -36,52 +36,42 @@ jobs:
       - name: Verify required database secret exists
         run: test -n "$SUPABASE_SESSION_DATABASE_URL"
 
-      - name: Install dependencies and update lockfile evidence
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Persist dependency lockfile once
-        run: |
-          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml pnpm-workspace.yaml
-            git commit -m "chore: persist POC-06 dependency lockfile"
-            git push
-          fi
+      - name: Install dependencies from committed lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Prepare temporary Realtime authorization and persistence resources
         env:
           PGSSLMODE: require
         run: |
           psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-          drop policy if exists "poc06_attempt4_receive_authorized_topic" on realtime.messages;
-          drop policy if exists "poc06_attempt4_send_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_validation_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_validation_send_authorized_topic" on realtime.messages;
 
-          create policy "poc06_attempt4_receive_authorized_topic"
+          create policy "poc06_validation_receive_authorized_topic"
           on realtime.messages
           for select
           to anon
           using (
-            (select realtime.topic()) = 'poc06:attempt4:authorized'
+            (select realtime.topic()) = 'poc06:validation:authorized'
             and realtime.messages.extension = 'broadcast'
           );
 
-          create policy "poc06_attempt4_send_authorized_topic"
+          create policy "poc06_validation_send_authorized_topic"
           on realtime.messages
           for insert
           to anon
           with check (
-            (select realtime.topic()) = 'poc06:attempt4:authorized'
+            (select realtime.topic()) = 'poc06:validation:authorized'
             and realtime.messages.extension = 'broadcast'
           );
 
-          create table if not exists public.poc06_attempt4_events (
+          create table if not exists public.poc06_validation_events (
             id uuid primary key,
             payload jsonb not null,
             created_at timestamptz not null default now()
           );
 
-          alter table public.poc06_attempt4_events enable row level security;
+          alter table public.poc06_validation_events enable row level security;
           SQL
 
       - name: Type-check Realtime PoC
@@ -96,7 +86,7 @@ jobs:
           PGSSLMODE: require
         run: |
           psql "$SUPABASE_SESSION_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-          drop policy if exists "poc06_attempt4_receive_authorized_topic" on realtime.messages;
-          drop policy if exists "poc06_attempt4_send_authorized_topic" on realtime.messages;
-          drop table if exists public.poc06_attempt4_events;
+          drop policy if exists "poc06_validation_receive_authorized_topic" on realtime.messages;
+          drop policy if exists "poc06_validation_send_authorized_topic" on realtime.messages;
+          drop table if exists public.poc06_validation_events;
           SQL
