@@ -16,6 +16,9 @@ Este diretório reúne as decisões arquiteturais aceitas a partir dos PoCs téc
 | ADR-010 | POC-10 | Resend email | Não Accepted — validação parcial/deferida |
 | ADR-011 | POC-11 | Expo mobile foundation | Accepted |
 | ADR-012 | POC-12 | OpenTelemetry + structured observability + Sentry | Accepted |
+| ADR-013 | Epic 0 / Web validation | Next.js 16 App Router | Accepted |
+| ADR-014 | Epic 0 / API validation | NestJS 12 + FastifyAdapter | Accepted |
+| ADR-015 | Epic 0 | Deployment topology and environment boundaries | Accepted |
 
 ## Regras
 

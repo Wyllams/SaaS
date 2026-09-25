@@ -1,8 +1,9 @@
 # SaaS — Implementation Plan v1.0
 
-- **Status:** Draft — ready for owner review
+- **Status:** Approved
 - **Date:** 2026-09-25
-- **Implementation authorization:** not granted by this document alone
+- **Approval record:** approved by the product owner on 2026-09-25; PR #13 merged into `main`
+- **Implementation authorization:** Epic 0 explicitly authorized by the product owner on 2026-09-25
 - **Product brand:** intentionally undefined
 
 ## 1. Purpose

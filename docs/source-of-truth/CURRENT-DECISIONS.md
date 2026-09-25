@@ -36,4 +36,6 @@ A visão consolidada pós-PoCs está em:
 
 O arquivo antigo `PLAN-20260917-005 - Plano mestre de implementação do CrewCommand.md` pertence a uma linha de implementação anterior e **não substitui** o `Implementation Plan v1.0` previsto pelo TRD e pelo Technical Validation & PoC Plan.
 
-O Implementation Plan v1.0 dos seis documentos-base permanece pendente até ser criado explicitamente a partir das fontes oficiais e dos resultados dos PoCs.
+O Implementation Plan v1.0 foi criado a partir das fontes oficiais e dos resultados dos PoCs, aprovado pelo proprietário em 2026-09-25 e mergeado na `main` pela PR #13.
+
+A implementação foi autorizada a iniciar pelo **Epic 0 — Foundation**. Nenhum Epic posterior é autorizado a pular os gates definidos no próprio Implementation Plan.
