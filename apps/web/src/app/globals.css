@@ -2,12 +2,12 @@
 @import "@saas/design-tokens/tokens.css";
 
 @theme inline {
-  --color-page: var(--color-page);
-  --color-surface: var(--color-surface-primary);
-  --color-foreground: var(--color-text-primary);
-  --color-muted-foreground: var(--color-text-secondary);
-  --color-border: var(--color-border-default);
-  --color-primary: var(--color-action-primary);
+  --color-app-page: var(--color-page);
+  --color-app-surface: var(--color-surface-primary);
+  --color-app-foreground: var(--color-text-primary);
+  --color-app-muted: var(--color-text-secondary);
+  --color-app-border: var(--color-border-default);
+  --color-app-primary: var(--color-action-primary);
 }
 
 html {
