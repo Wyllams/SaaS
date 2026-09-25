@@ -11,7 +11,7 @@ import {
 } from "./webhook.js";
 
 const stripe = new Stripe("sk_test_123", {
-  apiVersion: "2026-08-26.preview",
+  apiVersion: "2026-08-26.dahlia",
 });
 
 describe("CrewCommand Stripe Connect architecture contract", () => {
