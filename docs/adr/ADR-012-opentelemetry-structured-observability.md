@@ -1,9 +1,9 @@
-# ADR-012 — OpenTelemetry + Structured Observability
+# ADR-012 — OpenTelemetry + Structured Observability with Sentry
 
-- **Status:** Accepted for local instrumentation architecture
+- **Status:** Accepted
 - **Date:** 2026-09-25
 - **Validated by:** POC-12
-- **External backend status:** Open — Sentry ingestion not yet validated
+- **Initial external backend:** Sentry for Error Monitoring + Tracing
 
 ## Context
 
@@ -14,8 +14,8 @@ The architecture must:
 - preserve trace context across asynchronous boundaries;
 - correlate application logs to traces;
 - represent failures without leaking secrets;
-- avoid hard-coding one observability vendor into application code;
-- support a future external backend such as Sentry.
+- avoid hard-coding vendor-specific concerns into business logic;
+- support a real external monitoring backend.
 
 ## Decision
 
@@ -23,7 +23,14 @@ Use **OpenTelemetry** as the trace instrumentation and propagation layer.
 
 Use **structured application logs** that include active `trace_id` and `span_id` where a trace context exists.
 
-Use W3C Trace Context for propagation across process/message boundaries.
+Use **W3C Trace Context** for propagation across process/message boundaries.
+
+Use **Sentry** as the initial external backend for:
+
+- Error Monitoring;
+- Tracing.
+
+Sentry Logs, Profiling and Application Metrics are not selected by this ADR.
 
 Keep exporter/backend selection outside business logic.
 
@@ -33,7 +40,7 @@ POC-12 locally validated this trace:
 
 `API request → queue publish → worker job → provider call`
 
-Evidence demonstrated:
+Local evidence demonstrated:
 
 - one trace id across all spans;
 - W3C `traceparent` inject/extract across the simulated queue;
@@ -44,15 +51,24 @@ Evidence demonstrated:
 - JSON logs correlated with trace/span ids;
 - secret redaction before log emission.
 
+Real Sentry evidence:
+
+- GitHub Actions run `36141832058`;
+- dedicated Node.js PoC project;
+- Error Monitoring enabled;
+- Tracing enabled;
+- controlled exception sent inside an active Sentry span;
+- `Sentry.flush()` completed successfully;
+- Sentry event id `b7b35cc8e06144dc93e0dd9baba8e1a2`;
+- DSN sourced only from the GitHub Actions `SENTRY_DSN` secret.
+
 ## Logs decision
 
 Structured application logging is accepted.
 
-Do not make the OpenTelemetry Logs SDK a required application dependency at this stage.
+Do not make the OpenTelemetry Logs SDK or Sentry Logs a required application dependency at this stage.
 
-Reason: the current OpenTelemetry JavaScript status documents Traces as Stable while Logs remain Development.
-
-A future logging bridge/exporter may translate the structured logs to the selected backend without changing business logging semantics.
+Application logs remain structured and trace-correlated so a future log exporter/backend can be added without changing business logging semantics.
 
 ## Sensitive data
 
@@ -72,6 +88,8 @@ Do not log full request/response bodies by default.
 
 Customer PII requires an explicit approved logging policy.
 
+Sentry initialization should keep default PII collection disabled unless a future explicit requirement justifies changing it.
+
 ## Async propagation
 
 Background work must preserve distributed trace context.
@@ -90,36 +108,36 @@ Expected error observability includes:
 
 A parent operation that successfully accepted asynchronous work may remain successful even when a later background operation fails.
 
-## External backend boundary
+## Sentry boundary
 
-This ADR does **not** select Sentry as the final observability backend.
+Sentry is the initial external backend, not a business-layer dependency.
 
-Sentry remains a candidate because a real external validation requires:
+Requirements:
 
-- project creation;
-- DSN;
-- provider-side ingestion evidence.
-
-No backend-specific DSN, token or project identifier belongs in source control.
-
-Once external ingestion is validated, a follow-up ADR or amendment may approve the backend/exporter configuration.
+- DSN stored only in environment/secret configuration;
+- no DSN in Git;
+- no Sentry project identifiers required in business models;
+- exporter/client failure must not break business workflows;
+- synthetic external checks run manually, not on every push;
+- production sampling policy must be explicitly configured before launch.
 
 ## Consequences
 
 ### Positive
 
-- vendor-neutral instrumentation;
+- vendor-neutral trace instrumentation;
 - trace continuity across API and worker boundaries;
 - logs can link directly to traces;
+- real external error/tracing visibility is proven;
 - observability security rules are explicit;
-- backend replacement remains possible.
+- future backend replacement remains possible.
 
 ### Trade-offs
 
-- exporter/backend configuration still needs a production decision;
+- Sentry configuration adds an external operational dependency;
 - log correlation requires logging discipline;
 - asynchronous propagation must be implemented consistently;
-- vendor-specific features cannot be assumed until a backend is selected.
+- production sampling and retention/cost policies still need explicit values.
 
 ## Guardrails
 
@@ -130,4 +148,6 @@ Once external ingestion is validated, a follow-up ADR or amendment may approve t
 5. Structured logs include trace/span ids when active.
 6. External exporter failures must not break business workflows.
 7. Sampling policy must be explicit before production.
-8. Sentry or another backend requires separate external validation.
+8. Keep Sentry SDK initialization/configuration outside business-domain logic.
+9. Store `SENTRY_DSN` only in secure environment/secret configuration.
+10. Do not enable additional Sentry products implicitly; validate them separately if needed.

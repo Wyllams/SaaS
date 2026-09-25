@@ -2,19 +2,19 @@
 
 ## Status
 
-**LOCAL PASS — OpenTelemetry + structured-log contract validated. Real Sentry ingestion remains pending because it requires a Sentry project/DSN.**
+**PASS — local OpenTelemetry/structured-log contract and real Sentry error + tracing ingestion validated.**
 
 ## Goal
 
 Validate an end-to-end observability contract for the SaaS without tying the architecture to the final product name.
 
-The PoC scope is:
+The PoC proves:
 
-- OpenTelemetry trace propagation can be validated locally;
-- application logs can be structured and correlated to traces locally;
-- a controlled error can be represented in trace data;
-- sensitive fields must not leak into logs;
-- real Sentry validation requires a Sentry project and DSN.
+- OpenTelemetry trace propagation works across asynchronous boundaries;
+- application logs can be structured and correlated to traces;
+- controlled errors can be represented in trace data;
+- sensitive fields are redacted before logging;
+- Sentry can receive a real controlled error and trace from the PoC through a DSN stored outside Git.
 
 ## Repository basis
 
@@ -26,12 +26,13 @@ The experiment lives under:
 
 No Web/API framework scaffold is introduced by this PoC.
 
-## Validated local stack
+## Validated stack
 
 - `@opentelemetry/api` 1.9.1;
 - `@opentelemetry/core` 2.11.0;
 - `@opentelemetry/context-async-hooks` 2.11.0;
 - `@opentelemetry/sdk-trace` 2.11.0;
+- `@sentry/node` 11.0.0;
 - Node.js 24.21.0;
 - pnpm 12.6.0.
 
@@ -63,69 +64,73 @@ OpenTelemetry tracing is the interoperability layer accepted by this PoC.
 
 The PoC uses structured application logs correlated with the active OpenTelemetry span.
 
-OpenTelemetry JavaScript log SDK support is not treated as a production requirement by this PoC because the current OpenTelemetry JavaScript documentation classifies Logs as **Development**, while Traces are **Stable**.
+The OpenTelemetry Logs SDK is not a required application dependency at this stage. The application logging contract remains structured and trace-correlated without coupling business logging semantics to one exporter.
 
-The design therefore keeps logging output structured and trace-correlated without coupling the application to the OpenTelemetry Logs SDK.
+### Errors / external backend
 
-## Sentry boundary
+Sentry is validated as the initial external backend for **Error Monitoring + Tracing**.
 
-Real Sentry ingestion is **not yet validated**.
+This PoC does not enable or validate Sentry Logs, Profiling or Application Metrics.
 
-External validation requires:
+## Real Sentry evidence
 
-- a Sentry account/organization;
-- a dedicated PoC project;
-- its DSN stored outside Git;
-- an actual event/trace sent and visible in that project.
+A dedicated Node.js PoC project was created with:
 
-The DSN must not be committed to the repository or copied into normal evidence logs.
+- Error Monitoring: enabled;
+- Tracing: enabled;
+- Logging: disabled;
+- Profiling: disabled;
+- Application Metrics: disabled.
 
-The local contract verifies:
+The DSN was stored only as the GitHub Actions secret:
 
-- Sentry remains disabled when no DSN exists;
-- a supplied DSN must be HTTPS;
-- config/evidence redacts the DSN.
+`SENTRY_DSN`
 
-Sentry is therefore **not approved as the external backend by POC-12 yet**.
+External ingestion workflow:
 
-### External test prepared
+- GitHub Actions run: `36141832058`;
+- controlled exception sent inside an active Sentry span: PASS;
+- `Sentry.flush()`: PASS;
+- returned event id: `b7b35cc8e06144dc93e0dd9baba8e1a2`;
+- DSN was not printed by the workflow;
+- resolved Sentry dependency lock committed by GitHub Actions bot:
+  `b99c796a2ccbda69429c0ce5d17b6c2e3ab39cd4`.
 
-The branch includes a controlled Sentry external-ingestion test that:
+The synthetic error message used only for this PoC is:
 
-- reads `SENTRY_DSN` only from the GitHub Actions secret environment;
-- initializes `@sentry/node` with tracing enabled at 100% sampling for the PoC;
-- sends one synthetic controlled exception inside an active span;
-- disables default PII collection;
-- strips Authorization/Cookie headers if present;
-- flushes before process exit;
-- prints only the returned Sentry event id and flush status.
-
-The workflow never prints the DSN.
+`POC-12 controlled Sentry ingestion test`
 
 ## Security guardrails
 
 - no Authorization headers in logs;
-- no passwords, API keys, tokens or secrets in logs;
+- no cookies, passwords, API keys, tokens or secrets in logs;
 - trace attributes must not become a dumping ground for request bodies;
 - customer content/PII requires explicit allowlisting before logging;
 - DSNs/tokens belong in environment/secrets configuration;
-- errors may record stack information, but sensitive application context must be filtered first.
+- Sentry default PII collection is disabled in the external proof;
+- the DSN is never committed to Git or printed in evidence logs.
 
 ## CI evidence
 
-Bootstrap/local validation run:
+Local observability validation:
 
 - GitHub Actions run: `36139191422`;
 - local observability tests: PASS;
 - monorepo structure: PASS;
-- dependency lock committed by GitHub Actions bot:
+- OpenTelemetry dependency lock:
   `4172c2f6657bcd1f43add2a3a83db8d3a54316dc`.
 
-The permanent workflow uses:
+External Sentry validation:
 
-- `pnpm install --frozen-lockfile`;
-- read-only repository permissions;
-- deterministic local E2E tests.
+- GitHub Actions run: `36141832058`;
+- external error + trace ingestion: PASS;
+- flush: PASS;
+- Sentry dependency lock:
+  `b99c796a2ccbda69429c0ce5d17b6c2e3ab39cd4`.
+
+The permanent workflows use committed dependencies with `pnpm install --frozen-lockfile` and read-only repository permissions.
+
+The external Sentry workflow is manual-only (`workflow_dispatch`) so normal pushes do not create synthetic Sentry issues.
 
 ## Acceptance criteria
 
@@ -138,21 +143,25 @@ The permanent workflow uses:
 | Error span + exception event | PASS |
 | Structured log trace correlation | PASS |
 | Secret redaction | PASS |
-| Sentry external ingestion | PENDING — requires project/DSN |
+| Sentry project created with Error Monitoring + Tracing | PASS |
+| Real Sentry controlled-error ingestion | PASS |
+| Real Sentry trace-enabled SDK execution | PASS |
+| DSN kept outside Git | PASS |
+| Sentry flush before process exit | PASS |
 
 ## Decision
 
-The local architecture decision is:
+Use:
 
-- use OpenTelemetry as the trace instrumentation/interoperability layer;
-- use structured logs with trace/span correlation;
-- keep sensitive-field redaction mandatory;
-- keep the external observability backend replaceable.
+- **OpenTelemetry** as the trace instrumentation/interoperability layer;
+- **W3C Trace Context** for propagation across process/message boundaries;
+- **structured logs** correlated with trace/span ids;
+- **Sentry** as the initial external backend for Error Monitoring + Tracing.
 
-Sentry remains a candidate backend pending real ingestion validation.
+Keep exporter/backend concerns outside business logic so the observability backend remains replaceable.
 
 ## ADR
 
-Local architecture decision recorded in:
+Decision recorded in:
 
 `docs/adr/ADR-012-opentelemetry-structured-observability.md`
