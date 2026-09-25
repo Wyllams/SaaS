@@ -69,7 +69,7 @@ Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It ca
 - [x] Confirmar no código os pontos exatos de integração Web/API/DB autorizados pelo Task Packet.
 - [x] Resolver a estratégia UUIDv7: geração na aplicação por dependência revisada, sem extensão nem alteração remota no PostgreSQL.
 - [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0; dependências restauradas com lockfile congelado.
-- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case e repositório estão implementados; a prova de integração real depende da configuração de Development ainda bloqueada.
+- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, verifier, use case, repositório e `GET /identity/me` estão implementados; falta exclusivamente a prova integrada com conta controlada e API NestJS publicada.
 - [x] Definir estado/lifecycle inicial e a representação persistida de `User`, aprovado pelo Product Owner em 2026-09-25.
 - [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies públicas.
 - [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
@@ -80,7 +80,7 @@ Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It ca
 - [x] Criar e executar os testes unitários inicialmente possíveis do Slice 01: 12/12 PASS (token negativo, identidade verificada, criação, repetição, concorrência, campos não confiáveis ignorados, token vazio, parsing do Bearer e respostas HTTP 401/503/200); typecheck e build da API PASS. Web typecheck e build PASS.
 - [x] Executar QA de navegador do estado seguro sem configuração: 320, 375, 768, 1024 e 1440 px sem overflow horizontal; campos e botão indisponíveis; console sem warnings/errors.
 - [-] Executar QA de navegador autenticado, console e rede: Production foi verificado para configuração, erro seguro, console e responsividade; login bem-sucedido e reconciliação persistida exigem conta controlada e API NestJS publicada.
-- [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. A revisão de diff Git permanece indisponível porque o repositório local inteiro segue não rastreado.
+- [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. Diff sem erros de whitespace, baseline de secrets e alterações revisadas antes dos commits publicados em `main`.
 - [x] Publicar o Web SaaS no Vercel Production após gates locais, usando o projeto `saas` e commit `105012c`.
 
 ### Obrigações restantes do Epic 1
