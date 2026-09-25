@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -17,8 +17,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: validation/api-nest-fastify
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -30,8 +28,8 @@ jobs:
           corepack enable
           corepack prepare pnpm@12.6.0 --activate
 
-      - name: Resolve API dependencies
-        run: pnpm install --no-frozen-lockfile
+      - name: Install committed dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Verify approved monorepo structure
         run: pnpm run verify:structure
@@ -57,16 +55,3 @@ jobs:
 
           cat /tmp/health.json
           node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync("/tmp/health.json","utf8")); if(x.status!=="ok"||x.framework!=="nest-fastify") process.exit(1)'
-
-      - name: Commit resolved lockfile
-        run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
-            echo "Lockfile already current."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pnpm-lock.yaml
-          git commit -m "chore(api-validation): lock framework dependencies [skip ci]"
-          git push origin HEAD:validation/api-nest-fastify
