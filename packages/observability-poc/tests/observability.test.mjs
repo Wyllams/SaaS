@@ -5,7 +5,7 @@ import { createObservabilityRuntime } from "../src/runtime.mjs";
 import { runEndToEndScenario } from "../src/scenario.mjs";
 import { resolveSentryExternalConfig } from "../src/sentry-contract.mjs";
 
-test("propagates one trace across API, queue, worker and provider spans", async () => {
+test("validates trace propagation, error capture, correlated logs and redaction end to end", async () => {
   const runtime = createObservabilityRuntime();
 
   try {
@@ -28,6 +28,8 @@ test("propagates one trace across API, queue, worker and provider spans", async 
     );
     assert.equal(traceIds.size, 1);
 
+    const [traceId] = traceIds;
+
     assert.equal(
       byName.get("worker.job").parentSpanContext?.spanId,
       byName.get("queue.publish").spanContext().spanId,
@@ -48,17 +50,6 @@ test("propagates one trace across API, queue, worker and provider spans", async 
         .get("provider.call")
         .events.some((event) => event.name === "exception"),
     );
-  } finally {
-    await runtime.shutdown();
-  }
-});
-
-test("correlates structured logs with trace context and redacts secrets", async () => {
-  const runtime = createObservabilityRuntime();
-
-  try {
-    const result = await runEndToEndScenario(runtime);
-    const traceId = result.spans[0].spanContext().traceId;
 
     assert.ok(result.logs.length >= 4);
 
