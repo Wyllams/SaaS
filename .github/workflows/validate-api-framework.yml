@@ -1,0 +1,72 @@
+name: Validate API Framework Candidate
+
+on:
+  push:
+    branches:
+      - validation/api-nest-fastify
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: validation/api-nest-fastify
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Resolve API dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify approved monorepo structure
+        run: pnpm run verify:structure
+
+      - name: Type-check API candidate
+        run: pnpm --filter @crewcommand/api check
+
+      - name: Build API candidate
+        run: pnpm --filter @crewcommand/api build
+
+      - name: Smoke-test Fastify health endpoint
+        run: |
+          node apps/api/dist/main.js >/tmp/api-validation.log 2>&1 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/health >/tmp/health.json; then
+              break
+            fi
+            sleep 1
+          done
+
+          cat /tmp/health.json
+          node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync("/tmp/health.json","utf8")); if(x.status!=="ok"||x.framework!=="nest-fastify") process.exit(1)'
+
+      - name: Commit resolved lockfile
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore(api-validation): lock framework dependencies [skip ci]"
+          git push origin HEAD:validation/api-nest-fastify
