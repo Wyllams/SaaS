@@ -9,12 +9,13 @@ const expected = new Map([
   ["apps/worker", "@saas/worker"],
   ["apps/mobile", "@saas/mobile"],
   ["packages/api-client", "@saas/api-client"],
-  ["packages/design-tokens", "@saas/design-tokens"],
-  ["packages/ui-web", "@saas/ui-web"],
-  ["packages/domain-types", "@saas/domain-types"],
-  ["packages/validation", "@saas/validation"],
   ["packages/config", "@saas/config"],
-  ["packages/observability", "@saas/observability"]
+  ["packages/db", "@saas/db"],
+  ["packages/design-tokens", "@saas/design-tokens"],
+  ["packages/domain-types", "@saas/domain-types"],
+  ["packages/observability", "@saas/observability"],
+  ["packages/ui-web", "@saas/ui-web"],
+  ["packages/validation", "@saas/validation"],
 ]);
 
 const rootPackage = JSON.parse(
