@@ -1,0 +1,16 @@
+{
+  "name": "observability-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --check src/runtime.mjs && node --check src/structured-log.mjs && node --check src/scenario.mjs && node --check src/sentry-contract.mjs",
+    "check": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/context-async-hooks": "2.11.0",
+    "@opentelemetry/core": "2.11.0",
+    "@opentelemetry/sdk-trace": "2.11.0"
+  }
+}

@@ -1,0 +1,56 @@
+name: POC-12 Observability Bootstrap
+
+on:
+  push:
+    branches:
+      - poc/12-observability-e2e
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: poc/12-observability-e2e
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Resolve observability dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify monorepo structure
+        run: pnpm run verify:structure
+
+      - name: Build observability contract
+        run: pnpm --filter observability-poc build
+
+      - name: Run end-to-end observability tests
+        run: pnpm --filter observability-poc check
+
+      - name: Commit dependency lock
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Dependency lock already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore(poc-12): lock observability dependencies [skip ci]"
+          git push origin HEAD:poc/12-observability-e2e
