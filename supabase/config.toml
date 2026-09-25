@@ -1,0 +1,2 @@
+[functions.identity-me]
+verify_jwt = false

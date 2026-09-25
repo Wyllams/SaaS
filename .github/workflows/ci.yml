@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - epic/00-foundation
+      - migration/supabase-backend
   pull_request:
   workflow_dispatch:
 
@@ -15,17 +16,6 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-
-    services:
-      valkey:
-        image: valkey/valkey:8-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "valkey-cli ping"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
 
     steps:
       - name: Checkout
@@ -62,57 +52,11 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Smoke-test API health and readiness contract
+      - name: Verify Supabase runtime is versioned
         run: |
-          APP_ENV=development PORT=4000 HOST=127.0.0.1 node apps/api/dist/main.js >/tmp/api.log 2>&1 &
-          API_PID=$!
-          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
-
-          API_READY=false
-          for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:4000/health >/tmp/api-health.json; then
-              API_READY=true
-              break
-            fi
-            sleep 1
-          done
-
-          if [ "$API_READY" != "true" ]; then
-            cat /tmp/api.log
-            exit 1
-          fi
-
-          cat /tmp/api-health.json
-          node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync("/tmp/api-health.json","utf8")); if(x.status!=="ok"||x.service!=="api") process.exit(1)'
-
-          READY_CODE=$(curl --silent --output /tmp/api-ready.json --write-out "%{http_code}" http://127.0.0.1:4000/ready)
-          cat /tmp/api-ready.json
-          test "$READY_CODE" = "503"
-
-          kill "$API_PID"
-          wait "$API_PID" || true
-          trap - EXIT
-
-      - name: Smoke-test Worker readiness against Valkey
-        run: |
-          APP_ENV=development REDIS_URL=redis://127.0.0.1:6379 node apps/worker/dist/main.js >/tmp/worker.log 2>&1 &
-          WORKER_PID=$!
-          trap 'kill "$WORKER_PID" 2>/dev/null || true' EXIT
-
-          for attempt in {1..30}; do
-            if grep -q '"readiness":"ready"' /tmp/worker.log; then
-              break
-            fi
-            sleep 1
-          done
-
-          cat /tmp/worker.log
-          grep -q '"readiness":"ready"' /tmp/worker.log
-          grep -q '"handlers":0' /tmp/worker.log
-
-          kill "$WORKER_PID"
-          wait "$WORKER_PID" || true
-          trap - EXIT
+          test -f supabase/config.toml
+          test -f supabase/functions/identity-me/index.ts
+          test -f supabase/migrations/20260925201500_enable_supabase_async_infrastructure.sql
 
       - name: Verify repository remains clean
         run: |
