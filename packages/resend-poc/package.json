@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --check src/adapter.mjs && node --check src/webhook.mjs",
+    "build": "node --check src/adapter.mjs && node --check src/webhook.mjs && node --check api/webhook.mjs && node --check api/health.mjs",
     "check": "node --test src/poc.test.mjs"
   }
 }

@@ -32,6 +32,13 @@ This follows the existing PoC convention of isolating provider experiments under
 
 No framework-specific application scaffold is introduced by this PoC.
 
+For the external webhook proof, the Vercel project must use `packages/resend-poc` as its Root Directory. The temporary public functions are:
+
+- `api/health.mjs`
+- `api/webhook.mjs`
+
+These functions are PoC-only infrastructure and are not the final Web/API application structure.
+
 ## Naming rule
 
 The final SaaS product name is intentionally undecided.

@@ -6,6 +6,7 @@ import {
   buildSendEmailRequest,
   redactRequestForEvidence,
 } from "./adapter.mjs";
+import webhookHandler from "../api/webhook.mjs";
 import {
   classifyInboundEmail,
   InMemoryWebhookIdStore,
@@ -147,4 +148,30 @@ test("uses a strict sender allowlist for inbound email processing", () => {
 
   assert.equal(classifyInboundEmail(trusted, ["trusted@example.test"]), "accepted");
   assert.equal(classifyInboundEmail(unknown, ["trusted@example.test"]), "rejected");
+});
+
+
+test("public webhook handler rejects unsigned requests without exposing secrets", async () => {
+  const previousSecret = process.env.RESEND_WEBHOOK_SECRET;
+  const previousAllowlist = process.env.POC10_ALLOWED_SENDERS;
+  process.env.RESEND_WEBHOOK_SECRET = WEBHOOK_SECRET;
+  process.env.POC10_ALLOWED_SENDERS = "trusted@example.test";
+
+  try {
+    const request = new Request("https://example.test/api/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "email.received", data: { from: "trusted@example.test" } }),
+    });
+
+    const response = await webhookHandler.fetch(request);
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.deepEqual(body, { ok: false, error: "invalid_webhook" });
+  } finally {
+    if (previousSecret === undefined) delete process.env.RESEND_WEBHOOK_SECRET;
+    else process.env.RESEND_WEBHOOK_SECRET = previousSecret;
+    if (previousAllowlist === undefined) delete process.env.POC10_ALLOWED_SENDERS;
+    else process.env.POC10_ALLOWED_SENDERS = previousAllowlist;
+  }
 });
