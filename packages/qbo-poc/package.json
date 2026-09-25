@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
-    "check": "tsc -p tsconfig.json --noEmit && vitest run"
+    "check": "tsc -p tsconfig.json --noEmit && vitest run",
+    "external": "node src/external.mjs"
   },
   "devDependencies": {
     "@types/node": "24.10.1",

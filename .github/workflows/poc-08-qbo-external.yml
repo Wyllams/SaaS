@@ -1,0 +1,45 @@
+name: POC-08 QuickBooks External Sandbox
+
+on:
+  push:
+    branches:
+      - poc/08-quickbooks-online
+
+permissions:
+  contents: read
+
+jobs:
+  external:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QBO_CLIENT_ID: ${{ secrets.QBO_CLIENT_ID }}
+      QBO_CLIENT_SECRET: ${{ secrets.QBO_CLIENT_SECRET }}
+      QBO_REFRESH_TOKEN: ${{ secrets.QBO_REFRESH_TOKEN }}
+      QBO_REALM_ID: ${{ secrets.QBO_REALM_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Verify QuickBooks secrets exist
+        run: |
+          test -n "$QBO_CLIENT_ID"
+          test -n "$QBO_CLIENT_SECRET"
+          test -n "$QBO_REFRESH_TOKEN"
+          test -n "$QBO_REALM_ID"
+
+      - name: Run QuickBooks Sandbox validation
+        run: node packages/qbo-poc/src/external.mjs
+
+      - name: Upload sanitized QuickBooks evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: poc-08-qbo-external-evidence
+          path: .poc/qbo-external-sanitized.json
+          if-no-files-found: error
