@@ -1,5 +1,8 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — Status
 
+> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+
+
 - **Date:** 2026-09-25
 - **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
 - **State:** Slice 01 is implemented; the Web is published on Vercel and the NestJS API is Live on Render Free. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.

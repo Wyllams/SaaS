@@ -1,5 +1,8 @@
 # Epic 1 — Identity / Workspace / Membership / Permissions — QA
 
+> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+
+
 - **Date:** 2026-09-25
 - **State:** local, remote schema/RLS, Production Web error-path and Render API health evidence recorded. Successful authenticated reconciliation remains pending a controlled account and approved server-side identity/database configuration.
 - **Scope recorded:** `EPIC-01-SLICE-01 — Authentication and server-side identity boundary`
