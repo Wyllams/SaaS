@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@saas/design-tokens/tokens.css";
+
+@theme inline {
+  --color-page: var(--color-page);
+  --color-surface: var(--color-surface-primary);
+  --color-foreground: var(--color-text-primary);
+  --color-muted-foreground: var(--color-text-secondary);
+  --color-border: var(--color-border-default);
+  --color-primary: var(--color-action-primary);
+}
+
+html {
+  background: var(--color-page);
+  color: var(--color-text-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-page);
+  color: var(--color-text-primary);
+}
