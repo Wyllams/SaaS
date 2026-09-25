@@ -1,0 +1,60 @@
+name: POC-02 Supabase Pooling
+
+on:
+  push:
+    branches:
+      - poc/02-supabase-pooling
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      SUPABASE_DIRECT_DATABASE_URL: ${{ secrets.SUPABASE_DIRECT_DATABASE_URL }}
+      SUPABASE_SESSION_DATABASE_URL: ${{ secrets.SUPABASE_SESSION_DATABASE_URL }}
+      SUPABASE_TRANSACTION_DATABASE_URL: ${{ secrets.SUPABASE_TRANSACTION_DATABASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Verify required secrets exist
+        shell: bash
+        run: |
+          test -n "$SUPABASE_DIRECT_DATABASE_URL"
+          test -n "$SUPABASE_SESSION_DATABASE_URL"
+          test -n "$SUPABASE_TRANSACTION_DATABASE_URL"
+
+      - name: Install dependencies and update lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Persist dependency lockfile once
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml pnpm-workspace.yaml
+            git commit -m "chore: persist POC-02 dependency lockfile"
+            git push
+          fi
+
+      - name: Type-check pooling PoC
+        run: pnpm --filter @crewcommand/db-pooling-poc check
+
+      - name: Run Supabase pooling PoC
+        run: pnpm --filter @crewcommand/db-pooling-poc poc:test
