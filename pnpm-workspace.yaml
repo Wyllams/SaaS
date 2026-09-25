@@ -5,6 +5,7 @@ packages:
 autoDedupe: true
 
 allowBuilds:
+  esbuild: true
   msgpackr-extract: false
 
 minimumReleaseAgeExclude:
