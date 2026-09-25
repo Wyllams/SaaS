@@ -199,7 +199,7 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 
 ## Production publication evidence
 
-- **GitHub:** `main` advanced from `519cb3e` to `105012c` (`feat(epic-01): add email-password identity boundary`) by fast-forward, without force push.
+- **GitHub:** `main` advanced by fast-forward without force push. The identity transport contract is in `1e1cf9c` (`feat(epic-01): add identity transport boundary`).
 - **Vercel project:** `wyllams-projects/saas`, root directory `apps/web`, Node.js 24.x.
 - **Environment:** only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` were added for Production and Preview; no secret/service key was used.
 - **Deployment:** `https://saas-pi-one-31.vercel.app`, Ready; deployment `dpl_85kkG2rPrYRZeqhjD8idV1n6Dzk3`.
@@ -211,7 +211,7 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - **Structure:** PASS — 12 workspaces brand-neutral verified.
 - **Secrets baseline:** PASS — zero tracked implementation files scanned; no secret reported.
 - **Lint:** PASS with warnings only. One warning in code novo foi corrigido; os avisos restantes pertencem ao acervo histórico imutável de wireframes.
-- **Tests:** PASS — Turbo executou 7 testes da API, 3 de config e 1 de observability; todos passaram.
+- **Tests:** PASS — Turbo executou 12 testes da API, 3 de config e 1 de observability; todos passaram.
 - **Typecheck:** PASS — 12 workspaces.
 - **Build:** PASS — 12 workspaces; Next.js gerou `/login`.
-- **Git review limitation:** o repositório foi inicializado localmente sem histórico e todos os arquivos continuam não rastreados. Nenhum arquivo foi staged, committed, pushed ou merged.
+- **Git review:** diff sem whitespace errors, baseline de secrets aprovada e alterações do contrato de transporte revisadas antes do commit. `1e1cf9c` foi enviado a `origin/main`; não houve force push, merge de PR nem deploy de API.
