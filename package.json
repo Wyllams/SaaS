@@ -9,12 +9,14 @@
   "scripts": {
     "build": "turbo run build",
     "check": "turbo run check",
+    "lint": "oxlint .",
     "test": "turbo run test",
     "verify:structure": "node scripts/verify-structure.mjs",
-    "ci": "pnpm run verify:structure && pnpm run check && pnpm run build"
+    "ci": "pnpm run verify:structure && pnpm run lint && pnpm run check && pnpm run build"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
+    "oxlint": "1.85.0",
     "turbo": "2.11.4",
     "typescript": "6.0.3"
   }
