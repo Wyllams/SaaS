@@ -523,29 +523,25 @@ Falta o webhook externo real.
 
 Até esse teste, Resend não é considerado completamente aprovado para o fluxo inbound/webhook.
 
-### 15.2 Web framework definitivo
+### 15.2 Web framework definitivo — RESOLVIDO
 
-O POC-04 validou a existência de `apps/web`, mas não validou por si só um framework Web de produção.
+**ADR-013 Accepted:** usar Next.js 16 App Router para `apps/web`.
 
-Uma decisão de framework deve vir de evidência/documento específico, não do comentário de placeholder do monorepo.
+A decisão foi reconciliada com o TRD aprovado e validada tecnicamente em `validation/web-nextjs`.
 
-### 15.3 API framework definitivo
+### 15.3 API framework definitivo — RESOLVIDO
 
-O POC-04 validou a existência de `apps/api`, mas não aprovou por si só NestJS/Fastify ou qualquer alternativa.
+**ADR-014 Accepted:** usar NestJS 12 + FastifyAdapter para `apps/api`.
 
-### 15.4 Deployment topology definitiva
+A escolha aprovada no TRD foi revalidada em `validation/api-nest-fastify`, incluindo build e smoke HTTP com lockfile congelado.
 
-Os POCs validaram capacidades técnicas e alguns serviços externos, mas não congelaram sozinhos:
+### 15.4 Deployment topology definitiva — RESOLVIDA
 
-- provedor final de hosting de cada app;
-- quantidade de ambientes;
-- domínios finais;
-- sizing;
-- autoscaling;
-- budgets;
-- backup/restore de produção.
+**ADR-015 Accepted:** Vercel para Web; Render Virginia para API/Worker/Key Value; Supabase North Virginia (`us-east-1`) para PostgreSQL/Auth/Storage/Realtime; Expo/EAS para Mobile; GitHub Actions para CI; Sentry + OpenTelemetry para observabilidade.
 
-Esses itens precisam de decisão própria antes de produção.
+Development, Staging e Production permanecem separados.
+
+Sizing, autoscaling, budgets, custom domains e retenção final de backup continuam como decisões de capacity/release e não foram congelados por esta ADR.
 
 ### 15.5 Branding / package scope
 
