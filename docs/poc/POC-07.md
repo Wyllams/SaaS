@@ -4,63 +4,73 @@
 
 **PARTIAL PASS — local/CI architecture validated; external Connect v2 validation blocked on Stripe Sandbox.**
 
-## Stripe account state
+## Stripe environment discovered
 
-The connected Stripe account available to this session is:
+The Stripe account currently connected to ChatGPT is:
 
 - Account: `acct_1TNBRJCtl0zzV1rp`
-- Mode: legacy test mode (`livemode = false`)
-- Connected accounts currently: 0
+- Environment: legacy test mode (`livemode = false`)
+- Existing connected accounts: 0
 
-Stripe's current Accounts v2 documentation states that new Connect integrations using Accounts v2 must be tested in a **Stripe Sandbox**, not legacy test mode.
+Stripe's current documentation states that **new Accounts v2 / Connect integrations must use a general Stripe Sandbox**, not legacy test mode.
 
-An attempt to call Stripe's sandbox-only `EnableConnect` operation against the current test-mode account was rejected with the expected error that automatic Connect enablement is supported only for sandbox accounts.
+The sandbox-only `EnableConnect` API was attempted against the connected test-mode account and Stripe rejected it exactly for that reason: automatic Connect enablement is supported only for Sandbox accounts.
 
-## Architecture decision already confirmed by Stripe planner
+## Architecture confirmed by Stripe planner
 
-CrewCommand is a **SaaS Platform**, not a marketplace.
+CrewCommand is a **SaaS Platform**, not a Marketplace.
 
-The intended V1 model is:
+V1 model:
 
-- merchant businesses are connected accounts;
-- each business is merchant of record for its own end customer;
-- payments use **direct charges**;
-- Stripe owns payment pricing for connected accounts;
+- the field-service business is the connected account;
+- its customer buys directly from that business;
+- the connected business is merchant of record;
+- use **direct charges**;
+- Stripe owns pricing/processing fees;
 - Stripe owns connected-account loss liability / Managed Risk;
-- onboarding is Stripe-hosted or embedded;
-- no CrewCommand application fee is charged per transaction in V1;
-- raw card/bank data never enters CrewCommand servers;
-- Stripe webhook/provider state is authoritative for payment result;
+- use Stripe-hosted or embedded onboarding;
+- no per-transaction CrewCommand `application_fee_amount` in V1;
+- CrewCommand never stores raw card or bank details;
+- payment completion is based on Stripe authoritative state/webhooks;
 - future application fees/platform pricing remain possible later.
 
-## Local/CI validation scope
+## Local/CI evidence
 
-The local package validates:
+GitHub Actions run `36087392763` completed successfully.
 
-1. direct-charge PaymentIntent request is created in connected-account context;
-2. no `application_fee_amount` is allowed in V1;
-3. idempotency key is required at request level;
-4. business metadata carries Workspace and Invoice references;
-5. webhook signature verification uses Stripe's raw-body verification;
-6. tampered payloads fail signature verification;
-7. repeated Stripe Event IDs are processed once;
-8. supported and unsupported event types are handled explicitly.
+- strict TypeScript: PASS
+- Vitest files: 1/1 PASS
+- Tests: **6/6 PASS**
+- stripe-node: 22.6.2
+
+Validated locally:
+
+1. direct PaymentIntent request is scoped to a connected account via `stripeAccount`;
+2. payment amount is represented in minor units;
+3. Workspace and Invoice IDs are attached as Stripe metadata;
+4. request-level idempotency key is mandatory;
+5. V1 request contains no `application_fee_amount`;
+6. valid raw-body webhook signature is accepted;
+7. tampered webhook body is rejected;
+8. duplicated Stripe Event ID is processed once;
+9. unsupported event types are handled explicitly.
 
 ## External validation still required
 
-The PoC is not complete until a Stripe Sandbox exists and we validate:
+POC-07 cannot become PASS until a **general Stripe Sandbox** exists and we validate:
 
-1. Connect platform enabled in Sandbox;
+1. Connect platform enablement;
 2. Accounts v2 merchant connected account creation;
-3. Stripe-managed fees/losses responsibilities;
-4. hosted or embedded onboarding link/session creation;
-5. connected account capability/status retrieval;
-6. direct PaymentIntent created on the connected account;
-7. test payment confirmation;
-8. authoritative PaymentIntent retrieval;
-9. webhook delivery + signature + idempotent local update;
-10. no live money movement.
+3. `fees_collector = stripe`;
+4. `losses_collector = stripe`;
+5. card-payments capability request/status;
+6. Stripe-hosted or embedded onboarding;
+7. direct PaymentIntent in connected-account context;
+8. test card payment confirmation;
+9. authoritative PaymentIntent retrieval;
+10. webhook delivery/signature/idempotent local update;
+11. no live money movement.
 
-## Decision status
+## No ADR yet
 
-The architecture is approved by the TRD and Stripe planner, but **POC-07 must remain PARTIAL until the external Sandbox tests pass**.
+ADR-007 is intentionally **not created** while the external half of the PoC remains unvalidated.
