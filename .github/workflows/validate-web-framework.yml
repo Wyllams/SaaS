@@ -1,0 +1,56 @@
+name: Validate Web Framework Candidate
+
+on:
+  push:
+    branches:
+      - validation/web-nextjs
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: validation/web-nextjs
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Resolve Web dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify approved monorepo structure
+        run: pnpm run verify:structure
+
+      - name: Type-check Web candidate
+        run: pnpm --filter @crewcommand/web check
+
+      - name: Build Web candidate
+        run: pnpm --filter @crewcommand/web build
+
+      - name: Commit resolved lockfile
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore(web-validation): lock framework dependencies [skip ci]"
+          git push origin HEAD:validation/web-nextjs

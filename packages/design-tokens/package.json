@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./web.css": "./src/web.css"
+  },
   "scripts": {
     "build": "node ../../scripts/package-task.mjs build",
     "check": "node ../../scripts/package-task.mjs check"

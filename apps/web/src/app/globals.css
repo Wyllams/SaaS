@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@crewcommand/design-tokens/web.css";
+
+@theme inline {
+  --color-page: var(--surface-page);
+  --color-panel: var(--surface-panel);
+  --color-foreground: var(--text-primary);
+  --color-muted-foreground: var(--text-secondary);
+  --color-border: var(--border-subtle);
+  --color-primary: var(--action-primary);
+  --color-primary-foreground: var(--action-primary-foreground);
+  --radius-control: var(--radius-control);
+}
+
+html {
+  background: var(--surface-page);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
