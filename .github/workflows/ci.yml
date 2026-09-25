@@ -56,7 +56,7 @@ jobs:
         run: |
           test -f supabase/config.toml
           test -f supabase/functions/identity-me/index.ts
-          test -f supabase/migrations/20260925201500_enable_supabase_async_infrastructure.sql
+          test -f supabase/migrations/20260925230745_enable_supabase_async_infrastructure.sql
 
       - name: Verify repository remains clean
         run: |
