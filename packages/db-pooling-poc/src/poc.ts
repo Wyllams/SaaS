@@ -48,12 +48,16 @@ function isNetworkReachabilityError(error: unknown) {
 }
 
 async function probe(mode: Mode, connectionString: string): Promise<Result> {
+  const parsedUrl = new URL(connectionString);
+  parsedUrl.searchParams.delete("sslmode");
+
   const pool = new Pool({
-    connectionString,
+    connectionString: parsedUrl.toString(),
     max: 8,
     connectionTimeoutMillis: 12_000,
     idleTimeoutMillis: 5_000,
     application_name: `crewcommand-poc02-${mode}`,
+    ssl: { rejectUnauthorized: false },
   });
   const db = drizzle(pool);
 
@@ -61,19 +65,23 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
     const started = performance.now();
     const base = await db.execute(sql<{
       server_version: string;
-      ssl: boolean;
     }>`
-      select
-        current_setting('server_version') as server_version,
-        exists (
-          select 1
-          from pg_stat_ssl
-          where pid = pg_backend_pid() and ssl
-        ) as ssl
+      select current_setting('server_version') as server_version
     `);
     const simpleQueryMs = Math.round((performance.now() - started) * 100) / 100;
     const first = base.rows[0];
     assert.ok(first?.server_version);
+
+    const tlsClient = await pool.connect();
+    let clientTlsEncrypted = false;
+    try {
+      const internal = tlsClient as unknown as {
+        connection?: { stream?: { encrypted?: boolean } };
+      };
+      clientTlsEncrypted = Boolean(internal.connection?.stream?.encrypted);
+    } finally {
+      tlsClient.release();
+    }
 
     const contextValue = "11111111-1111-7111-8111-111111111111";
     const transactionLocalContext = await db.transaction(async (tx) => {
@@ -142,7 +150,7 @@ async function probe(mode: Mode, connectionString: string): Promise<Result> {
       mode,
       reachable: true,
       serverVersion: String(first.server_version),
-      ssl: Boolean(first.ssl),
+      ssl: clientTlsEncrypted,
       simpleQueryMs,
       transactionLocalContext,
       concurrency: {
