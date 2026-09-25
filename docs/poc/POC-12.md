@@ -92,6 +92,8 @@ External ingestion workflow:
 - controlled exception sent inside an active Sentry span: PASS;
 - `Sentry.flush()`: PASS;
 - returned event id: `b7b35cc8e06144dc93e0dd9baba8e1a2`;
+- provider-side visual confirmation: PASS — Sentry Issues displayed `POC-12 controlled Sentry ingestion test`;
+- Sentry issue feed showed 1 ingested event for the synthetic PoC issue;
 - DSN was not printed by the workflow;
 - resolved Sentry dependency lock committed by GitHub Actions bot:
   `b99c796a2ccbda69429c0ce5d17b6c2e3ab39cd4`.
