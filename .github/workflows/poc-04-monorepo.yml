@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
@@ -31,19 +31,8 @@ jobs:
           node --version
           pnpm --version
 
-      - name: Install dependencies and generate lockfile evidence
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Commit generated lock/config evidence once
-        if: github.event_name == 'push'
-        run: |
-          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml || [ ! -f pnpm-lock.yaml ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml pnpm-workspace.yaml
-            git commit -m "chore: persist pnpm lockfile for POC-04"
-            git push
-          fi
+      - name: Install dependencies from committed lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Verify monorepo structure
         run: pnpm run verify:structure

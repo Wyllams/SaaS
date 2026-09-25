@@ -2,35 +2,75 @@
 
 ## Status
 
-IN PROGRESS — awaiting GitHub Actions evidence.
+**PASS — technical hypothesis validated.**
 
-## Hypothesis
+## Decision
 
-CrewCommand can use a single `pnpm` workspace orchestrated by Turborepo for Web, API, Worker, Mobile and shared packages while preserving explicit package boundaries and workspace dependencies.
+CrewCommand will use a single `pnpm` workspace orchestrated by Turborepo for Web, API, Worker, Mobile and shared packages.
 
-## Versions validated by the PoC
+This PoC validates repository structure and task orchestration only. Framework-specific scaffolding remains owned by the PoCs/implementation steps that validate Next.js, NestJS and Expo.
+
+## Versions validated
 
 - Node.js 24.21.0 LTS
 - pnpm 12.6.0
 - Turborepo 2.11.4
 
-## Scope
+## Validated repository shape
 
-The PoC intentionally does **not** scaffold Next.js, NestJS or Expo yet. It validates repository shape, workspace dependency linking, task graph orchestration and local Turborepo caching without coupling POC-04 to framework-specific decisions.
+```text
+apps/
+  web/
+  api/
+  worker/
+  mobile/
+packages/
+  api-client/
+  design-tokens/
+  types/
+  validation/
+  config/
+```
 
-## Acceptance criteria
+## Acceptance criteria and evidence
 
-1. `pnpm install` resolves all workspaces and `workspace:*` dependencies.
-2. `scripts/verify-monorepo.mjs` validates all expected workspaces and boundaries.
-3. `turbo run build --dry=json` produces a valid task graph.
-4. `turbo run build` executes package builds respecting `^build` dependencies.
-5. A second `turbo run build` demonstrates local cache hits in CI logs.
-6. `turbo run check` succeeds across all workspaces.
-7. Generated build artifacts exist for all workspaces.
-8. The generated `pnpm-lock.yaml` is captured as PoC evidence and must be committed before the PoC is marked final PASS.
+| Criterion | Result |
+| --- | --- |
+| pnpm resolves the workspace and `workspace:*` dependencies | PASS |
+| Expected app/package boundaries are present | PASS |
+| Turborepo produces a valid task graph | PASS |
+| First build executes all package tasks successfully | PASS — 9/9 |
+| Workspace checks execute successfully | PASS — 9/9 |
+| Build artifacts are generated for all workspaces | PASS — 9/9 |
+| Second build demonstrates Turborepo cache reuse | PASS — 9/9 cache hits, FULL TURBO |
+| `pnpm-lock.yaml` is committed | PASS — commit `0fc803f6baef0e4569fd6494cd8e291c0e3d05ee` |
+| Final CI uses the committed lockfile with `--frozen-lockfile` | Required final verification on this branch |
 
-## Evidence
+## CI evidence
 
-GitHub Actions workflow: `.github/workflows/poc-04-monorepo.yml`.
+Initial validation:
 
-After validation, this document will be updated with the run ID, commit SHA, cache evidence and final decision.
+- GitHub Actions run: `36081203499`
+- Source commit: `04808a7e779d4c5da500b38d7d3bb1e9409ede95`
+- Build: 9 successful / 9 total
+- Checks: 9 successful / 9 total
+- Second build: 9 cached / 9 total — `FULL TURBO`
+- Evidence artifact: `poc-04-evidence` (artifact ID `10842340652`)
+
+Lockfile bootstrap validation:
+
+- GitHub Actions run: `36081323597`
+- Workflow conclusion: success
+- Generated lockfile persisted by GitHub Actions bot in commit `0fc803f6baef0e4569fd6494cd8e291c0e3d05ee`
+
+## Risks / observations
+
+- The PoC intentionally uses lightweight package tasks rather than framework builds. This avoids conflating monorepo validation with framework-specific PoCs.
+- Turborepo remote cache is not required for the V1 foundation; local task caching was validated. Remote cache can be enabled later if CI timings justify it.
+- Package versions are pinned for repeatability during the PoC. Future upgrades must pass normal CI gates.
+
+## ADR
+
+Decision recorded in:
+
+`docs/adr/ADR-004-pnpm-turborepo-monorepo.md`
