@@ -94,10 +94,9 @@ describe("CrewCommand Twilio Messaging contract", () => {
       consentTransition: "OPTED_IN",
       suppressApplicationAutoReply: true,
     });
-    expect(parseInboundSms({ ...base, Body: "HELP", OptOutType: "HELP" })).toMatchObject({
-      consentTransition: undefined,
-      suppressApplicationAutoReply: true,
-    });
+    const help = parseInboundSms({ ...base, Body: "HELP", OptOutType: "HELP" });
+    expect(help.suppressApplicationAutoReply).toBe(true);
+    expect(help).not.toHaveProperty("consentTransition");
   });
 
   it("keeps normal inbound messages as customer communications", () => {
