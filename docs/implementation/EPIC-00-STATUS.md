@@ -144,6 +144,20 @@ Resultado:
 - nenhum SMS/Twilio;
 - nenhum webhook público real do Resend.
 
+## Modelo operacional ChatGPT × Codex
+
+Antes do início do Epic 1 foram adicionadas regras obrigatórias de execução:
+
+- `AGENTS.md` — regras de repositório e política rígida de não invenção para o Codex;
+- `docs/implementation/CHATGPT-CODEX-OPERATING-MODEL.md` — separação de responsabilidades;
+- `docs/implementation/CODEX-TASK-TEMPLATE.md` — formato obrigatório para toda tarefa enviada ao Codex.
+
+A partir do Epic 1, o fluxo padrão será:
+
+`ChatGPT planeja/documenta → Codex implementa/testa → ChatGPT revisa → gate de merge`.
+
+Nenhuma decisão crítica deve existir apenas na conversa.
+
 ## Próximo passo conforme Implementation Plan
 
 Após revisão e merge do Epic 0, a próxima etapa documental/técnica é:
