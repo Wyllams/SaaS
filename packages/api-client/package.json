@@ -1,0 +1,14 @@
+{
+  "name": "@crewcommand/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/package-task.mjs build",
+    "check": "node ../../scripts/package-task.mjs check"
+  },
+  "dependencies": {
+    "@crewcommand/types": "workspace:*",
+    "@crewcommand/validation": "workspace:*"
+  }
+}

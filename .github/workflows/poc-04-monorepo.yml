@@ -1,0 +1,65 @@
+name: POC-04 Monorepo Foundation
+
+on:
+  push:
+    branches:
+      - poc/04-monorepo-foundation
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+          node --version
+          pnpm --version
+
+      - name: Install dependencies and generate lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Verify monorepo structure
+        run: pnpm run verify:structure
+
+      - name: Capture Turbo task graph
+        run: |
+          mkdir -p .poc
+          pnpm turbo run build --dry=json > .poc/turbo-dry.json
+
+      - name: First build
+        run: pnpm run build
+
+      - name: Workspace checks
+        run: pnpm run check
+
+      - name: Verify build artifacts
+        run: pnpm run verify:artifacts
+
+      - name: Second build (cache evidence)
+        run: pnpm run build | tee .poc/second-build.log
+
+      - name: Upload PoC evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: poc-04-evidence
+          path: |
+            pnpm-lock.yaml
+            .poc/turbo-dry.json
+            .poc/second-build.log
+          if-no-files-found: error

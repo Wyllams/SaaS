@@ -1,0 +1,19 @@
+{
+  "name": "crewcommand",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "check": "turbo run check",
+    "verify:structure": "node scripts/verify-monorepo.mjs",
+    "verify:artifacts": "node scripts/verify-build-artifacts.mjs",
+    "poc:04": "pnpm run verify:structure && pnpm run build && pnpm run check && pnpm run verify:artifacts"
+  },
+  "devDependencies": {
+    "turbo": "2.11.4"
+  }
+}
