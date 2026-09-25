@@ -24,11 +24,11 @@ export function initializeServerErrorMonitoring({
     throw new Error("SENTRY_TRACES_SAMPLE_RATE must be between 0 and 1");
   }
 
-  const options: Parameters<typeof Sentry.init>[0] = {
+  Sentry.init({
     dsn,
     environment,
     serverName: service,
-    sendDefaultPii: false,
+    ...(tracesSampleRate === undefined ? {} : { tracesSampleRate }),
     beforeSend(event) {
       if (event.request?.headers) {
         delete event.request.headers.authorization;
@@ -39,13 +39,7 @@ export function initializeServerErrorMonitoring({
 
       return event;
     },
-  };
-
-  if (tracesSampleRate !== undefined) {
-    options.tracesSampleRate = tracesSampleRate;
-  }
-
-  Sentry.init(options);
+  });
 
   return { enabled: true } as const;
 }
