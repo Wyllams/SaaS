@@ -2,13 +2,13 @@
 
 ## Status
 
-**IN PROGRESS — local OpenTelemetry + structured-log validation prepared; CI and real Sentry ingestion pending.**
+**LOCAL PASS — OpenTelemetry + structured-log contract validated. Real Sentry ingestion remains pending because it requires a Sentry project/DSN.**
 
 ## Goal
 
 Validate an end-to-end observability contract for the SaaS without tying the architecture to the final product name.
 
-The PoC focuses on the scope already defined for POC-12:
+The PoC scope is:
 
 - OpenTelemetry trace propagation can be validated locally;
 - application logs can be structured and correlated to traces locally;
@@ -26,54 +26,67 @@ The experiment lives under:
 
 No Web/API framework scaffold is introduced by this PoC.
 
+## Validated local stack
+
+- `@opentelemetry/api` 1.9.1;
+- `@opentelemetry/core` 2.11.0;
+- `@opentelemetry/context-async-hooks` 2.11.0;
+- `@opentelemetry/sdk-trace` 2.11.0;
+- Node.js 24.21.0;
+- pnpm 12.6.0.
+
 ## Local E2E scenario
 
 The test scenario models:
 
 `API request → queue publish → worker job → provider call`
 
-The trace crosses the simulated queue boundary through the W3C `traceparent` header.
+The trace crosses the simulated queue boundary through W3C Trace Context.
 
-Acceptance requires:
+Validated:
 
 1. all four spans share one trace id;
-2. queue-to-worker parentage is preserved after inject/extract;
-3. structured logs contain `trace_id` and `span_id`;
-4. a controlled provider failure produces an exception event and ERROR span status;
-5. authorization/password/token-like fields are redacted from logs.
+2. `traceparent` is injected and extracted across the queue boundary;
+3. worker span is parented to the producer span;
+4. provider span is parented to the worker span;
+5. structured logs contain `trace_id` and `span_id`;
+6. a controlled provider failure produces an exception event and ERROR span status;
+7. authorization/password/token-like fields are redacted from logs.
 
 ## Signal scope
 
 ### Traces
 
-OpenTelemetry tracing is the primary interoperability layer for this PoC.
+OpenTelemetry tracing is the interoperability layer accepted by this PoC.
 
 ### Logs
 
 The PoC uses structured application logs correlated with the active OpenTelemetry span.
 
-OpenTelemetry JavaScript log SDK support is not treated as a production requirement by this PoC because the current OpenTelemetry JavaScript documentation still classifies Logs as **Development**, while Traces are **Stable**.
+OpenTelemetry JavaScript log SDK support is not treated as a production requirement by this PoC because the current OpenTelemetry JavaScript documentation classifies Logs as **Development**, while Traces are **Stable**.
 
-This does not prevent a future logging bridge/exporter decision.
+The design therefore keeps logging output structured and trace-correlated without coupling the application to the OpenTelemetry Logs SDK.
 
 ## Sentry boundary
 
-Real Sentry ingestion is **not validated locally**.
+Real Sentry ingestion is **not yet validated**.
 
 External validation requires:
 
 - a Sentry account/organization;
 - a dedicated PoC project;
 - its DSN stored outside Git;
-- an actual event/trace sent and visible in the Sentry project.
+- an actual event/trace sent and visible in that project.
 
 The DSN must not be committed to the repository or copied into normal evidence logs.
 
-The local contract only verifies that:
+The local contract verifies:
 
 - Sentry remains disabled when no DSN exists;
-- a supplied DSN must be an HTTPS URL;
-- evidence/config output redacts the DSN.
+- a supplied DSN must be HTTPS;
+- config/evidence redacts the DSN.
+
+Sentry is therefore **not approved as the external backend by POC-12 yet**.
 
 ## Security guardrails
 
@@ -84,21 +97,48 @@ The local contract only verifies that:
 - DSNs/tokens belong in environment/secrets configuration;
 - errors may record stack information, but sensitive application context must be filtered first.
 
-## CI acceptance criteria
+## CI evidence
 
-| Criterion | Status |
+Bootstrap/local validation run:
+
+- GitHub Actions run: `36139191422`;
+- local observability tests: PASS;
+- monorepo structure: PASS;
+- dependency lock committed by GitHub Actions bot:
+  `4172c2f6657bcd1f43add2a3a83db8d3a54316dc`.
+
+The permanent workflow uses:
+
+- `pnpm install --frozen-lockfile`;
+- read-only repository permissions;
+- deterministic local E2E tests.
+
+## Acceptance criteria
+
+| Criterion | Result |
 | --- | --- |
-| POC-04 monorepo structure preserved | PENDING |
-| OpenTelemetry dependencies resolve from committed lockfile | PENDING |
-| W3C trace propagation | PENDING |
-| API → queue → worker → provider single trace | PENDING |
-| Error span + exception event | PENDING |
-| Structured log trace correlation | PENDING |
-| Secret redaction | PENDING |
-| Sentry external ingestion | BLOCKED — requires project/DSN |
+| POC-04 monorepo structure preserved | PASS |
+| OpenTelemetry dependencies resolve from committed lockfile | PASS |
+| W3C trace propagation | PASS |
+| API → queue → worker → provider single trace | PASS |
+| Error span + exception event | PASS |
+| Structured log trace correlation | PASS |
+| Secret redaction | PASS |
+| Sentry external ingestion | PENDING — requires project/DSN |
 
-## Decision gate
+## Decision
 
-The local OpenTelemetry/logging architecture may be accepted after CI passes.
+The local architecture decision is:
 
-Sentry itself must remain **unapproved as the external backend** until a real project/DSN ingestion test is performed.
+- use OpenTelemetry as the trace instrumentation/interoperability layer;
+- use structured logs with trace/span correlation;
+- keep sensitive-field redaction mandatory;
+- keep the external observability backend replaceable.
+
+Sentry remains a candidate backend pending real ingestion validation.
+
+## ADR
+
+Local architecture decision recorded in:
+
+`docs/adr/ADR-012-opentelemetry-structured-observability.md`
