@@ -1,0 +1,73 @@
+name: POC-07 Stripe Connect External Sandbox
+
+on:
+  push:
+    branches:
+      - poc/07-stripe-connect
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  external:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      STRIPE_SANDBOX_SECRET_KEY: ${{ secrets.STRIPE_SANDBOX_SECRET_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Verify Sandbox secret exists
+        run: test -n "$STRIPE_SANDBOX_SECRET_KEY"
+
+      - name: Install Stripe CLI 1.52.0
+        run: |
+          curl -fsSL -o /tmp/stripe.tar.gz             https://github.com/stripe/stripe-cli/releases/download/v1.52.0/stripe_1.52.0_linux_x86_64.tar.gz
+          tar -xzf /tmp/stripe.tar.gz -C /tmp
+          sudo install /tmp/stripe /usr/local/bin/stripe
+          stripe version
+
+      - name: Capture Accounts v2 CLI help
+        run: |
+          mkdir -p .poc
+          stripe v2 core accounts create --help > .poc/accounts-v2-create-help.txt
+          stripe v2 core account_links create --help > .poc/account-links-v2-create-help.txt
+
+      - name: Create Accounts v2 merchant connected account
+        id: account
+        shell: bash
+        run: |
+          set -euo pipefail
+          stripe v2 core accounts create             --api-key "$STRIPE_SANDBOX_SECRET_KEY"             --contact-email="poc07@example.com"             --dashboard=full             --identity.country=US             --defaults.responsibilities.fees-collector=stripe             --defaults.responsibilities.losses-collector=stripe             --configuration.merchant.capabilities.card-payments.requested=true             > .poc/account.json
+
+          ACCOUNT_ID="$(jq -r '.id' .poc/account.json)"
+          test -n "$ACCOUNT_ID"
+          test "$ACCOUNT_ID" != "null"
+
+          echo "account_id=$ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+
+          jq '{
+            id,
+            object,
+            dashboard,
+            defaults: { responsibilities: .defaults.responsibilities },
+            merchant_card_payments_requested: .configuration.merchant.capabilities.card_payments.requested,
+            merchant_card_payments_status: .configuration.merchant.capabilities.card_payments.status,
+            livemode
+          }' .poc/account.json > .poc/account-sanitized.json
+
+          cat .poc/account-sanitized.json
+
+      - name: Upload external probe evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: poc-07-stripe-external-probe
+          path: |
+            .poc/accounts-v2-create-help.txt
+            .poc/account-links-v2-create-help.txt
+            .poc/account-sanitized.json
+          if-no-files-found: error
