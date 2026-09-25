@@ -81,6 +81,16 @@ Deliver `SCR-AUTH-001` as an email/password sign-in surface connected to Supabas
 - Use only the Supabase publishable key in the Web client. A Supabase secret/service key is prohibited in the Web bundle and unnecessary for this slice.
 - Do not add a route or API operation that authorizes business data based on this login alone.
 
+## Identity transport contract — approved 2026-09-25
+
+- `GET /identity/me` is the sole Slice 01 transport operation.
+- It accepts only `Authorization: Bearer <Supabase access token>`; it accepts no user ID, Workspace ID, Role, Permission, scope, query parameter or request body.
+- The API independently verifies the access token with Supabase, then reconciles the verified subject to the internal User.
+- Success response: `{ "user": { "id": "<internal UUIDv7>", "email": "<verified email>" } }`.
+- Missing, malformed or invalid credentials return HTTP 401 with the stable code `UNAUTHENTICATED`; no reconciliation occurs.
+- A missing API database configuration returns HTTP 503 with `IDENTITY_SERVICE_UNAVAILABLE`; implementation detail is not exposed.
+- This route is an identity handoff only. It does not establish Workspace context, Membership, Role, Permission, scope or access to tenant-owned data.
+
 ## Acceptance criteria
 
 1. A configured Development email/password account can sign in through `SCR-AUTH-001` without fixture authentication.

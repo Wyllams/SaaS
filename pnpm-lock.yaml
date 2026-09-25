@@ -193,6 +193,9 @@ importers:
       '@saas/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@saas/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@saas/observability':
         specifier: workspace:*
         version: link:../../packages/observability
