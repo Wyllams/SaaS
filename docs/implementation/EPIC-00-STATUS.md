@@ -33,7 +33,7 @@ Antes de qualquer decisão ou código deste Epic, consultar:
 
 - [x] Implementation Plan v1.0 aprovado e mergeado na `main`.
 - [x] Branch `epic/00-foundation` criada a partir da `main` aprovada.
-- [ ] G0.1 — reconciliar e fechar autoridade do framework Web.
+- [x] G0.1 — reconciliar e fechar autoridade do framework Web — **Next.js 16 App Router / ADR-013 Accepted**.
 - [ ] G0.2 — criar/fechar ADR do framework da API.
 - [ ] G0.3 — documentar topologia definitiva de deploy antes de Staging.
 - [ ] Criar estrutura definitiva `apps/web`, `apps/api`, `apps/worker`, `apps/mobile`.
@@ -56,8 +56,8 @@ Antes de qualquer decisão ou código deste Epic, consultar:
 
 ## Última ação executada
 
-Branch `epic/00-foundation` criada após merge da PR #13.
+G0.1 fechado: ADR-013 aceita com base no TRD aprovado + validação técnica já concluída em `validation/web-nextjs`.
 
 ## Próxima ação
 
-Resolver G0.1 e G0.2 conforme o Implementation Plan antes de criar o scaffold definitivo.
+Resolver G0.2: validar NestJS + Fastify conforme o TRD e criar/fechar a ADR do framework da API.
