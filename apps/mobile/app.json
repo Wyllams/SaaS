@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "SaaS Mobile POC 11",
+    "slug": "saas-mobile-poc-11",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "scheme": "saaspoc11",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow this proof of concept to use the camera to capture work media."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

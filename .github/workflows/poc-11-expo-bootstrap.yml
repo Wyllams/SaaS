@@ -1,0 +1,76 @@
+name: POC-11 Expo Mobile Bootstrap
+
+on:
+  push:
+    branches:
+      - poc/11-expo-mobile
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: poc/11-expo-mobile
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+
+      - name: Bootstrap Expo SDK 57 dependencies
+        run: |
+          pnpm install --no-frozen-lockfile
+          cd apps/mobile
+          pnpm exec expo install expo-router expo-camera expo-file-system expo-linking expo-status-bar react-native-safe-area-context react-native-screens
+          pnpm exec expo install --fix
+          cd ../..
+          pnpm install --lockfile-only --no-frozen-lockfile
+
+      - name: Verify monorepo structure
+        run: pnpm run verify:structure
+
+      - name: Verify Expo dependency alignment
+        working-directory: apps/mobile
+        run: pnpm exec expo install --check
+
+      - name: Type-check and contract tests
+        working-directory: apps/mobile
+        run: pnpm run check
+
+      - name: Preserve POC-04 build artifact contract
+        working-directory: apps/mobile
+        run: pnpm run build
+
+      - name: Export Android bundle
+        working-directory: apps/mobile
+        run: pnpm run poc:bundle:android
+
+      - name: Export iOS bundle
+        working-directory: apps/mobile
+        run: pnpm run poc:bundle:ios
+
+      - name: Commit resolved Expo dependency lock
+        run: |
+          if git diff --quiet -- apps/mobile/package.json pnpm-lock.yaml; then
+            echo "Expo dependency lock already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/mobile/package.json pnpm-lock.yaml
+          git commit -m "chore(poc-11): lock Expo SDK 57 dependencies [skip ci]"
+          git push origin HEAD:poc/11-expo-mobile

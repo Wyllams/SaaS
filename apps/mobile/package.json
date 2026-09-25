@@ -3,12 +3,25 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "expo-router/entry",
   "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "build": "node ../../scripts/package-task.mjs build",
-    "check": "node ../../scripts/package-task.mjs check"
+    "check": "tsc --noEmit && node --experimental-strip-types --test tests/*.test.mjs",
+    "poc:bundle:android": "expo export --platform android --output-dir .poc/android-bundle",
+    "poc:bundle:ios": "expo export --platform ios --output-dir .poc/ios-bundle"
   },
   "dependencies": {
     "@crewcommand/api-client": "workspace:*",
-    "@crewcommand/design-tokens": "workspace:*"
+    "@crewcommand/design-tokens": "workspace:*",
+    "expo": "^57.0.0",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "typescript": "~6.0.3"
   }
 }
