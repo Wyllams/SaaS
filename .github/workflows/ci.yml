@@ -68,12 +68,19 @@ jobs:
           API_PID=$!
           trap 'kill "$API_PID" 2>/dev/null || true' EXIT
 
+          API_READY=false
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4000/health >/tmp/api-health.json; then
+              API_READY=true
               break
             fi
             sleep 1
           done
+
+          if [ "$API_READY" != "true" ]; then
+            cat /tmp/api.log
+            exit 1
+          fi
 
           cat /tmp/api-health.json
           node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync("/tmp/api-health.json","utf8")); if(x.status!=="ok"||x.service!=="api") process.exit(1)'
