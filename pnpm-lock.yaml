@@ -217,6 +217,8 @@ importers:
 
   packages/config: {}
 
+  packages/resend-poc: {}
+
   packages/design-tokens: {}
 
   packages/types: {}

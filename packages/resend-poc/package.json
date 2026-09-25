@@ -1,0 +1,10 @@
+{
+  "name": "resend-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node --check src/adapter.mjs && node --check src/webhook.mjs",
+    "check": "node --test src/poc.test.mjs"
+  }
+}
