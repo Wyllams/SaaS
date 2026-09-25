@@ -1,6 +1,6 @@
 # ADR-013 — Framework Web
 
-- **Status:** Proposed
+- **Status:** Proposed — technical validation PASS; owner approval pending
 - **Date:** 2026-09-25
 - **Scope:** `apps/web`
 - **Branding:** neutral; no final product name assumed
@@ -175,6 +175,42 @@ This ADR becomes **Accepted** only after a minimal `apps/web` scaffold proves:
 6. TypeScript check passes;
 7. repository structure checks remain green;
 8. no additional package manager or circular workspace dependency is introduced.
+
+## Validation evidence
+
+The technical gate was executed on branch:
+
+`validation/web-nextjs`
+
+Validated candidate:
+
+- Next.js 16.3.6;
+- React 19.2.0;
+- Tailwind CSS 4.3.3;
+- Node.js 24.21.0;
+- pnpm 12.6.0;
+- approved Turborepo monorepo foundation.
+
+Evidence:
+
+- initial dependency/bootstrap run: `36148939650` — **PASS**;
+- frozen-lockfile validation run: `36149050275` — **PASS**;
+- dependency lock commit: `bc2d6ac6add437f5d53dc301fe3ae50d5ae1e2df`;
+- final validation workflow commit: `851542c8ed5646f5717425d4b700cf321a286030`.
+
+The validation proved:
+
+1. pnpm workspace dependency resolution: PASS;
+2. approved monorepo structure verifier: PASS;
+3. strict TypeScript check: PASS;
+4. App Router production build: PASS;
+5. semantic Tailwind CSS 4 token integration: PASS;
+6. Server Component route build: PASS;
+7. isolated Client Component build: PASS;
+8. frozen lockfile install: PASS.
+
+No production route architecture, product branding or API framework was introduced by this validation.
+
 
 ## Not decided here
 
