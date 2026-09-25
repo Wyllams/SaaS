@@ -1,0 +1,141 @@
+name: POC-01 ORM Query Layer
+
+on:
+  push:
+    branches:
+      - poc/01-orm-query-layer
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      PGPASSWORD: postgres
+      DRIZZLE_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/crewcommand_drizzle
+      DRIZZLE_APP_DATABASE_URL: postgresql://app_user:app_password@localhost:5432/crewcommand_drizzle
+      PRISMA_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/crewcommand_prisma
+      PRISMA_APP_DATABASE_URL: postgresql://app_user:app_password@localhost:5432/crewcommand_prisma
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.21.0
+
+      - name: Enable pinned pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.6.0 --activate
+          node --version
+          pnpm --version
+
+      - name: Install dependencies and update lockfile evidence
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Persist dependency lockfile once
+        if: github.event_name == 'push'
+        run: |
+          if ! git diff --quiet -- pnpm-lock.yaml pnpm-workspace.yaml; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pnpm-lock.yaml pnpm-workspace.yaml
+            git commit -m "chore: persist POC-01 dependency lockfile"
+            git push
+          fi
+
+      - name: Create PoC databases and application role
+        run: |
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          create database crewcommand_drizzle;
+          create database crewcommand_prisma;
+          create role app_user login password 'app_password' nosuperuser nocreatedb nocreaterole;
+          SQL
+
+      - name: Generate Drizzle migration
+        run: |
+          rm -rf packages/db-drizzle-poc/drizzle
+          pnpm --filter @crewcommand/db-drizzle-poc drizzle:generate
+          grep -R "ENABLE ROW LEVEL SECURITY" packages/db-drizzle-poc/drizzle
+          grep -R "CREATE POLICY" packages/db-drizzle-poc/drizzle
+
+      - name: Apply Drizzle migration
+        run: pnpm --filter @crewcommand/db-drizzle-poc drizzle:migrate
+
+      - name: Prepare Drizzle PostgreSQL features and grants
+        run: |
+          psql "$DRIZZLE_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create extension if not exists pg_trgm;
+          grant usage on schema public to app_user;
+          grant select, insert, update, delete on all tables in schema public to app_user;
+          SQL
+
+      - name: Run Drizzle runtime PoC
+        run: pnpm --filter @crewcommand/db-drizzle-poc poc:test
+
+      - name: Type-check Drizzle PoC
+        run: pnpm --filter @crewcommand/db-drizzle-poc check
+
+      - name: Generate Prisma client
+        run: pnpm --filter @crewcommand/db-prisma-poc prisma:generate
+
+      - name: Generate Prisma base migration
+        working-directory: packages/db-prisma-poc
+        run: |
+          rm -rf prisma/migrations/0001_init
+          mkdir -p prisma/migrations/0001_init
+          pnpm exec prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0001_init/migration.sql
+          cp prisma/migrations/0001_init/migration.sql prisma/migrations/0001_init/base-generated.sql
+          if grep -q "ROW LEVEL SECURITY" prisma/migrations/0001_init/base-generated.sql; then
+            echo "Unexpected: Prisma base migration generated RLS."
+            exit 1
+          fi
+          cat prisma/rls.sql >> prisma/migrations/0001_init/migration.sql
+
+      - name: Apply Prisma migration
+        run: pnpm --filter @crewcommand/db-prisma-poc prisma:migrate
+
+      - name: Prepare Prisma grants
+        run: |
+          psql "$PRISMA_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          grant usage on schema public to app_user;
+          grant select, insert, update, delete on all tables in schema public to app_user;
+          SQL
+
+      - name: Run Prisma runtime PoC
+        run: pnpm --filter @crewcommand/db-prisma-poc poc:test
+
+      - name: Type-check Prisma PoC
+        run: pnpm --filter @crewcommand/db-prisma-poc check
+
+      - name: Upload ORM PoC evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: poc-01-orm-evidence
+          path: |
+            packages/db-drizzle-poc/drizzle/
+            packages/db-prisma-poc/prisma/migrations/0001_init/
+          if-no-files-found: error

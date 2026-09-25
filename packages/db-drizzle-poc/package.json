@@ -1,0 +1,24 @@
+{
+  "name": "@crewcommand/db-drizzle-poc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "drizzle:generate": "drizzle-kit generate --config=drizzle.config.ts --name=init",
+    "drizzle:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "poc:test": "tsx src/poc.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.3",
+    "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
