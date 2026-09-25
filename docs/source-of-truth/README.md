@@ -19,7 +19,7 @@ Este diretório concentra os documentos de produto e arquitetura que devem ser c
 | 3 | Fluxo do App | CONCLUÍDO / OFICIAL | `canonical/03-APP-FLOW-OFICIAL.md` |
 | 4 | UI/UX Design | CONCLUÍDO / APROVADO | `canonical/04-UI-UX-DESIGN.md` |
 | 5 | Esquema Backend / Domain Model | CONCLUÍDO / OFICIAL | `canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md` |
-| 6 | Implementation Plan v1.0 | **PENDENTE** | ainda não criado |
+| 6 | Implementation Plan v1.0 | **CRIADO — DRAFT, aguardando aprovação** | `canonical/06-IMPLEMENTATION-PLAN-v1.0.md` |
 
 ## Material de apoio
 
