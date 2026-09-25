@@ -22,6 +22,7 @@ type Result = {
   namedPreparedStatement?: "SUPPORTED" | "UNSUPPORTED" | "NOT_TESTED";
   sessionStateProbe?: "PERSISTED" | "NOT_PERSISTED" | "NOT_TESTED";
   errorCode?: string;
+  errorCodes?: string[];
   errorClass?: string;
 };
 
@@ -33,18 +34,38 @@ const urls: Record<Mode, string | undefined> = {
 
 function safeError(error: unknown) {
   if (error && typeof error === "object") {
-    const candidate = error as Partial<DatabaseError> & { code?: string; name?: string };
+    const candidate = error as Partial<DatabaseError> & {
+      code?: string;
+      name?: string;
+      errors?: Array<{ code?: string }>;
+    };
+    const nestedCodes = (candidate.errors ?? [])
+      .map((item) => item.code)
+      .filter((code): code is string => Boolean(code));
+    const codes = [candidate.code, ...nestedCodes].filter(
+      (code): code is string => Boolean(code),
+    );
     return {
-      errorCode: candidate.code ?? "UNKNOWN",
+      errorCode: codes[0] ?? "UNKNOWN",
+      errorCodes: [...new Set(codes)],
       errorClass: candidate.name ?? error.constructor?.name ?? "Error",
     };
   }
-  return { errorCode: "UNKNOWN", errorClass: "Error" };
+  return { errorCode: "UNKNOWN", errorCodes: [], errorClass: "Error" };
 }
 
-function isNetworkReachabilityError(error: unknown) {
-  const code = (error as { code?: string } | undefined)?.code;
-  return ["ENETUNREACH", "EHOSTUNREACH", "EAI_AGAIN", "ECONNREFUSED", "ETIMEDOUT"].includes(code ?? "");
+function isNetworkReachabilityResult(result: Result) {
+  const networkCodes = new Set([
+    "ENETUNREACH",
+    "EHOSTUNREACH",
+    "EAI_AGAIN",
+    "ENOTFOUND",
+    "ECONNREFUSED",
+    "ETIMEDOUT",
+  ]);
+  return (result.errorCodes ?? [result.errorCode]).some(
+    (code) => code != null && networkCodes.has(code),
+  );
 }
 
 async function probe(mode: Mode, connectionString: string): Promise<Result> {
@@ -196,9 +217,7 @@ async function main() {
   assert.equal(session.ssl, true, "Session pooler must use SSL");
   assert.equal(transaction.ssl, true, "Transaction pooler must use SSL");
 
-  if (!direct.reachable && !isNetworkReachabilityError({
-    code: direct.errorCode,
-  })) {
+  if (!direct.reachable && !isNetworkReachabilityResult(direct)) {
     throw new Error(
       `Direct connection failed for a non-network reason: ${direct.errorCode}/${direct.errorClass}`,
     );
