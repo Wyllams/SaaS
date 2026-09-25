@@ -29,6 +29,10 @@ Both candidates execute against real PostgreSQL 17 in GitHub Actions and must de
 8. raw SQL escape hatch;
 9. strict TypeScript compilation.
 
+## Supply-chain policy
+
+pnpm 12's dependency build-script policy is enabled. Only the packages required by the Prisma/esbuild toolchain are explicitly allowlisted under `onlyBuiltDependencies`. The first CI attempt stopped at dependency installation until this allowlist was made explicit; no ORM test had executed yet.
+
 ## Decision criteria
 
 | Criterion | Weight |
