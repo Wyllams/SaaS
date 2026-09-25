@@ -15,14 +15,14 @@ jobs:
     timeout-minutes: 15
 
     env:
-      STRIPE_SANDBOX_SECRET_KEY: ${{ secrets.STRIPE_SANDBOX_SECRET_KEY }}
+      STRIPE_API_KEY: ${{ secrets.STRIPE_SANDBOX_SECRET_KEY }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Verify Sandbox secret exists
-        run: test -n "$STRIPE_SANDBOX_SECRET_KEY"
+        run: test -n "$STRIPE_API_KEY"
 
       - name: Install Stripe CLI 1.52.0
         run: |
@@ -31,43 +31,161 @@ jobs:
           sudo install /tmp/stripe /usr/local/bin/stripe
           stripe version
 
-      - name: Capture Accounts v2 CLI help
-        run: |
-          mkdir -p .poc
-          stripe v2 core accounts create --help > .poc/accounts-v2-create-help.txt
-          stripe v2 core account_links create --help > .poc/account-links-v2-create-help.txt
-
-      - name: Create Accounts v2 merchant connected account
+      - name: Create or reuse Accounts v2 merchant connected account
         id: account
         shell: bash
         run: |
           set -euo pipefail
-          stripe v2 core accounts create             --api-key "$STRIPE_SANDBOX_SECRET_KEY"             --contact-email="poc07@example.com"             --dashboard=full             --identity.country=US             --defaults.responsibilities.fees-collector=stripe             --defaults.responsibilities.losses-collector=stripe             --configuration.merchant.capabilities.card-payments.requested=true             > .poc/account.json
+          mkdir -p .poc
+
+          stripe v2 core accounts create             --idempotency="crewcommand-poc07-connected-account-v2"             --contact-email="poc07@example.com"             --dashboard=full             --identity.country=US             --defaults.responsibilities.fees-collector=stripe             --defaults.responsibilities.losses-collector=stripe             --configuration.merchant.capabilities.card-payments.requested=true             --include=defaults             --include=configuration.merchant             --include=requirements             > .poc/account.json
 
           ACCOUNT_ID="$(jq -r '.id' .poc/account.json)"
           test -n "$ACCOUNT_ID"
           test "$ACCOUNT_ID" != "null"
-
           echo "account_id=$ACCOUNT_ID" >> "$GITHUB_OUTPUT"
 
           jq '{
             id,
             object,
             dashboard,
-            defaults: { responsibilities: .defaults.responsibilities },
-            merchant_card_payments_requested: .configuration.merchant.capabilities.card_payments.requested,
-            merchant_card_payments_status: .configuration.merchant.capabilities.card_payments.status,
+            fees_collector: .defaults.responsibilities.fees_collector,
+            losses_collector: .defaults.responsibilities.losses_collector,
+            card_payments_requested: .configuration.merchant.capabilities.card_payments.requested,
+            card_payments_status: .configuration.merchant.capabilities.card_payments.status,
+            requirements_status: .requirements.summary.minimum_deadline.status,
             livemode
           }' .poc/account.json > .poc/account-sanitized.json
 
           cat .poc/account-sanitized.json
 
-      - name: Upload external probe evidence
+          test "$(jq -r '.dashboard' .poc/account.json)" = "full"
+          test "$(jq -r '.defaults.responsibilities.fees_collector' .poc/account.json)" = "stripe"
+          test "$(jq -r '.defaults.responsibilities.losses_collector' .poc/account.json)" = "stripe"
+          test "$(jq -r '.configuration.merchant.capabilities.card_payments.requested' .poc/account.json)" = "true"
+          test "$(jq -r '.livemode' .poc/account.json)" = "false"
+
+      - name: Create Stripe-hosted onboarding link
+        shell: bash
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.account_id }}
+        run: |
+          set -euo pipefail
+
+          stripe v2 core account_links create             --confirm             --account="$ACCOUNT_ID"             --use-case.type=account_onboarding             -d "use_case[account_onboarding][configurations][]=merchant"             -d "use_case[account_onboarding][collection_options][fields]=eventually_due"             -d "use_case[account_onboarding][return_url]=https://example.com/stripe/return"             -d "use_case[account_onboarding][refresh_url]=https://example.com/stripe/refresh"             > .poc/account-link.json
+
+          jq '{
+            object,
+            created,
+            expires_at,
+            has_url: (.url != null and .url != "")
+          }' .poc/account-link.json > .poc/account-link-sanitized.json
+
+          cat .poc/account-link-sanitized.json
+          test "$(jq -r '.url != null and .url != ""' .poc/account-link.json)" = "true"
+
+      - name: Create and confirm direct PaymentIntent twice
+        id: payment
+        shell: bash
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.account_id }}
+        run: |
+          set -euo pipefail
+
+          create_payment() {
+            stripe payment_intents create               --confirm               --stripe-account "$ACCOUNT_ID"               --idempotency="crewcommand-poc07-direct-payment-v2"               -d amount=1250               -d currency=usd               -d payment_method=pm_card_visa               -d confirm=true               -d "payment_method_types[]=card"               -d "metadata[workspace_id]=poc07_workspace"               -d "metadata[invoice_id]=poc07_invoice"
+          }
+
+          set +e
+          create_payment > .poc/payment-1.json 2> .poc/payment-error.txt
+          FIRST_EXIT=$?
+          set -e
+
+          if [ "$FIRST_EXIT" -ne 0 ]; then
+            printf '{"external_payment_status":"BLOCKED","cli_exit_code":%s}\n' "$FIRST_EXIT" > .poc/payment-sanitized.json
+            cat .poc/payment-sanitized.json
+            echo "payment_blocked=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          create_payment > .poc/payment-2.json
+
+          PI1="$(jq -r '.id' .poc/payment-1.json)"
+          PI2="$(jq -r '.id' .poc/payment-2.json)"
+          test "$PI1" = "$PI2"
+
+          echo "payment_intent_id=$PI1" >> "$GITHUB_OUTPUT"
+          echo "payment_blocked=false" >> "$GITHUB_OUTPUT"
+
+          jq '{
+            id,
+            object,
+            amount,
+            currency,
+            status,
+            livemode,
+            workspace_id: .metadata.workspace_id,
+            invoice_id: .metadata.invoice_id
+          }' .poc/payment-1.json > .poc/payment-sanitized.json
+
+          cat .poc/payment-sanitized.json
+          test "$(jq -r '.status' .poc/payment-1.json)" = "succeeded"
+          test "$(jq -r '.livemode' .poc/payment-1.json)" = "false"
+
+      - name: Retrieve authoritative PaymentIntent
+        if: steps.payment.outputs.payment_blocked == 'false'
+        shell: bash
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.account_id }}
+          PAYMENT_INTENT_ID: ${{ steps.payment.outputs.payment_intent_id }}
+        run: |
+          set -euo pipefail
+
+          stripe payment_intents retrieve "$PAYMENT_INTENT_ID"             --stripe-account "$ACCOUNT_ID"             > .poc/payment-retrieved.json
+
+          test "$(jq -r '.id' .poc/payment-retrieved.json)" = "$PAYMENT_INTENT_ID"
+          test "$(jq -r '.status' .poc/payment-retrieved.json)" = "succeeded"
+
+          jq '{
+            payment_retrieval: "PASS",
+            id,
+            status,
+            amount,
+            currency,
+            livemode
+          }' .poc/payment-retrieved.json > .poc/payment-retrieved-sanitized.json
+
+          cat .poc/payment-retrieved-sanitized.json
+
+      - name: Confirm matching connected-account Stripe event
+        if: steps.payment.outputs.payment_blocked == 'false'
+        shell: bash
+        env:
+          ACCOUNT_ID: ${{ steps.account.outputs.account_id }}
+          PAYMENT_INTENT_ID: ${{ steps.payment.outputs.payment_intent_id }}
+        run: |
+          set -euo pipefail
+
+          stripe events list             --stripe-account "$ACCOUNT_ID"             --type=payment_intent.succeeded             --limit=20             > .poc/events.json
+
+          MATCHES="$(jq --arg pi "$PAYMENT_INTENT_ID" '[.data[] | select(.data.object.id == $pi)] | length' .poc/events.json)"
+          test "$MATCHES" -ge 1
+
+          jq --arg pi "$PAYMENT_INTENT_ID" '{
+            provider_event: "PASS",
+            matching_payment_intent_succeeded_events: ([.data[] | select(.data.object.id == $pi)] | length)
+          }' .poc/events.json > .poc/provider-event-sanitized.json
+
+          cat .poc/provider-event-sanitized.json
+
+      - name: Upload external PoC evidence
         uses: actions/upload-artifact@v7
         with:
-          name: poc-07-stripe-external-probe
+          name: poc-07-stripe-external-evidence
           path: |
-            .poc/accounts-v2-create-help.txt
-            .poc/account-links-v2-create-help.txt
             .poc/account-sanitized.json
-          if-no-files-found: error
+            .poc/account-link-sanitized.json
+            .poc/payment-sanitized.json
+            .poc/payment-retrieved-sanitized.json
+            .poc/provider-event-sanitized.json
+          if-no-files-found: warn
