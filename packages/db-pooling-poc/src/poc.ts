@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { performance } from "node:perf_hooks";
+import { lookup } from "node:dns/promises";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool, type DatabaseError } from "pg";
@@ -25,6 +26,7 @@ type Result = {
   errorCodes?: string[];
   errorClass?: string;
   errorStage?: string;
+  dnsAddressFamilies?: number[];
 };
 
 const urls: Record<Mode, string | undefined> = {
@@ -67,6 +69,16 @@ function isNetworkReachabilityResult(result: Result) {
   return (result.errorCodes ?? [result.errorCode]).some(
     (code) => code != null && networkCodes.has(code),
   );
+}
+
+async function dnsFamilies(connectionString: string): Promise<number[]> {
+  const parsed = new URL(connectionString);
+  try {
+    const records = await lookup(parsed.hostname, { all: true });
+    return [...new Set(records.map((record) => record.family))].sort();
+  } catch {
+    return [];
+  }
 }
 
 async function probe(mode: Mode, connectionString: string): Promise<Result> {
@@ -208,7 +220,9 @@ async function main() {
 
   const results: Result[] = [];
   for (const mode of ["direct", "session", "transaction"] as const) {
-    results.push(await probe(mode, urls[mode]!));
+    const result = await probe(mode, urls[mode]!);
+    result.dnsAddressFamilies = await dnsFamilies(urls[mode]!);
+    results.push(result);
   }
 
   const direct = results.find((item) => item.mode === "direct")!;
@@ -226,9 +240,17 @@ async function main() {
   assert.equal(session.ssl, true, "Session pooler must use SSL");
   assert.equal(transaction.ssl, true, "Transaction pooler must use SSL");
 
-  if (!direct.reachable && !isNetworkReachabilityResult(direct)) {
+  const directIpv6Only =
+    direct.dnsAddressFamilies?.length === 1 &&
+    direct.dnsAddressFamilies[0] === 6;
+
+  if (
+    !direct.reachable &&
+    !isNetworkReachabilityResult(direct) &&
+    !directIpv6Only
+  ) {
     throw new Error(
-      `Direct connection failed for a non-network reason: ${direct.errorCode}/${direct.errorClass}`,
+      `Direct connection failed unexpectedly at ${direct.errorStage}: ${direct.errorCode}/${direct.errorClass}`,
     );
   }
 
@@ -239,7 +261,9 @@ async function main() {
       direct:
         direct.reachable
           ? "reachable-from-github-runner"
-          : "network-unreachable-from-github-runner-acceptable-if-ipv6",
+          : directIpv6Only
+            ? "ipv6-only-direct-endpoint-unreachable-from-github-runner"
+            : "network-unreachable-from-github-runner",
       session: "persistent-backend-compatible",
       transaction:
         "short-lived-connection-compatible; transaction-local tenant context validated",
