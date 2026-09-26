@@ -1,6 +1,7 @@
 # ADR-011 — Expo Mobile Foundation
 
-- **Status:** Accepted
+- **Status:** **Superseded by ADR-018** (PWA) no escopo da V1, em 2026-09-25
+- **Status original:** Accepted
 - **Date:** 2026-09-25
 - **Validated by:** POC-11
 

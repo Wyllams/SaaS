@@ -50,7 +50,7 @@ packages/
   i18n/         ← catálogos en-US e es-US
 ```
 
-`apps/api`, `apps/worker` e `apps/mobile` saem no Epic 0. Regras:
+`apps/api` e `apps/worker` já foram removidos pelo ADR-016. `apps/mobile` sai no Epic 0. Regras:
 
 - um único app implantável;
 - `packages/domain` **não importa** nada de `apps/web`;
@@ -97,21 +97,30 @@ Nenhum Epic posterior autoriza pular gate bloqueante de Epic anterior.
 
 ## Objetivo
 
-Converter o repositório da arquitetura anterior para a decidida no TRD v2.0, sem carregar resíduo.
+Concluir a convergência para a arquitetura do TRD v2.0, sem carregar resíduo.
+
+## Já concluído pelo ADR-016
+
+Não repetir. `apps/api` e `apps/worker` removidos · dependências de BullMQ, Valkey e Render
+removidas · `pgmq`, `pg_cron` e `pg_net` habilitados por migration · contrato de identidade
+do Slice 01 migrado para a Edge Function `identity-me`.
 
 ## Trabalho
 
-1. Mover o contrato de identidade de `apps/api` para Route Handler em `apps/web`, com paridade de comportamento e testes.
-2. Remover `apps/api` e `apps/worker` após a paridade comprovada.
-3. Decidir e registrar o destino de `apps/mobile` — fora da V1.
-4. Remover dependências de BullMQ, Valkey e NestJS do workspace.
+1. **Migrar a Edge Function `identity-me` para Route Handler** em `apps/web`, preservando o
+   contrato do Slice 01, com paridade comprovada por teste.
+2. Remover a Edge Function do Supabase somente após a paridade.
+3. Implementar o worker de fila como **rota protegida acionada por Vercel Cron**, substituindo
+   o dispatch por `pg_net`.
+4. Avaliar a remoção de `pg_net`, que deixa de ser necessário para fila.
 5. Criar `packages/domain` e `packages/i18n`.
-6. Habilitar `pgmq` e `pg_cron` no projeto Supabase.
-7. Configurar Drizzle Kit com conexão direta para migration e pooler transaction para runtime.
-8. Estabelecer o contrato de configuração por ambiente e a política de secret.
-9. Ativar observabilidade desde o início: `request_id`, logs estruturados, Sentry e OpenTelemetry.
-10. Rota de health e readiness.
-11. Criar os ADRs 016 a 019.
+6. Reavaliar `packages/api-client` e `packages/domain-types`: com a regra dentro do `apps/web`,
+   parte deles pode perder propósito.
+7. Decidir e registrar o destino de `apps/mobile` — fora da V1 pelo ADR-018.
+8. Configurar Drizzle Kit com conexão direta para migration e pooler transaction para runtime.
+9. Estabelecer o contrato de configuração por ambiente e a política de secret.
+10. Ativar observabilidade: `request_id`, logs estruturados, Sentry e OpenTelemetry.
+11. Rota de health e readiness.
 12. Manter todo identificador brand-neutral.
 
 ## CI
@@ -122,9 +131,10 @@ Integridade de dependências · lint · type-check · testes · **cobertura por 
 
 - um único app implantável, construído a partir de lockfile commitado;
 - nenhum vestígio de NestJS, BullMQ ou Valkey;
-- `pgmq` e `pg_cron` ativos e verificados;
+- `identity-me` servido por Route Handler, com a Edge Function desativada;
+- worker de fila acionado por Vercel Cron, verificado sob falha e reinício;
 - CI verde com os gates acima;
-- ADRs 016 a 019 aceitos;
+- ADRs 017 a 023 aceitos;
 - nenhum secret ou ID de PoC vazado para configuração de produto.
 
 ---
@@ -482,7 +492,7 @@ Não marcar PASS com gate pulado.
 
 # 7. Primeira execução
 
-1. Criar os ADRs 016 a 019.
+1. Confirmar os ADRs 017 a 023.
 2. Executar o Epic 0, incluindo a migração do contrato de identidade já implementado.
 3. Confirmar o gate de saída do Epic 0 antes de qualquer Epic de produto.
 

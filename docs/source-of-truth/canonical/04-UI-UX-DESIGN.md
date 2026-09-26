@@ -4,12 +4,126 @@
 
 Design System, navegação, layouts, mobile, Client Portal e handoff
 
-| **Versão**            | 1.0                                                                      |
+| **Versão**            | 1.0 + adendo v2.0                                                        |
 |-----------------------|--------------------------------------------------------------------------|
 | **Status**            | Aprovado — Discovery UI/UX concluído                                     |
 | **Mercado primário**  | Estados Unidos                                                           |
 | **Base de decisão**   | PRD + App Flow Oficial + Backend Domain Model + 8 blocos UI/UX aprovados |
 | **Próximo documento** | TRD — Technical Requirements Document                                    |
+
+---
+
+# Adendo v2.0 — 2026-09-25
+
+O corpo deste documento permanece válido: direção visual, paleta, tipografia, espaçamento,
+grid, breakpoints, biblioteca de componentes, layouts, estados globais e regras de handoff
+não dependem de stack e continuam sendo a referência.
+
+**As regras abaixo prevalecem sobre o texto original onde houver conflito.**
+
+## A1. Papéis
+
+Sete papéis substituem os oito perfis: **Owner, Admin, Salesperson, Supervisor, Crew,
+Accounting e Client**. `Supervisor` assume o que o documento original chama de Project
+Manager. Onde o texto disser "Gerente de Projeto" ou "PM", leia Supervisor.
+
+## A2. Dashboard único
+
+Existe **uma** tela de dashboard — `SCR-DASH-001` — que monta blocos conforme a permissão
+de quem entra. As variantes por papel (`SCR-DASH-002` a `005`) estão adiadas.
+
+Isso não muda o blueprint aprovado do Command Center; muda quem vê cada bloco. A regra
+"widgets personalizáveis por usuário e padrão configurável por papel" continua valendo e
+passa a ser o mecanismo principal, não um extra.
+
+## A3. Campo é PWA, não app nativo
+
+A experiência de campo é **PWA instalável**, servida no mesmo deploy da web.
+
+| Regra original | Substituição |
+|---|---|
+| App nativo iOS/Android | PWA instalável, com manifest e ícone na tela inicial |
+| Push nativo | **Web Push** com VAPID; no iOS exige o app adicionado à tela inicial |
+| Câmera nativa | `input` com `capture`, compressão no dispositivo, progresso e retry por arquivo |
+
+Tudo o que o documento define sobre a experiência de campo continua valendo: touch-first,
+operação com uma mão, alvos grandes, seções e cards em vez de fila de abas, ação primária
+fixa no rodapé, e falha de conexão sempre explícita.
+
+**Bottom navigation do Crew:** `Today | Jobs | Notifications | More` — o item Chat sai
+com o módulo de chat interno.
+
+## A4. Client Portal por magic link
+
+O acesso para **aprovar** Estimate ou Change Order é por link assinado, com validade e uso
+único, sem criar conta. Definir senha é opcional e serve para acompanhamento recorrente.
+
+Consequências de interface:
+
+- a tela de login do portal (`SCR-PORT-001`) passa a ter dois caminhos: consumo de link e,
+  quando existir senha, e-mail e senha;
+- link expirado mostra estado próprio com opção de reenvio, sem revelar dado do documento;
+- o fluxo de aprovação — Review → Payment Terms → Método → Assinar → Confirmar — não muda.
+
+## A5. Idiomas
+
+**`en-US` e `es-US`.** PT-BR sai do escopo.
+
+A regra de layout continua a mesma e agora tem alvo definido: componentes precisam
+acomodar rótulos em espanhol, tipicamente 15% a 30% mais longos que em inglês, sem
+depender de largura fixa.
+
+## A6. Tokens de status — lacuna corrigida
+
+A v1.0 definia seis tokens de status, mas o pipeline de Job tem nove estados e Estimate,
+Change Order, Invoice e Commission não tinham nenhum. Tokens acrescentados:
+
+| Token | Uso | Base |
+|---|---|---|
+| `status-approved` | Estimate e Change Order aprovados, Job aprovado | verde do `status-completed`, em tom mais claro |
+| `status-sent` | Estimate ou Invoice enviado, aguardando ação | azul do `status-scheduled` |
+| `status-rejected` | Rejeitado ou cancelado | cinza neutro, **não vermelho** — rejeição não é erro do sistema |
+| `status-invoiced` | Faturado, aguardando pagamento | âmbar do `status-waiting` |
+| `status-paid` | Pago, comissão paga | verde do `status-completed` |
+| `status-closed` | Encerrado administrativamente | `status-new` |
+| `status-expired` | Estimate expirado, certificado ou seguro vencido | vermelho do `status-delayed` |
+
+`status-delayed` continua sendo **indicador derivado**, não estado de pipeline — atraso é
+badge calculado, como o documento já definia.
+
+A regra permanece: **status nunca depende só de cor**; sempre cor mais texto e, quando
+apropriado, ícone.
+
+## A7. Componentes acrescentados ao Design System
+
+Somam-se aos componentes próprios já listados:
+
+- **Subcontractor Badge** — marca recurso externo na agenda e no card de Crew, com estado
+  de documento vencido;
+- **Insurance Expiry Alert** — aviso de vencimento próximo e bloqueio de atribuição;
+- **Tax Breakdown** — exibe imposto separando mão de obra e material, e mostra a isenção
+  aplicada quando houver;
+- **Magic Link State** — estados de link válido, expirado, já consumido e reenviado;
+- **Plan Limit Gate** — já previsto como estado global, agora com componente próprio.
+
+## A8. Componentes que saem com o escopo
+
+Chat (mensagem, áudio, reactions, pinned, read receipts), builder de automação, construtor
+de relatório e seleção de financiamento saem da V1 junto com seus módulos. As definições
+permanecem no documento para quando voltarem.
+
+## A9. Correção de rastreabilidade
+
+O §8.2 cita `SCR-JOB-DETAIL-001` como exemplo de Screen ID estável. **Esse ID não existe.**
+O detalhe do Job é `SCR-JOB-003`. Screen IDs válidos são exclusivamente os do catálogo do
+App Flow v2.0 §16.
+
+## A10. Escopo visual excluído da V1
+
+Ao Dark Mode, Offline Sync e Time Tracking, já listados, somam-se: chat interno, builder de
+automação, construtor de relatório e telas de financiamento.
+
+---
 
 <table>
 <colgroup>

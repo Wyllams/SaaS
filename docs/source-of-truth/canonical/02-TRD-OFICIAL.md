@@ -14,7 +14,7 @@
 
 > **O que mudou.** A V1.0 previa Modular Monolith em NestJS no Render, com BullMQ e Valkey, mobile em Expo e Web na Vercel — quatro fornecedores e três alvos de deploy. A v2.0 concentra tudo em Supabase e Vercel. A lógica de negócio vive no Next.js, a fila vive no PostgreSQL e o campo é PWA.
 >
-> Isso supersede os ADRs **005** (BullMQ/Valkey), **011** (Expo/EAS), **014** (NestJS/Fastify) e **015** (Render). ADRs formais de substituição são obrigatórios antes da implementação que dependa deles.
+> **O ADR-016 já havia removido o Render** e consolidado o backend no Supabase, superseding ADR-005, ADR-014 e ADR-015. Este TRD acrescenta duas emendas ao ADR-016, registradas no **ADR-017** (execução HTTP de negócio no Next.js, em vez de Edge Functions, e consumo de fila por Vercel Cron em vez de `pg_net`) e no **ADR-018** (campo em PWA, em vez de Expo/EAS). Todo o restante do ADR-016 permanece vigente.
 
 ---
 
@@ -449,28 +449,43 @@ Consequência a planejar: verificação de domínio no Resend, URL de webhook no
 
 # 15. Migração a partir do estado atual
 
-O repositório contém artefatos da arquitetura anterior que precisam ser tratados:
+Parte da migração **já foi executada** pelo ADR-016, em 2026-09-25. O que resta é consequência
+do ADR-017.
+
+## 15.1 Já concluído pelo ADR-016
+
+| Item | Situação |
+|---|---|
+| `apps/api` (NestJS) e `apps/worker` | **Removidos** do workspace |
+| Dependências de BullMQ, Valkey e Render | **Removidas** |
+| `pgmq`, `pg_cron` e `pg_net` | **Habilitados** por migration |
+| Contrato de identidade do Slice 01 | Migrado para a Edge Function `identity-me`, publicada |
+
+## 15.2 Pendente, por consequência do ADR-017
 
 | Item | Ação |
 |---|---|
-| `apps/api` (NestJS) | O contrato de identidade migra para Route Handler no `apps/web`. O app é removido após a paridade |
-| `apps/worker` | Substituído pelo worker de fila em rota protegida com Vercel Cron |
-| `apps/mobile` (Expo) | Fora da V1. Permanece sem evolução ou é removido por decisão |
+| Edge Function `identity-me` | Migra para **Route Handler** em `apps/web`, preservando o contrato do Slice 01. A função só é removida do Supabase após paridade comprovada por teste |
+| Consumo de fila | Passa de `pg_net` acionando Edge Function para **Vercel Cron** acionando rota protegida de worker |
+| `pg_net` | Deixa de ser necessário para dispatch de fila; avaliar remoção |
+| `apps/mobile` (Expo) | Fora da V1 pelo ADR-018. Permanece sem evolução ou é removido por decisão |
 | `packages/observability` | Preservado, reapontado para o runtime da Vercel |
 | `packages/db` | Preservado. É o núcleo do acesso a dados |
-| Dependências de BullMQ e Valkey | Removidas |
-| ADRs 005, 011, 014, 015 | Superseded por ADRs novos antes da implementação dependente |
+| `packages/api-client` e `packages/domain-types` | Reavaliados: com a regra dentro do `apps/web`, parte deles pode perder propósito |
+
+`apps/api` e `apps/worker` **não retornam**.
 
 ---
 
 # 16. ADRs
 
-## 16.1 Vigentes
+Todos aceitos. A cadeia de backend se lê em três camadas: o **ADR-016** removeu o Render e
+consolidou o Supabase; o **ADR-017** e o **ADR-018** o emendam em dois pontos.
 
 | ADR | Decisão |
 |---|---|
 | ADR-001 | Drizzle ORM + Drizzle Kit |
-| ADR-002 | Estratégia de conexão e pooling no Supabase |
+| ADR-002 | Conexão e pooling no Supabase |
 | ADR-003 | Tailwind CSS 4 + tokens semânticos |
 | ADR-004 | pnpm + Turborepo |
 | ADR-006 | Supabase Realtime Broadcast |
@@ -478,24 +493,23 @@ O repositório contém artefatos da arquitetura anterior que precisam ser tratad
 | ADR-008 | QuickBooks Online |
 | ADR-012 | OpenTelemetry + logs estruturados + Sentry |
 | ADR-013 | Next.js App Router |
+| **ADR-016** | Supabase-only backend runtime; `pgmq` e `pg_cron`; sem Render |
+| **ADR-017** | Next.js como camada de aplicação — supersede ADR-014, **emenda ADR-016** na execução HTTP e no consumo de fila |
+| **ADR-018** | PWA como superfície de campo — supersede ADR-011, **emenda ADR-016** na linha de mobile |
+| **ADR-019** | `TaxProvider` e tratamento fiscal |
+| **ADR-020** | Stripe Billing para a assinatura, separado do Connect |
+| **ADR-021** | Resend como provider único, outbound apenas — substitui ADR-010 |
+| **ADR-022** | Portal por magic link |
+| **ADR-023** | Arquitetura de i18n |
 
-## 16.2 A criar
+Superseded: ADR-005, ADR-011, ADR-014 e ADR-015. Permanecem como registro histórico e não
+podem ser usados para reintroduzir a decisão revogada.
 
-| ADR | Assunto |
-|---|---|
-| ADR-016 | Next.js como camada de aplicação — **supersede ADR-014** |
-| ADR-017 | pgmq + pg_cron para filas e agendamento — **supersede ADR-005** |
-| ADR-018 | Topologia Supabase + Vercel — **supersede ADR-015** |
-| ADR-019 | PWA como superfície de campo — **supersede ADR-011 na V1** |
-| ADR-020 | `TaxProvider` e tratamento fiscal |
-| ADR-021 | Stripe Billing para assinatura, separado do Connect |
-| ADR-022 | Resend como provider único, outbound apenas — fecha ADR-010 |
-| ADR-023 | Acesso ao portal por magic link |
-| ADR-024 | Arquitetura de i18n |
-
-Todo ADR novo segue o formato exigido pelo Technical Validation Plan §20 — incluindo **Revisit Trigger**, campo ausente em todos os ADRs existentes.
+Do ADR-017 em diante, todo ADR segue o formato do Technical Validation Plan §20, incluindo
+**Revisit Trigger** — campo ausente nos ADRs de 001 a 016.
 
 ---
+
 
 # 17. Decisões abertas
 
