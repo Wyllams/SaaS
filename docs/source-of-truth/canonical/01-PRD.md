@@ -436,10 +436,11 @@ Registradas para decisão do Product Owner. **Não devem ser resolvidas por infe
 | Item | Situação |
 |---|---|
 | Marca do produto | Não definida. Nomes permanecem brand-neutral |
-| Idiomas da V1 | O App Flow declarava inglês, espanhol e PT-BR. Recomendação técnica: inglês no produto e espanhol apenas nas telas de campo, onde há razão de mercado real nos EUA. **Pendente de decisão** |
 | Valores dos planos e limites | Estrutura definida, números em aberto |
 | Escopo de UI de multi-location | `location_id` permanece no modelo; a extensão da interface na V1 está em aberto |
 | Duração do período de exportação e retenção | Em aberto |
+
+**Idiomas não estão em aberto.** A V1 entrega **`en-US` e `es-US`, ambos completos no produto inteiro**; PT-BR sai do escopo. Decidido em 2026-09-25 e registrado no **ADR-023** (Accepted), em `CURRENT-DECISIONS.md` §Idiomas, no TRD §8 e no adendo A5 do UI/UX. Esta linha existia como decisão pendente e propunha espanhol restrito às telas de campo — escopo **menor** que o decidido. Removida.
 
 ---
 
