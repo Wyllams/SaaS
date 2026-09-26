@@ -520,7 +520,7 @@ Todos **adiados, não cancelados**. Retornam por decisão explícita registrada 
 
 | Item | Situação |
 |---|---|
-| Marca do produto | Não definida. Todo identificador permanece brand-neutral; o UI/UX usa o placeholder `[MARCA]` |
+| Marca do produto | **Resolvida em caráter provisório em 2026-09-26: CrewCommand.** A marca definitiva segue em aberto. Identificador técnico permanece brand-neutral; onde o UI/UX escreve `[MARCA]`, ler CrewCommand. Ver a seção "Nome do produto" |
 | Valores e limites dos planos | Estrutura definida, números em aberto. Não bloqueia o Epic 4: limite é dado em `Entitlement`, nunca condicional por nome de plano |
 | Extensão da UI de multi-location | `location_id` permanece no modelo; o alcance na interface da V1 está em aberto |
 | Período de exportação e retenção | Em aberto — é o motivo de `SCR-SET-013` estar adiada |

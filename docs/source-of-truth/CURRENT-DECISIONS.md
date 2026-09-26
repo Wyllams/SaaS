@@ -119,7 +119,7 @@ Nenhum destes itens pode ser resolvido por inferência durante a implementação
 
 | Item | Situação |
 |---|---|
-| Marca do produto | Não definida. Todo identificador permanece brand-neutral; o UI/UX usa o placeholder `[MARCA]` |
+| Marca do produto | **Resolvida em caráter provisório em 2026-09-26: CrewCommand.** A marca definitiva segue em aberto. Identificador técnico permanece brand-neutral; onde o UI/UX escreve `[MARCA]`, ler CrewCommand. Ver a seção "Nome do produto" |
 | Valores e limites dos planos | Estrutura definida, números em aberto. Não bloqueia o Epic 4: limite é dado em `Entitlement`, nunca condicional por nome de plano |
 | Extensão da UI de multi-location | `location_id` permanece no modelo; o alcance na interface da V1 está em aberto |
 | Período de exportação e retenção | Em aberto — é o motivo de `SCR-SET-013` estar adiada |
@@ -132,7 +132,60 @@ e `es-US`, ambos completos. O escopo exato da administração da plataforma tamb
 
 ## Nome do produto
 
-**CrewCommand é nome histórico/provisório.** A marca final ainda não foi definida. Não propagar o nome automaticamente para novos packages, namespaces, domínios ou documentação.
+**Decisão do Product Owner em 2026-09-26: CrewCommand é a marca vigente, em caráter
+provisório.** O Product Owner declarou que pretende trocar o nome no futuro.
+
+Isto encerra o estado anterior — "nome histórico, marca não definida" — apenas para a
+**marca de exibição**. A separação abaixo é o que torna a troca futura barata e é
+obrigatória:
+
+| Camada | O que leva | Regra |
+|---|---|---|
+| **Marca de exibição** — o que o usuário lê e vê | CrewCommand + logo | Vive em **um único módulo**, nunca escrita direto na tela |
+| **Identificadores técnicos** — pacote, pasta, namespace, banco, domínio, scope | permanecem `@saas/*` e brand-neutral | **Não propagar CrewCommand.** Continua valendo integralmente |
+
+Arquivos de marca e regra de uso por fundo: `apps/web/public/brand/README.md`.
+
+**Cor.** O azul do logo (≈`#0070F8`) **não** substitui o `--color-action-primary`
+(`#2563EB`) do UI/UX §2.1. O azul do logo reprova o mínimo de contraste WCAG de 4,5:1
+tanto com texto branco em cima (4,49:1) quanto como link sobre `#F8FAFC` (4,30:1); o
+aprovado passa nos dois (5,17:1 e 4,94:1). A interface mantém `#2563EB`.
+
+**Lacuna aberta:** falta o logo horizontal com fundo transparente e a palavra "Crew"
+escura. Sem ele não há logo utilizável em `SCR-AUTH-001`, `SCR-AUTH-006`, Client Portal e
+e-mails, porque o fundo das telas é `#F8FAFC` e não branco puro. Solicitado ao Product
+Owner em 2026-09-26.
+
+## Produção visual — desenhar antes de programar
+
+**Decisão do Product Owner em 2026-09-26.** As telas são desenhadas e aprovadas **antes**
+de serem programadas, conforme o UI/UX §8.1 e a Definition of Ready do §10. Não se
+implementa tela de produto a partir de descrição textual.
+
+A etapa low-fidelity do §8.1 **já está cumprida**: o catálogo em
+`docs/reference/wireframes/historical/2026-09-25/` cobre as **91 telas da V1**, verificado
+por contagem de Screen ID contra o App Flow §16.1. O trabalho pendente é o high-fidelity.
+
+Condições para reaproveitar o catálogo, todas obrigatórias:
+
+- ignorar as **25 telas adiadas** do App Flow §16.2, que também estão desenhadas ali;
+- descartar o que foi revogado: SMS/Twilio, Chat interno, Automações e Financing;
+- reconciliar cada tela contra o App Flow v2.0 e o Epic vigente antes de usá-la.
+
+A marca CrewCommand do catálogo **deixou de ser motivo de não-autoridade**, por força da
+decisão de marca acima.
+
+## Textos da interface — propriedade
+
+**Decisão do Product Owner em 2026-09-26.** O microcopy das telas — todo texto que o
+usuário lê, em `en-US` e `es-US` — é produzido fora deste repositório, pelo Product Owner
+com o ChatGPT. O agente de implementação **não redige e não traduz** microcopy, e não
+inventa mensagem de negócio (`AGENTS.md` §1).
+
+O formato de entrega é o exigido pelo ADR-023: catálogo por idioma, mesmo conjunto de
+chaves nos dois, chave semântica (nunca o texto em inglês como chave), frase inteira sem
+concatenação em runtime, e data/número/moeda fora do catálogo por serem formatados por
+`Intl`.
 
 ## Backend / infraestrutura — Supabase como plataforma única
 
