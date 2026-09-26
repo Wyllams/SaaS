@@ -116,7 +116,7 @@ do Slice 01 migrado para a Edge Function `identity-me`.
 5. Criar `packages/domain` e `packages/i18n`.
 6. Reavaliar `packages/api-client` e `packages/domain-types`: com a regra dentro do `apps/web`,
    parte deles pode perder propósito.
-7. Decidir e registrar o destino de `apps/mobile` — fora da V1 pelo ADR-018.
+7. ~~Decidir o destino de `apps/mobile`.~~ **Feito em 2026-09-26:** removido do Git, do workspace e da CI, por decisão do Product Owner. O monorepo passa a ter 9 workspaces.
 8. Configurar Drizzle Kit com conexão direta para migration e pooler transaction para runtime.
 9. Estabelecer o contrato de configuração por ambiente e a política de secret.
 10. Ativar observabilidade: `request_id`, logs estruturados, Sentry e OpenTelemetry.

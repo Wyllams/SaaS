@@ -468,7 +468,7 @@ do ADR-017.
 | Edge Function `identity-me` | Migra para **Route Handler** em `apps/web`, preservando o contrato do Slice 01. A função só é removida do Supabase após paridade comprovada por teste |
 | Consumo de fila | Passa de `pg_net` acionando Edge Function para **Vercel Cron** acionando rota protegida de worker |
 | `pg_net` | Deixa de ser necessário para dispatch de fila; avaliar remoção |
-| `apps/mobile` (Expo) | Fora da V1 pelo ADR-018. Permanece sem evolução ou é removido por decisão |
+| `apps/mobile` (Expo) | **Removido em 2026-09-26** por decisão do Product Owner. Era fora da V1 pelo ADR-018; o histórico preserva o código |
 | `packages/observability` | Preservado, reapontado para o runtime da Vercel |
 | `packages/db` | Preservado. É o núcleo do acesso a dados |
 | `packages/api-client` e `packages/domain-types` | Reavaliados: com a regra dentro do `apps/web`, parte deles pode perder propósito |
