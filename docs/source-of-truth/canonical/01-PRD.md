@@ -1,892 +1,461 @@
-**CREWCOMMAND**
+# PRODUCT REQUIREMENTS DOCUMENT
 
-**PRODUCT REQUIREMENTS DOCUMENT**
+**PRD Oficial — v2.0**
 
-**PRD Oficial — v1.0**
+Visão de produto, ICP, escopo funcional e regras de negócio da V1
 
-Visão de produto, escopo funcional, regras de negócio e critérios da V1
+| Campo | Definição |
+|---|---|
+| Versão | 2.0 |
+| Status | Substitui o PRD v1.0 reconstruído |
+| Data | 2026-09-25 |
+| Marca | **Não definida.** Este documento usa "a Plataforma" e nomes brand-neutral |
+| Mercado | Estados Unidos |
+| Idioma do documento | Português (Brasil); termos de produto e código em inglês |
+| Base | App Flow Oficial + Backend Domain Model + UI/UX Design Document + decisões do Product Owner de 2026-09-25 |
+| Próximos documentos | App Flow → Backend Domain Model → UI/UX → TRD → Implementation Plan |
 
-| **Campo**                     | **Definição**                                                                                      |
-|-------------------------------|----------------------------------------------------------------------------------------------------|
-| Status                        | Reconstrução consolidada do PRD original — conteúdo de produto aprovado                            |
-| Mercado primário              | Estados Unidos                                                                                     |
-| Idioma interno                | Português (Brasil)                                                                                 |
-| Idioma padrão do produto      | English (US), com suporte planejado a Spanish e Português (Brasil)                                 |
-| Base de reconstrução          | Product Discovery aprovado + App Flow Oficial + Backend Domain Model + UI/UX Design Document + TRD |
-| Próximos documentos na cadeia | App Flow → Backend Domain Model → UI/UX → TRD → Implementation Plan                                |
+> **Por que uma v2.0.** O PRD v1.0 reconstruído descrevia um produto de field service genérico, com 15 verticais e escopo de 116 telas. Esta versão estreita o ICP para exterior contractors, fixa os sete papéis, define o escopo da V1 e registra o que fica explicitamente fora. As decisões de stack foram tomadas em 2026-09-25 e pertencem ao TRD.
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Nota de integridade documental<br />
-</strong>O arquivo binário original do PRD não está disponível na biblioteca atual do projeto. Esta versão recompõe o conteúdo aprovado a partir das decisões preservadas nos documentos oficiais posteriores e no histórico do projeto. Não é apresentada como cópia byte a byte do arquivo antigo.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+---
 
-# 1. Controle do Documento e Propósito
+# 1. Problema e proposta
 
-Este PRD define o que o CrewCommand deve construir na V1 e por quê. Ele consolida objetivos, usuários, escopo funcional, regras de negócio, comportamentos esperados, limites e critérios de sucesso. Decisões técnicas de stack, banco, cloud, filas, observabilidade e deploy pertencem ao TRD.
+## 1.1 O problema
 
-| **Item**                         | **Definição**                                                                                                                      |
-|----------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| Produto                          | CrewCommand                                                                                                                        |
-| Categoria                        | B2B SaaS para empresas de serviços com operação de campo                                                                           |
-| Mercado inicial                  | Estados Unidos                                                                                                                     |
-| Comprador principal              | Owner / proprietário da empresa                                                                                                    |
-| Usuários internos                | Owner, Admin/Office, Salesperson, Project Manager, Field Worker/Technician, Accounting                                             |
-| Usuário externo                  | Customer / Client Portal                                                                                                           |
-| Referência competitiva principal | Jobber; referências adicionais: Housecall Pro, ServiceTitan, Workiz e FieldPulse                                                   |
-| Princípio central                | Organizar a operação em torno do Job e deixar claro o que aconteceu, o que está pendente, quem é responsável e o que vem a seguir. |
+Empresas de serviços externos residenciais nos Estados Unidos operam projetos de vários dias, com equipes que se deslocam entre propriedades, material que representa a maior linha de custo e escopo que muda durante a execução.
 
-## 1.1 Problema que o produto resolve
+A dor concreta:
 
-Reduzir tempo e esforço gastos para descobrir o status real de clientes, vendas, Jobs, serviços, equipes, cobranças e pendências.
+- ninguém sabe, sem perguntar, em que pé está cada job e o que trava cada um;
+- mudar a data de um serviço quebra a sequência dos serviços seguintes, e o reagendamento é refeito na mão;
+- escopo adicional descoberto no telhado não vira cobrança porque não foi registrado na hora;
+- a capacidade real da equipe não entra na conta ao prometer prazo ao cliente;
+- material comprado não é vinculado ao job, e a margem só aparece no fim;
+- o cliente liga para perguntar o andamento porque não tem onde olhar.
 
-Reduzir perda de receita causada por falta de follow-up, escopo não cobrado, conflitos de agenda, compras não registradas e cobranças desorganizadas.
+## 1.2 A proposta
 
-Substituir informações espalhadas por uma visão operacional única e rastreável.
+Uma plataforma em que o **Job é a unidade central**, o **agendamento nasce da capacidade real da equipe** e qualquer mudança de data recalcula a sequência inteira mostrando antes e depois.
 
-Dar ao Owner e aos gestores uma resposta rápida para a pergunta: “Em que pé está cada Job e o que precisa acontecer agora?”
+## 1.3 Resultado esperado
 
-## 1.2 Resultado esperado para o cliente
+Um contractor de exteriores opera o dia inteiro na Plataforma: do lead ao recebimento, com o campo alimentando o registro e o cliente acompanhando sozinho.
 
-Uma empresa de serviços deve conseguir operar diariamente no CrewCommand com clareza, confiabilidade e baixa fricção, desde o primeiro Lead até a conclusão do Job, cobrança, pagamento e histórico do relacionamento.
+---
 
-# 2. Visão, Posicionamento e Princípios do Produto
+# 2. ICP — quem é o cliente
 
-## 2.1 Visão
+## 2.1 Verticais atendidas
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Visão de produto<br />
-</strong>Um sistema para empresas de serviços gerenciarem clientes, equipe, agenda e pagamentos, mantendo o Job como centro da operação e conectando venda, execução e financeiro.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+| Vertical | Unidade de produção típica | Prioridade |
+|---|---|---|
+| **Roofing** | SQ (roofing square, 100 ft²) | **Lidera a V1** |
+| Gutters | Linear feet | V1 |
+| Siding | SQ / linear feet | V1 |
+| Windows | Units | V1 |
+| Doors | Units | V1 |
+| Decks | ft² | V1 |
+| Landscaping (instalação) | ft² / units | V1 |
 
-## 2.2 Segmentos-alvo
+Roofing lidera porque tem o maior ticket, a maior dor de sequenciamento de crew e a unidade SQ já está modelada no produto.
 
-Cleaning
+## 2.2 Por que essas e não outras
 
-Landscaping
+A Plataforma é construída em torno de **trabalho de produção multi-dia**: capacidade por unidade/dia, sequenciamento de serviços, Change Order, Daily Log, faturamento parcial e Progress Report.
 
-HVAC
+Serviços de chamado avulso — limpeza, pool service, handyman, reparo de HVAC, encanamento e elétrica emergencial — têm outro modelo: uma visita, despacho otimizado por rota, sem mudança de escopo, fatura igual ao total do job. **Nenhuma feature desta plataforma serve esse modelo**, e é nele que os incumbentes são fortes.
 
-Plumbing
+**Essas verticais estão fora do ICP da V1.** Isso é decisão de produto, não limitação técnica.
 
-Electrical
+## 2.3 Perfil da empresa-alvo
 
-Pressure Washing
+- 1 a 10 crews, próprias ou subcontratadas;
+- opera em um ou poucos estados;
+- vende por Estimate com assinatura do cliente;
+- compra material por job;
+- usa QuickBooks Online na contabilidade;
+- hoje resolve com planilha, WhatsApp e caderno.
 
-Pool Service
+---
 
-Handyman
+# 3. Papéis e acesso
 
-Dumpster
+Sete papéis. Seis internos ao Workspace e um externo.
 
-Roofing
+| Papel | O que faz | Limite de acesso |
+|---|---|---|
+| **Owner** | Controla a empresa, configurações, permissões e assinatura da Plataforma | Acesso total ao Workspace. Único por empresa; transferência exige confirmação forte e auditoria |
+| **Admin** | Opera CRM, Jobs, agenda e suporte ao dia a dia | O que o Owner liberar; normalmente transversal |
+| **Salesperson** | Leads, follow-ups, Estimates e fechamento | Por padrão só enxerga os leads e clientes atribuídos a ele. Vê apenas a própria comissão |
+| **Supervisor** | Coordena execução, capacidade, crews, materiais e aprovações operacionais | Jobs, Services, Schedule, Daily Logs, aprovações. Sem acesso financeiro por padrão |
+| **Crew** | Executa o serviço no campo | Apenas os Services atribuídos a ele ou à sua crew. **Nunca vê valor financeiro** |
+| **Accounting** | Invoices, Payments, AR, comissões e integração contábil | Somente financeiro. Sem necessidade de módulos de campo |
+| **Client** | Aprova, paga, acompanha e baixa documentos | Apenas os próprios dados e o que for marcado como customer-visible |
 
-Gutters
+## 3.1 Regras transversais
 
-Siding
-
-Windows
-
-Doors
-
-Decks e outros serviços de campo com operação por cliente/propriedade/job.
-
-## 2.3 Princípios de produto
-
-Job-centric: o Job é a principal unidade operacional do trabalho vendido.
-
-Clareza antes de complexidade: usuários devem entender rapidamente status, pendências, responsáveis e próximos passos.
-
-Configuração sem rigidez excessiva: pipelines, templates, status, automações e permissões devem acomodar empresas diferentes sem fragmentar o produto.
-
-Uma fonte de verdade operacional: histórico e estado devem permanecer rastreáveis dentro do CrewCommand.
-
-Permissão por necessidade: usuários veem e fazem apenas o que seu papel e escopo permitem.
-
-Mobile de campo é operacional, não uma cópia reduzida do desktop.
-
-O Client Portal deve parecer uma extensão digital da empresa prestadora, não um painel administrativo do CrewCommand.
-
-# 3. Usuários, Papéis e Escopos
-
-| **Perfil**                | **Objetivo principal**                                               | **Regras de acesso relevantes**                                                                     |
-|---------------------------|----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| Owner                     | Controlar toda a operação e configurações                            | Acesso amplo ao Workspace; governa permissões, integrações e configurações.                         |
-| Admin / Office            | Operar CRM, Jobs, agenda, financeiro e suporte                       | Acesso definido pelo Owner; normalmente transversal.                                                |
-| Salesperson               | Gerenciar Leads, follow-ups, Estimates e fechamento                  | Por padrão vê apenas Leads/Clientes atribuídos; pode criar Estimates conforme permissão.            |
-| Project Manager           | Coordenar execução e capacidade                                      | Acompanha Jobs, Services, Crews, conflitos, materiais, aprovações e problemas.                      |
-| Field Worker / Technician | Executar serviços no campo                                           | Foco em Today/Jobs; sem financeiro; registra checklist, Daily Log, fotos, problemas e solicitações. |
-| Accounting                | Operar Invoices, Payments, AR, commissions e integrações financeiras | Somente dados financeiros conforme permissões.                                                      |
-| Client                    | Aprovar, pagar, acompanhar e baixar documentos                       | Acesso restrito aos próprios dados/Properties/Jobs e somente conteúdo customer-visible.             |
-
-## 3.1 Estrutura organizacional
-
-Workspace representa a empresa cliente do CrewCommand.
-
-Locations/filiais restringem ou agregam dados conforme o acesso do usuário.
-
-Workspace e Location são contextos separados.
-
-A opção All Locations consolida apenas Locations às quais o usuário tem acesso.
-
-Usuários sem permissão financeira não devem ver o módulo Financial nem valores financeiros em outras telas.
-
-# 4. Escopo Funcional da V1 — Visão Geral
-
-| **Domínio**       | **Incluído na V1**                                                                                                      |
-|-------------------|-------------------------------------------------------------------------------------------------------------------------|
-| CRM               | Customer/contacts/properties, lifecycle, tags, sources, assignments, follow-ups, saved views.                           |
-| Sales             | Sales Pipeline, Estimates, templates, approvals, versioning, signatures, payment terms, financing choice.               |
-| Jobs              | Job Pipeline, Services, milestones, progress, PM, crews/teams, planned/actual dates, documents/photos.                  |
-| Schedule          | Day/Week/Month/Agenda/List e visões por pessoa/crew/service/location; conflicts, recurring, blocks, Stair-Step.         |
-| Field             | Today, Service Mobile, checklist, Daily Logs, photos, material extra, change order request, problem report, completion. |
-| Financial         | Invoices, Payments, AR, Commissions, Financing, progress billing, payment schedules, refunds.                           |
-| Purchases         | Material requests, purchases, POs, vendors/stores.                                                                      |
-| Client Portal     | Approvals, progress configurável, documents, balances/invoices/payments, request service.                               |
-| Communication     | Customer Inbox (SMS/Email/Portal), Internal Chat, Notifications.                                                        |
-| Tasks & Approvals | Tasks, subtasks, recurring, approvals center, delegation.                                                               |
-| Automation        | WHEN → IF → THEN, delayed actions, history, loop prevention, recipes.                                                   |
-| Reports           | Operational, sales, financial and Project Progress Report.                                                              |
-
-## 4.1 Fora do escopo explícito da V1
-
-GPS tracking de colaboradores.
-
-Route optimization automática.
-
-Time Tracking / Clock In-Out.
-
-Offline Mode completo.
-
-Good / Better / Best Estimates.
-
-Optional-item selection model em Estimates.
-
-Split commission.
-
-Customer Credit / carteira interna.
-
-Dark Mode completo.
-
-Vídeo como mídia operacional padrão; fotos e documentos primeiro.
-
-# 5. CRM e Gestão de Clientes
-
-## 5.1 CRM único
-
-O produto utiliza um CRM único. Lead e Customer não são bases/telas totalmente separadas; o lifecycle/status/tags e Saved Views diferenciam Lead, Prospect, Customer e Past Customer.
-
-## 5.2 Lead
-
-Fontes V1: entrada manual pelo Salesperson, formulário do site da empresa e importação CSV/Excel.
-
-Campos obrigatórios: first name, last name, phone, email, full address e service of interest.
-
-Registrar lead source para relatórios de conversão e receita.
-
-Atribuição manual de Lead na V1.
-
-Follow-ups/tasks para Salesperson e Owner/Admin.
-
-Salesperson vê, por padrão, apenas Leads/Clientes atribuídos a ele; Owner/Admin podem filtrar por Salesperson.
-
-Registrar Lost Reason quando uma oportunidade é perdida.
-
-## 5.3 Customer, Contacts e Properties
-
-Um Customer pode possuir várias Properties.
-
-Cada Property mantém seus próprios serviços, equipes, Estimates, fotos, histórico e Jobs.
-
-Customer pode ter múltiplos Contacts, incluindo Primary, Billing, Property Contact e outros tipos configuráveis.
-
-Tags customizáveis são permitidas.
-
-Mudanças relevantes permanecem no Activity/History.
-
-## 5.4 Saved Views e produtividade
-
-Listas devem suportar busca, filtros, ordenação e Saved Views.
-
-Usuários devem poder retornar a uma lista preservando filtros, ordenação e posição de rolagem.
-
-Ações em massa são permitidas quando seguras e compatíveis com permissões.
-
-# 6. Sales Pipeline e Estimates
+- Permissão é verificada no servidor. Visibilidade de interface nunca é autorização.
+- Valor financeiro desaparece por completo para quem não tem permissão financeira — não é exibido borrado, riscado ou zerado.
+- Deep link e notificação revalidam permissão antes de abrir o registro.
+- Um usuário pode pertencer a vários Workspaces sem que os dados se misturem.
+- `Client` não é um Membership. Portal é um caminho de acesso separado.
+
+## 3.2 Crew parceira (subcontratada)
+
+Em roofing e exteriores, subcontratar crew é a norma. Uma Crew pode ser própria ou parceira, e a parceira exige controle adicional:
+
+- empresa, contato e documento fiscal (W-9);
+- **certificado de seguro com data de validade**;
+- licença quando o estado exigir;
+- marcador visível de recurso externo na agenda.
+
+**Seguro vencido de subcontratado é risco jurídico direto do contractor.** A Plataforma deve alertar antes do vencimento e sinalizar ao atribuir uma crew com documento vencido. Isso é argumento de venda, não burocracia.
+
+---
+
+# 4. Escopo da V1
+
+## 4.1 Módulos incluídos
+
+| Módulo | Conteúdo |
+|---|---|
+| **Identidade e Workspace** | Cadastro, login, múltiplos Workspaces, Locations, membros, papéis, convites |
+| **Assinatura** | Planos, Trial de 14 dias com cartão, cobrança recorrente, Grace, Read-only, Suspended |
+| **CRM** | Customer, contatos, Properties, lifecycle, tags, lead source, atribuição, follow-up, Saved Views, importação CSV |
+| **Sales** | Pipeline, Estimates com versão, templates, catálogo de serviços, preview, envio, assinatura eletrônica, payment terms |
+| **Jobs** | Job, Services, milestones, progresso, Supervisor responsável, documentos e fotos |
+| **Schedule** | Visões de calendário, capacidade de produção, cálculo de duração, conflitos, bloqueios, feriados e **Escadinha** |
+| **Field (PWA)** | Today, Service, checklist, Daily Log, fotos, solicitação de material, solicitação de Change Order, reportar problema, conclusão com assinatura |
+| **Change Orders** | Solicitação sem preço no campo, precificação, preview, aprovação e assinatura do cliente |
+| **Materiais e Compras** | Material Request, Purchase, Purchase Order, Vendors/Stores, recibos, gasto por job e por fornecedor |
+| **Financial** | Invoice, faturamento parcial, Payment, Accounts Receivable com aging, Commissions |
+| **Client Portal** | Aprovar Estimate e Change Order, acompanhar projeto, ver e pagar faturas, baixar documentos |
+| **Integrações** | Stripe Connect, Stripe Billing, QuickBooks Online, Resend |
+
+## 4.2 Fora da V1
+
+Decidido e registrado, não esquecido:
+
+| Fora | Motivo |
+|---|---|
+| Chat interno | Crews já usam WhatsApp e SMS; é um dos maiores builds do escopo original |
+| Automation Engine | Motor de plataforma; sem clientes, não há automação a configurar |
+| Reports como módulo | A V1 entrega relatórios fixos, não construtor de relatório |
+| Public API, Webhooks de saída, MCP | Ninguém integra com um produto sem base instalada |
+| Super Admin como aplicação separada | Rotas protegidas no app principal resolvem por anos |
+| SMS / Twilio / A2P 10DLC | Decisão de 2026-09-25. Ver §4.3 |
+| E-mail inbound (responder e cair na conversa) | Outbound entra na V1; bidirecional fica para V2 |
+| Financing | Integração com parceiro externo; sai do caminho crítico |
+| Offline Mode | Falha de conexão deve ser explícita e nunca sugerir que salvou |
+| Time Tracking / Clock In-Out | Fora |
+| GPS contínuo e otimização de rota | Fora |
+| Serviços recorrentes | Padrão de chamado avulso; não pertence ao ICP |
+| Good/Better/Best e itens opcionais no Estimate | Aprovação é do documento inteiro |
+| Customer Credit | Overpayment fica bloqueado enquanto não existir |
+| Split commission | Uma comissão por vendedor responsável |
+| Duplicar agendamento | Fora |
+| Dark Mode | Tokens preparados, tema não implementado |
+| Vídeo em Daily Log | Fotos e documentos primeiro |
+| Multi-moeda | USD na V1; `currency_code` permanece na coluna |
+
+## 4.3 SMS — decisão e consequência
+
+SMS está fora da V1. A razão é o A2P 10DLC: cada empresa precisa registrar marca e campanha junto às operadoras, o que leva semanas e trava o onboarding.
+
+**Consequência que a V1 assume:** nos EUA, lembrete por SMS é expectativa básica em serviço residencial. O substituto é o Client Portal com notificação por e-mail, posicionado como "seu cliente acompanha a obra".
+
+**O que não pode ser esquecido:** consentimento por contato e por canal precisa ser registrado **desde a V1**. Consentimento retroativo é impossível de reconstruir, e sem ele o retorno do SMS vira reescrita.
+
+---
+
+# 5. CRM
+
+CRM único. Lead e Customer são o mesmo cadastro, diferenciados por lifecycle, status, tags e Saved Views.
+
+- **Lifecycle:** Lead → Customer → Past Customer.
+- **Fontes de lead na V1:** entrada manual e importação CSV/Excel. Captação por formulário de site fica para V2.
+- **Obrigatórios ao criar:** nome, sobrenome, telefone, e-mail, endereço completo e serviço de interesse.
+- Endereço é estruturado. O primeiro endereço cria automaticamente a primeira Property.
+- Duplicidade por e-mail, telefone ou endereço gera aviso antes de salvar ou importar.
+- Um Customer tem várias Properties; cada Property tem seus próprios Estimates, Jobs, fotos e histórico.
+- Contatos por Property: Primary, Billing, Property Contact e outros.
+- Lost Reason é obrigatório ao marcar oportunidade como perdida.
+- Notas são permanentes, com menção e anexo, e são distintas de mensagem.
+
+---
+
+# 6. Sales e Estimates
 
 ## 6.1 Pipeline
 
-Sales Pipeline é um Kanban separado do Job Pipeline.
+Kanban próprio, separado do pipeline de Jobs. Estágios criáveis, renomeáveis e reordenáveis. Arrastar muda o estágio. Mover para Lost exige motivo. Won pode ser automático na aprovação do Estimate, conforme configuração.
 
-Etapas podem ser criadas, renomeadas, reordenadas e removidas de acordo com regras de segurança.
+## 6.2 Estimate
 
-Movimentação pode ocorrer por drag & drop e por ações explícitas.
+- Nasce da escolha da Property, depois template ou em branco.
+- Linha de serviço com nome, descrição, quantidade, unidade, preço unitário, desconto, imposto, total e fotos.
+- Serviço ad hoc pode ser criado no Estimate e opcionalmente salvo no catálogo.
+- Totais: Subtotal, Discount, Tax, Total Contract Value, Deposit Required, Remaining Balance.
+- Customer Notes, Terms & Conditions e Internal Notes são campos separados.
+- **Preview é obrigatório antes de qualquer envio.**
+- Status: Draft, Sent, Viewed, Awaiting Approval, Approved, Rejected, Expired, Cancelled.
+- Cada visualização do cliente é registrada; a interface resume primeira e última.
+- Versões antes da aprovação; o cliente vê apenas a versão ativa e é avisado quando uma versão enviada é substituída.
+- **Estimate aprovado é imutável.** Mudança de escopo vira Change Order.
 
-Estágio Won pode ser atualizado automaticamente quando um Estimate é aprovado, conforme configuração.
+## 6.3 Imposto
 
-## 6.2 Catálogo e templates
+Tratamento fiscal é configurado pela empresa, não calculado por motor genérico.
 
-Service Catalog para padronizar serviços, unidades, preços e descrições.
+- alíquota por Location, com override por Estimate;
+- **separação entre mão de obra e material**, porque vários estados tributam um e isentam o outro;
+- flag de isenção por Customer, com certificado anexado e validade;
+- a alíquota de referência é a do endereço da Property, não o da empresa.
 
-Estimate Templates reutilizáveis.
+> Em muitos estados o contractor de roofing opera por contrato *lump sum*: paga o imposto na compra do material e **não** cobra sales tax do cliente. Quem conhece o tratamento correto é o contador do cliente. A Plataforma oferece a configuração e registra a escolha — não decide por ele.
 
-Empresa e Salesperson com permissão podem criar templates.
+A implementação fica atrás de um contrato `TaxProvider`, para permitir plugar um provedor externo sem reescrever o domínio.
 
-Estimate aprovado pode ser convertido em template para usos futuros sem alterar o Estimate original.
+## 6.4 Aprovação
 
-## 6.3 Conteúdo do Estimate
+O cliente abre link seguro, autentica no Portal e decide sobre o documento inteiro.
 
-Services, quantity, price, discount, tax, photos, observations, payment choices e e-signature.
+Ao aprovar: escolhe payment term e método quando aplicável, assina desenhando ou digitando o nome, e o sistema registra signatário, data, hora e metadados.
 
-Validade/expiração configurável.
+Efeitos padrão da aprovação, configuráveis:
 
-Payment Terms baseados em datas/percentuais, como 50/50 ou 30/40/30.
+- lifecycle vira Customer e pipeline vira Won;
+- cria o Job copiando Property, serviços, valores, fotos e documentos;
+- mantém o vendedor responsável e calcula a comissão;
+- cria o saldo de depósito;
+- notifica Admin.
 
-Client pode escolher payment terms/payment method/financing dentre opções permitidas; Salesperson também pode selecionar quando autorizado.
+Rejeição exige motivo e **não** move automaticamente para Lost — a decisão é do vendedor.
 
-Mobile/tablet do Salesperson permite criar, fotografar, pré-visualizar, apresentar e colher assinatura.
+---
 
-Presentation/Signature Mode esconde informações internas.
+# 7. Jobs, Services e capacidade
 
-## 6.4 Versionamento e aprovação
+## 7.1 Estrutura
 
-Estimate enviado pode ganhar novas versões.
+Um Job representa o trabalho vendido para uma Property. Contém vários Services, cada um com status, crew, datas, checklist, fotos, materiais e Daily Logs próprios.
 
-Cliente vê apenas a versão ativa; histórico completo é interno.
+Job e Service têm status configuráveis pela empresa. Progresso pode ser manual ou calculado pelo checklist, com pesos vindos de template.
 
-Atualização de Estimate já enviado notifica o cliente.
+O cabeçalho do Job não exibe o valor do contrato. O valor aparece onde faz sentido no fluxo financeiro.
 
-Estimate aprovado é imutável.
+## 7.2 Capacidade de produção
 
-Mudanças posteriores de escopo usam Change Order.
+Cada Crew tem capacidade por unidade e por dia — 12 SQ/day, 8 SQ/day, linear ft/day, rooms/day, units/day.
 
-Estimate pode ser duplicado como novo Estimate independente.
+`quantidade do Service ÷ capacidade da Crew = duração em dias`, e a data final é calculada automaticamente respeitando dias úteis da Location, feriados e bloqueios.
 
-## 6.5 Efeitos da aprovação
+Quando um Team reúne várias Crews, a capacidade é a soma apenas das Crews efetivamente selecionadas.
 
-Pode marcar lifecycle como Customer e Sales Pipeline como Won.
+Sem capacidade configurada, a duração é manual. Override manual exige permissão e motivo auditável.
 
-Pode criar automaticamente um Job ou permitir “Add Services to Existing Job”.
+## 7.3 Conflito de agenda
 
-Copia serviços, valores, fotos e documentos relevantes.
+Conflito **impede o salvamento imediato** e mostra o Job e o horário em choque. As opções são agendar mesmo assim, escolher outra data ou escolher outra crew. "Agendar mesmo assim" exige segunda confirmação e fica registrado.
 
-Mantém Salesperson responsável e calcula comissão conforme regra.
+**Conflito nunca fica escondido**, nem para quem tem permissão de override.
 
-Pode criar saldo de depósito e notificar Admin.
+## 7.4 Escadinha — o diferencial
 
-Automação é habilitada por padrão, porém configurável pela empresa.
+Quando a data ou a duração de um Service muda — por troca de crew, por mudança de quantidade ou por arraste no calendário — a Plataforma pergunta se os Services seguintes ainda não concluídos devem deslocar junto.
 
-# 7. Jobs e Services
+Comportamento obrigatório:
 
-## 7.1 Job como entidade operacional principal
+- preserva por padrão os intervalos relativos entre os serviços;
+- ignora serviços já concluídos;
+- mostra **Before → After** antes de confirmar;
+- lista todos os novos conflitos gerados;
+- permite desfazer imediatamente;
+- registra quem fez, quando e por quê.
 
-Um Job representa o trabalho/projeto vendido. Pode conter múltiplos Services/Work Items, cada um com execução, responsáveis e histórico próprios.
+Esta é a mecânica central do produto. Nenhuma outra decisão de escopo pode degradá-la.
 
-## 7.2 Service
+---
 
-Status próprio.
+# 8. Campo
 
-Crew/Team próprio.
+## 8.1 Entrega
 
-Planned Start/Completion e Actual Start/Completion.
+PWA instalável. Sem app store. Um código, o mesmo deploy da web.
 
-Checklist.
+Navegação inferior: **Today | Jobs | Chat¹ | Notifications | More** — na V1 sem Chat, portanto **Today | Jobs | Notifications | More**.
 
-Photos, Materials, Documents e Daily Logs.
+Today é a tela inicial. Cards mostram horário, Service, Customer, Property e status. **Sem qualquer valor financeiro.**
 
-Usuários responsáveis.
+Ações rápidas: ligar, mensagem e mapa. Ações operacionais: Daily Log, adicionar foto, material extra, solicitar Change Order, reportar problema. Concluir serviço é ação própria e fixa no rodapé.
 
-Dependências com warning, sem hard-block por padrão.
+Operação com uma mão, alvos de toque grandes, texto objetivo.
 
-## 7.3 Status, progresso e milestones
+## 8.2 Daily Log
 
-Job status e Service status são configuráveis.
+Um Daily Log por Service por dia. Nova tentativa abre o existente.
 
-Empresa pode criar/reordenar/renomear/remover stages conforme regras.
+Preenchidos automaticamente: data, Job, Service, Crew, Property e usuário. Editáveis: trabalho realizado, progresso, problemas, materiais usados, fotos, próximos passos e observações. A empresa define quais campos são obrigatórios.
 
-Mudança de status pode ser manual ou automática, configurável.
+Upload múltiplo com compressão, miniatura e retry por arquivo. **Sem Offline Mode: falha de conexão precisa ser explícita e nunca sugerir que salvou.**
 
-Progress % pode ser manual ou automático.
+Depois que o Service vai para DONE, o Daily Log fica somente leitura e apenas novas fotos podem ser anexadas. Reabrir exige Supervisor ou Admin, com motivo registrado.
 
-Templates podem definir pesos e comportamento do progresso.
+## 8.3 Conclusão
 
-Milestones podem vir de templates ou ser adicionados manualmente.
+Antes de concluir, a Plataforma verifica checklist, Daily Log, Change Orders e materiais pendentes. Cada regra é aviso ou bloqueio, conforme configuração da empresa.
 
-## 7.4 Job Templates
+Assinatura do cliente usa tela limpa, desenho ou nome digitado. Se o cliente não estiver presente, gera pendência visível para o escritório.
 
-Templates podem predefinir Services, ordem, duração/capacidade esperada, checklists, milestones e regras de progresso.
+---
 
-Template não deve eliminar a possibilidade de ajustes específicos no Job.
+# 9. Change Orders, materiais e compras
 
-## 7.5 Project Manager
+## 9.1 Change Order
 
-Cada Job pode ter um Project Manager responsável pela coordenação operacional e aprovações compatíveis com seu papel.
+Nasce no campo **sem preço** — o Crew não vê valor. Contém Service, descrição, motivo e fotos.
 
-# 8. Crews, Teams e Production Capacity
+Vendedor ou Admin revisa, precifica, gera preview e envia ao cliente. Pode ter várias linhas, e um Job pode ter vários Change Orders.
 
-## 8.1 Modelo de equipe
+O cliente aceita ou rejeita e assina. Rejeição exige motivo. Aprovado fica bloqueado, aumenta o valor do Job e passa a ser faturável.
 
-Empresa pode operar com Crew único, sem Team, ou com Teams compostos por várias Crews.
+## 9.2 Materiais e compras
 
-Cada Service pode receber Crew/Team diferente conforme disponibilidade e natureza do trabalho.
+- Crew solicita material com quantidade, motivo, foto e observação; Supervisor aprova.
+- A compra registra fornecedor, data, número de PO, valor, quem comprou, status de pagamento, recibo e observações.
+- Uma solicitação pode gerar várias compras.
+- Compra pode existir sem solicitação prévia, com permissão.
+- Vendors/Stores têm tela própria com histórico, total gasto e jobs relacionados.
 
-Suportar Primary Crew + crews/workers adicionais.
+Em roofing material é a maior linha de custo. Vincular compra ao job é o que permite ver margem antes do fim da obra.
 
-Subcontractors/sub-crews usam o mesmo modelo de agenda/capacidade e recebem marcador externo.
+---
 
-## 8.2 Capacity
+# 10. Financeiro
 
-Cada Crew pode ter capacidade por unidade/dia, ex.: 12 SQ/day, 8 SQ/day, rooms/day, linear ft/day ou units/day.
+## 10.1 Invoice
 
-Quantidade do Service e capacidade da Crew estimam duração em dias.
+Criada manualmente a partir do Job, do módulo financeiro ou da conclusão. Faturamento parcial permite faturar antes do Job concluído.
 
-Quando várias Crews compõem o Team selecionado, a capacidade é a soma das Crews ativas selecionadas.
+O usuário escolhe quais Services, Change Orders ou percentuais entram. Rótulos: Deposit, Progress, Final. Review e preview antes de enviar.
 
-Override manual de duração/capacidade requer permissão e motivo auditável.
+A Plataforma compara o total faturado com Contract Value mais Change Orders aprovados e **bloqueia overbilling por padrão**. Exceção exige permissão alta e justificativa.
 
-# 9. Schedule, Conflitos e “Escadinha”
+Múltiplas invoices por Job. Status sincroniza com o provider quando possível; falha de sincronização mostra motivo e botão de reenvio.
 
-## 9.1 Visões do calendário
+## 10.2 Payment
 
-Week é a visão padrão.
+- Sempre aplicado a uma Invoice específica.
+- Métodos: Card, ACH, Cash, Check, Zelle, Wire e custom.
+- Card e ACH passam pelo provider. A Plataforma **não armazena dado de cartão ou conta bancária**.
+- Registro manual exige permissão e gera recibo.
+- **Overpayment é bloqueado** enquanto Customer Credit estiver fora do escopo.
+- Refund é transação separada; o pagamento original permanece no histórico.
 
-Também suportar Day, Month, Agenda/List, Employee, Crew/Team, Salesperson, Service e Location.
+## 10.3 Accounts Receivable e comissões
 
-Cores configuráveis por crew/employee/service/status/location.
+AR com aging Current, 1–30, 31–60, 61–90 e 90+, com filtros e drill-down. Lembretes automáticos param quando a fatura é paga e podem ser pausados.
 
-Drag & drop altera data; resize altera duração; drag pode mover atribuição de Crew.
+Comissão por venda: percentual sobre venda, percentual sobre margem, valor fixo, percentual por serviço ou combinação. Gatilho configurável. Status Projected, Earned, Approved, Paid. **Paid congela.** Ajuste exige motivo e fica auditado. Vendedor vê apenas a própria.
 
-Duplicate scheduling não entra na V1.
+---
 
-## 9.2 Conflito de agenda
+# 11. Client Portal
 
-Se Crew/Team já estiver ocupado, o segundo agendamento não é salvo imediatamente.
+Login por e-mail e senha. Visual da empresa prestadora, estrutura da Plataforma. Mobile-first.
 
-Mostrar conflito exato, Job, horários e recurso afetado.
+A home prioriza aprovações pendentes, próximo serviço, projetos ativos, saldo em aberto e documentos recentes.
 
-Opções: Schedule Anyway, Choose Another Date, Choose Another Crew/Team.
+O cliente vê todas as próprias Properties. Pode **solicitar** nova Property e solicitar serviço ou orçamento — ambos viram solicitação interna, nunca criação direta.
 
-Schedule Anyway exige segunda confirmação.
+**Nunca expor:** capacidade de crew, notas internas, comissões, custo de material, tarefas internas e qualquer conteúdo não marcado como customer-visible.
 
-Conflitos nunca ficam ocultos, mesmo para usuários com permissão de override.
+Progresso do projeto fica **oculto por padrão** e é liberado pela empresa. Quando liberado, mostra barra, percentual e "X de Y serviços concluídos" — sem expor pesos internos.
 
-## 9.3 Stair-Step / Escadinha
+No financeiro: saldo em aberto, próximo pagamento, faturas, histórico e pagamento online quando o provider estiver habilitado. Linguagem nunca agressiva.
 
-Ao alterar data/duração de um Service, inclusive por troca de Crew ou mudança de quantidade, perguntar se Services futuros ainda não concluídos também devem deslocar.
+Falha de pagamento após a aprovação **não desfaz** a aprovação do Estimate; o depósito fica pendente ou falho.
 
-Preservar por padrão os intervalos relativos entre Services.
+---
 
-Mostrar Before/After antes de confirmar.
+# 12. Assinatura da Plataforma
 
-Detectar todos os novos conflitos gerados.
+Cobrança da própria assinatura é independente do Stripe Connect usado para os pagamentos dos clientes finais. São duas integrações distintas no mesmo provider e não compartilham código de domínio.
 
-Permitir Undo da operação.
+- Planos Starter, Growth, Pro e Enterprise. Valores e limites exatos permanecem em aberto.
+- Trial de 14 dias, **com cartão**, informando explicitamente que não haverá cobrança antes do fim.
+- O Trial libera apenas os recursos do plano escolhido e exibe contagem regressiva.
+- Ciclo de falha: Payment Failed → **Grace de 3 dias** → Read-only → Suspended.
+- **Dados nunca são apagados** por falta de pagamento; o acesso retorna com a regularização.
+- Cancelamento pelo Owner leva a um período somente de exportação antes da exclusão definitiva.
+- Limites de plano viram Entitlements como dado, nunca condicionais de nome de plano espalhados pelo código.
 
-## 9.4 Recorrência e bloqueios
+---
 
-Recorrências: weekly, every 2 weeks, monthly e custom intervals/weekdays.
+# 13. Regras de integridade do produto
 
-Editar one occurrence / this and future / all.
+1. Estimate aprovado é imutável; escopo novo é Change Order.
+2. Change Order aprovado é imutável e exige assinatura.
+3. Daily Log de Service concluído é somente leitura, salvo reabertura autorizada com motivo.
+4. Conflito de agenda nunca é ocultado; override é rastreável.
+5. Overbilling e overpayment são bloqueados por padrão.
+6. Pagamento e estorno são append-only; a transação original nunca é apagada.
+7. Comissão paga não recalcula sozinha.
+8. Valor financeiro é integralmente ocultado de quem não tem permissão.
+9. Deep link e notificação não contornam autorização.
+10. Registro assinado, financeiro ou de auditoria não sofre exclusão definitiva.
+11. Nenhuma referência cruza Workspaces, mesmo com ID válido.
+12. Integração externa e pagamento são estados explícitos, nunca sucesso presumido.
 
-Holidays e blocks geram warning e pedido de nova data.
+---
 
-Bloqueios podem ser full day, time range, multi-day, recurring e globais ou específicos por Location.
+# 14. Critérios de sucesso da V1
 
-# 10. Field Mobile, Daily Logs e Conclusão
+| Dimensão | Critério |
+|---|---|
+| Ciclo completo | Um roofer leva um negócio do lead ao recebimento sem sair da Plataforma nem recorrer a planilha |
+| Escadinha | Mudar a data de um serviço reagenda a sequência com preview e desfazer, sem retrabalho manual |
+| Capacidade | O prazo prometido ao cliente sai da capacidade real da crew, não de estimativa de cabeça |
+| Campo | O Crew registra Daily Log e fotos pelo celular sem treinamento formal |
+| Escopo extra | Change Order pedido no telhado vira cobrança aprovada e assinada no mesmo dia |
+| Material | O gasto de material aparece vinculado ao job antes do fechamento |
+| Cliente | O cliente aprova, acompanha e paga sem ligar para o escritório |
+| Financeiro | Faturado, recebido e saldo em aberto batem sem conferência manual |
 
-## 10.1 Navegação do Field Worker
+## 14.1 Indicadores após os primeiros clientes
 
-Bottom nav: Today | Jobs | Chat | Notifications | More.
+Conversão Lead→Estimate e Estimate→Won; tempo entre aprovação e agendamento; conflitos e overrides por mês; percentual de Services com Daily Log conforme regra; Change Orders aprovados e receita adicional capturada; aging de AR; taxa de sucesso de pagamento; uso do Portal para aprovar e pagar.
 
-Today é a tela inicial.
+---
 
-Cards mostram horário, Service, Customer, Property e Status, sem valores financeiros.
+# 15. Decisões ainda abertas
 
-Service Mobile usa seções/cards, não uma grande sequência de tabs horizontais.
+Registradas para decisão do Product Owner. **Não devem ser resolvidas por inferência durante a implementação.**
 
-Quick actions: Call, Message, Map.
+| Item | Situação |
+|---|---|
+| Marca do produto | Não definida. Nomes permanecem brand-neutral |
+| Idiomas da V1 | O App Flow declarava inglês, espanhol e PT-BR. Recomendação técnica: inglês no produto e espanhol apenas nas telas de campo, onde há razão de mercado real nos EUA. **Pendente de decisão** |
+| Valores dos planos e limites | Estrutura definida, números em aberto |
+| Escopo de UI de multi-location | `location_id` permanece no modelo; a extensão da interface na V1 está em aberto |
+| Duração do período de exportação e retenção | Em aberto |
 
-Operational actions: Daily Log, Add Photo, Material Extra, Change Order, Report Problem.
+---
 
-Complete Service é ação separada/sticky.
+# 16. Cadeia documental
 
-Controles touch-first com áreas de toque grandes e operação possível com uma mão.
+| Documento | Responsabilidade |
+|---|---|
+| **PRD** | O que construir e por quê |
+| App Flow | Como o usuário percorre o produto |
+| Backend Domain Model | Estrutura lógica dos dados |
+| UI/UX Design Document | Como a experiência é apresentada |
+| TRD | Como é implementado tecnicamente |
+| Implementation Plan | Como o trabalho é dividido e entregue |
 
-## 10.2 Daily Log
+Este PRD não escolhe framework, banco, cloud nem arquitetura. Essas decisões pertencem ao TRD e aos ADRs.
 
-Um Daily Log por Service por dia; se já existir, abrir o existente.
+---
 
-Preencher automaticamente data, Service, Crew, Job, Property e usuário.
-
-Campos: workers, progress, work completed, issues, materials, photos, notes, next steps, Change Orders e assinatura opcional.
-
-Empresa pode tornar campos obrigatórios.
-
-Upload múltiplo de imagens, compressão, thumbnails e retry individual de falhas.
-
-Após Service DONE, Daily Log fica read-only; apenas novas fotos podem ser adicionadas.
-
-Reabrir DONE exige Manager/Admin + motivo/histórico.
-
-Client Portal recebe somente conteúdo customer-safe se a empresa habilitar visibilidade.
-
-## 10.3 Completion
-
-Antes de concluir, validar checklist, Daily Log, Change Orders/Material Requests pendentes e regras configuradas.
-
-Warnings podem bloquear ou apenas alertar conforme configuração da empresa.
-
-Assinatura final do cliente é configurável, podendo ser desenhada ou digitada.
-
-Se cliente não estiver presente, gerar pendência de assinatura quando aplicável.
-
-# 11. Change Orders, Materiais, Compras e Problemas
-
-## 11.1 Change Order
-
-Field Worker pode solicitar Change Order sem definir preço.
-
-Solicitação contém Service, descrição, motivo, fotos/documentos.
-
-Salesperson responsável e Admins apropriados são notificados.
-
-Sales/Admin revisam descrição final, linhas, preço, tax/terms.
-
-Preview obrigatório antes de enviar ao cliente.
-
-Um Change Order pode conter múltiplas linhas e um Job pode ter vários Change Orders.
-
-Cliente vê descrição, fotos e valor; pode Accept/Reject e assinar.
-
-Rejeição exige motivo.
-
-Aprovação bloqueia conteúdo, registra assinatura, atualiza Job value e notifica Sales/Admin/PM.
-
-## 11.2 Material Extra e Purchases
-
-Worker solicita material, quantity, reason, photo e notes.
-
-Project Manager aprova.
-
-Compra registra vendor/store, data, PO number, amount, purchased by, paid/unpaid, receipt e notes.
-
-Uma solicitação pode gerar múltiplas compras.
-
-Purchase pode existir sem Material Request prévio se o usuário tiver permissão.
-
-Vendors/Stores têm tela própria com histórico, total spend, Jobs e contacts.
-
-## 11.3 Report Problem
-
-Ação rápida separada de Change Order e Material Request.
-
-Categorias: damage, client unavailable, weather, measurement, missing material, access, installation e other.
-
-# 12. Financial, Billing e Payments
-
-## 12.1 Estrutura
-
-Tabs: Invoices | Payments | Accounts Receivable | Commissions | Financing.
-
-Pequeno Financial Overview apenas para usuários permitidos.
-
-Criação de Invoice pelo Job, Financial e fluxo de conclusão.
-
-Progress Billing permite Invoice antes de Job Completed.
-
-## 12.2 Invoice
-
-Usuário escolhe Services, Change Orders ou percentuais cobrados.
-
-Labels: Deposit / Progress / Final.
-
-Review/Preview + Save Draft antes de enviar ao provider.
-
-Armazenar provider, external invoice ID/number, amount, due date, status, link e sync status.
-
-Status sincronizado por API/Webhook quando o provider permitir.
-
-Sync Failed exibe Retry e motivo compreensível.
-
-Múltiplos Invoices por Job.
-
-Comparar total faturado com Contract Value + Approved Change Orders.
-
-Overbilling bloqueado por padrão; exceção de alta permissão exige justificativa.
-
-## 12.3 Payments
-
-Payment sempre alocado a Invoice específica.
-
-Deposit e partial payments reduzem saldos.
-
-Métodos: Card, ACH, Cash, Check, PayPal, Financing, Zelle, Wire e custom.
-
-Card/ACH/PayPal usam provider; CrewCommand não armazena dados sensíveis de cartão/banco.
-
-Record Payment manual é permission-specific e gera receipt.
-
-Overpayment é bloqueado até existir Customer Credit, que está fora do escopo.
-
-Refund é transação separada; pagamento original permanece no histórico.
-
-Financial timeline reúne eventos relevantes.
-
-# 13. Accounts Receivable, Financing e Commissions
-
-## 13.1 Accounts Receivable
-
-Aging: Current / 1–30 / 31–60 / 61–90 / 90+.
-
-Campos: Customer, Invoice, Job, Salesperson, due date, balance.
-
-Filtros por PM e Location quando aplicável.
-
-Payment reminders automáticos/configuráveis.
-
-Pause Reminders por Invoice/Customer quando necessário.
-
-## 13.2 Financing
-
-Providers/banks configuráveis.
-
-Status: Applied, Pending, Approved, Declined, Funded.
-
-Documentos e histórico vinculados.
-
-Valor funded pode ser refletido como payment/revenue conforme configuração.
-
-Approved amount pode diferir do contract value.
-
-## 13.3 Commissions
-
-Modelos: % sale, % gross profit, fixed, % service ou combinação.
-
-Triggers: Estimate Approved, Deposit Received, Job Completed, Paid in Full.
-
-Status: Projected, Earned, Approved, Paid.
-
-Paid fica congelado; valores em aberto podem recalcular conforme regras.
-
-Salesperson vê apenas própria comissão.
-
-Sem split commission na V1.
-
-Adjustments exigem reason + audit.
-
-# 14. Client Portal
-
-## 14.1 Acesso e branding
-
-Login por email + password.
-
-Portal com branding da empresa prestadora; estrutura base do CrewCommand.
-
-Mobile-first.
-
-Powered by CrewCommand discreto e futuramente configurável por plano.
-
-## 14.2 Home
-
-Priorizar approvals pendentes, next service, active projects, open balances/invoices e recent documents.
-
-Cliente vê todas as próprias Properties.
-
-Pode solicitar nova Property, mas não criar livremente.
-
-Pode Request Service/Estimate; isso cria request/Lead interno, não Job automático.
-
-## 14.3 Project/Job visibility
-
-Progress do projeto oculto por padrão e configurável pela empresa.
-
-Quando habilitado: status, %, services, schedule e PM.
-
-Somente fotos/documentos customer-visible.
-
-Customer upload não vira documento oficial automaticamente.
-
-## 14.4 Estimate e Change Order no Portal
-
-Estimate em formato documental com services/photos/pricing/terms.
-
-Approve/Reject, seleção de terms/payment/financing e assinatura draw/type.
-
-Rejeição exige motivo.
-
-Falha de pagamento após aprovação não desfaz aprovação do Estimate; depósito fica failed/pending.
-
-Change Order usa fluxo similar em versão menor.
-
-## 14.5 Portal Financial
-
-Open balance, next payment, invoices open/paid/overdue, payment history e financing.
-
-Pay Now quando provider online estiver habilitado.
-
-Cliente pode editar phone/password/basic profile; troca de email exige verificação.
-
-Properties não são livremente editáveis pelo cliente.
-
-# 15. Inbox, Internal Chat e Notifications
-
-## 15.1 Inbox
-
-Uma área de Inbox, separando Customer Communications e Internal Chat.
-
-Canais de cliente: SMS, Email e Portal.
-
-Filtros, busca, assignment/transfer e archive.
-
-Permissões restringem visibilidade.
-
-Mensagens e attachments persistentes.
-
-## 15.2 Internal Chat
-
-DMs, Groups, Job Chats e Crew Chats.
-
-Job Chat criado automaticamente.
-
-Images, audio, documents, @mention, reply, pinned, read receipts e reactions.
-
-Edit mostra Edited + history.
-
-Delete é soft delete + audit.
-
-Mute e Seen By.
-
-## 15.3 Notifications
-
-Canais: In-App, Email, SMS e Push.
-
-Preferências por usuário, exceto notificações obrigatórias.
-
-Deep Links para entidade/aba relacionada.
-
-Agrupamento para evitar spam.
-
-Quiet Hours para notificações não críticas.
-
-# 16. Tasks, Approvals e Automations
-
-## 16.1 Tasks
-
-Views: My / All / Overdue / Completed.
-
-Pode vincular a Lead, Client, Property, Estimate, Job ou nenhuma entidade.
-
-Um primary assignee + watchers.
-
-Subtasks/checklist, recurring, @mentions, attachments, templates, bulk actions e reminders.
-
-## 16.2 Approvals Center
-
-Centraliza Change Orders, Material Requests e Commission Adjustments.
-
-Contagens visíveis no Dashboard/Sidebar.
-
-Aprovação simples em drawer; casos complexos abrem detalhe.
-
-Rejeição exige motivo.
-
-Tudo auditável.
-
-Suportar delegação temporária.
-
-## 16.3 Automation Engine
-
-Modelo WHEN → IF → THEN.
-
-Triggers em entidades principais e eventos de tempo.
-
-Condições AND/OR.
-
-Ações: create task, send message, notify, assign, change status, add tag.
-
-Delay/Wait e send windows.
-
-Loop prevention obrigatório.
-
-Enabled/Disabled, Test with sample data e execution history.
-
-Recipes pré-configuradas.
-
-Mensagens/tarefas criadas por automação mostram origem.
-
-Sem arbitrary JavaScript para usuários.
-
-Ações financeiras sensíveis não devem virar automação genérica sem controles específicos.
-
-# 17. Busca, Navegação e Experiência Global
-
-## 17.1 Shell
-
-Sidebar + Topbar.
-
-Sidebar: Dashboard, CRM, Sales, Jobs, Schedule, Tasks, Inbox, Team, Purchases, Financial, Reports; Settings e Help próximos ao rodapé.
-
-Topbar: Workspace, Location, Global Search, + New, Notifications, Help, Profile.
-
-Breadcrumbs somente em páginas profundas.
-
-Sticky headers/tabs quando úteis.
-
-Deep links sempre revalidam permissão.
-
-## 17.2 Global Search
-
-Popup com Ctrl/Cmd-K.
-
-Resultados agrupados por entidade.
-
-Recent Items antes da busca quando útil.
-
-View All abre página completa com filtros.
-
-Busca respeita Workspace/Location/Role/permissões.
-
-## 17.3 + New
-
-Mostra apenas ações permitidas ao usuário.
-
-Ações contextuais aparecem primeiro quando aplicável.
-
-Não oferecer ação que depois falhar por permissão se a permissão puder ser conhecida previamente.
-
-# 18. Reporting e Visibilidade Operacional
-
-## 18.1 Dashboard / Command Center
-
-Priorizar banners/alerts, Needs Attention/Command Center, KPIs, agenda/today, sales, finance, tasks e recent activity.
-
-Não incluir widget separado de Crew Capacity no Dashboard principal da V1.
-
-Valores financeiros só aparecem para usuários autorizados.
-
-## 18.2 Project Progress Report
-
-Compila Service dates, Daily Logs, before/during/after photos, Change Orders, observations e conclusion.
-
-Printable/exportable.
-
-Conteúdo do cliente deve respeitar customer-visible flags.
-
-## 18.3 Relatórios
-
-Sales conversion por source e salesperson.
-
-Jobs por status/progress/delay.
-
-Operational throughput e schedule exceptions.
-
-AR/overdue/payment performance.
-
-Commissions.
-
-Purchases/vendor spend.
-
-Relatórios devem respeitar Workspace, Location e permissões.
-
-# 19. Regras de Integridade e Auditoria de Produto
-
-Estimate aprovado é imutável; mudança de escopo ocorre por Change Order.
-
-Daily Log de Service DONE fica bloqueado para edição retrospectiva, salvo fluxo de reopen com permissão/motivo.
-
-Schedule conflict nunca é escondido.
-
-Overbilling é bloqueado por padrão.
-
-Financial values são totalmente ocultados para usuários sem permissão financeira.
-
-Deep links e notificações não burlam autorização.
-
-Override sensível exige permissão e, quando aplicável, motivo auditável.
-
-Delete sensível usa soft delete/history em vez de apagar rastreabilidade.
-
-Automations precisam de execution history e proteção contra loops.
-
-Integrações externas e pagamentos são tratados como estados explícitos, nunca como sucesso presumido.
-
-# 20. Critérios de Sucesso da V1
-
-| **Dimensão**        | **Critério de sucesso**                                                                                                                                  |
-|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Uso diário          | O produto é simples o suficiente para Owner, Office, Sales, PM e Field usarem no trabalho real sem depender de planilhas paralelas para o fluxo central. |
-| Clareza operacional | É possível entender rapidamente o estado de cada Job, seus Services, responsáveis, pendências e próximos passos.                                         |
-| Confiabilidade      | Funções criadas operam de forma consistente, sem bugs críticos que bloqueiem o trabalho principal.                                                       |
-| Rastreabilidade     | Ações importantes, mudanças de estado, aprovações e eventos financeiros deixam histórico suficiente para investigação.                                   |
-| Financeiro          | Invoices, Payments, AR e integrações não produzem saldos silenciosamente inconsistentes.                                                                 |
-| Campo               | Field Worker consegue executar as ações essenciais pelo mobile com baixa fricção.                                                                        |
-| Cliente             | Cliente consegue aprovar, pagar, acompanhar e acessar documentos sem entender a estrutura interna do sistema.                                            |
-| Configuração        | Empresa consegue adaptar stages, templates, permissions e automations sem quebrar os fluxos centrais.                                                    |
-
-## 20.1 Indicadores a acompanhar após Alpha/Beta
-
-Tempo para localizar estado/pendência de um Job.
-
-Lead-to-Estimate e Estimate-to-Won conversion.
-
-Tempo entre aprovação e criação/agendamento do Job.
-
-Schedule conflicts e overrides.
-
-Percentual de Services concluídos com Daily Log/checklist conforme regra.
-
-Change Orders aprovados/rejeitados e receita adicional capturada.
-
-Invoices overdue e aging.
-
-Payment success/failure e tempo de reconciliação.
-
-Uso do Client Portal e approvals/pagamentos por portal.
-
-Automation execution success/failure.
-
-# 21. Dependências Documentais e Próxima Etapa
-
-Este PRD responde “o que construir e por quê”. A cadeia de definição do CrewCommand evolui a partir dele para documentos que detalham fluxo, dados, experiência, tecnologia e execução.
-
-| **Documento**         | **Responsabilidade**                                |
-|-----------------------|-----------------------------------------------------|
-| PRD                   | O que construir e por quê.                          |
-| App Flow              | Como o usuário percorre o produto.                  |
-| Backend Domain Model  | Estrutura lógica dos dados e relacionamentos.       |
-| UI/UX Design Document | Como a experiência é apresentada e operada.         |
-| TRD                   | Como tecnicamente será implementado.                |
-| Implementation Plan   | Como o trabalho será dividido, ordenado e entregue. |
-
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Princípio final<br />
-</strong>O CrewCommand deve transformar uma operação complexa em uma rotina clara, coordenada e rastreável — sem esconder exceções importantes e sem obrigar o usuário a reconstruir o contexto manualmente.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
-
-Documento consolidado para continuidade do projeto. Conteúdo derivado das decisões de produto aprovadas e preservadas nos documentos oficiais posteriores do CrewCommand.
+> **Princípio final.** A Plataforma existe para transformar uma operação de exteriores em uma rotina clara e rastreável — sem esconder exceção importante e sem obrigar ninguém a reconstruir o contexto na cabeça.
