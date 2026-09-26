@@ -283,7 +283,7 @@ Nada disso é runtime atual.
 
 1. **Decisão/ação faltante:** uma reconciliação autenticada bem-sucedida, comprovada por inspeção de request, log e mapeamento persistido.
 2. **Documentos consultados:** `EPIC-01-SLICE-01-TASK-PACKET.md`, `06-IMPLEMENTATION-PLAN.md` Epic 0 item 1 e Epic 1, ADR-016, ADR-017.
-3. **Situação:** a conta controlada e a configuração server-side existem. A prova depende de o Product Owner submeter uma única vez as credenciais controladas na Web publicada. O Codex não recebe, exibe, registra nem solicita a senha.
+3. **Situação em 2026-09-26:** o Route Handler que serve o contrato foi implementado no `EPIC-00-SLICE-01`, com 14 testes cobrindo as sete linhas do contrato. **Falta uma ação de ambiente:** provisionar `SUPABASE_DB_URL` no projeto Vercel. Sem ela a rota devolve o `503` de serviço não configurado, que é o comportamento correto do contrato, mas impede a prova. Depois disso a prova depende de o Product Owner submeter uma única vez as credenciais controladas na Web publicada. O Codex não recebe, exibe, registra nem solicita a senha.
 4. **Sequenciamento:** conforme §3, essa prova deve ser executada **contra o Route Handler**, como critério de aceite do Epic 0 / Fase 2 / item 1 — não contra a Edge Function, que será desativada no item 2.
 5. **Bloqueia:** encerramento do Slice 01 e, por consequência, o início das fatias de Workspace/Membership/RBAC.
 

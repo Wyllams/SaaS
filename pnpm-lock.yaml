@@ -184,6 +184,9 @@ importers:
       '@saas/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@saas/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@saas/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
@@ -205,6 +208,9 @@ importers:
       react-dom:
         specifier: 19.2.0
         version: 19.2.0(react@19.2.0)
+      uuidv7:
+        specifier: 1.2.1
+        version: 1.2.1
     devDependencies:
       '@tailwindcss/postcss':
         specifier: 4.3.3
@@ -2096,6 +2102,10 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
+  uuidv7@1.2.1:
+    resolution: {integrity: sha512-4kPkK3/XTQW9Hbm4CaqfICn+kY9LJtDVEOfgsRRra/+n2Ofg4NqzRFceAkxvQ/Ud/6BpHOPzj8cirqM7TzTN5Q==}
+    hasBin: true
+
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
@@ -3411,6 +3421,8 @@ snapshots:
       browserslist: 4.29.1
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  uuidv7@1.2.1: {}
 
   xtend@4.0.2: {}
 
