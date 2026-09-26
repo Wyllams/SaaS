@@ -29,10 +29,13 @@ export default function LoginPage() {
     }
 
     try {
-      const { error: identityError } = await client.functions.invoke("identity-me", {
-        method: "GET",
+      // Route Handler same-origin, conforme ADR-017. Substitui a invocação da
+      // Edge Function `identity-me`, que é desativada pelo item 2 do Epic 0.
+      const response = await fetch("/api/identity/me", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+        cache: "no-store",
       });
-      if (identityError) setError("Unable to sign in. Check your email and password.");
+      if (!response.ok) setError("Unable to sign in. Check your email and password.");
     } catch {
       setError("Unable to sign in. Check your email and password.");
     } finally {
