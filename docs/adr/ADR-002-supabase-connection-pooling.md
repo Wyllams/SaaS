@@ -116,3 +116,14 @@ This policy preserves the advantages of Direct Postgres for persistent infrastru
 - POC: `docs/poc/POC-02.md`
 - Functional run: `36085782384`
 - Supabase project: `obpncbnzwrocvgngtodg`
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. **gatilho já disparado em parte:** esta decisão foi escrita para uma API e workers persistentes no Render, que o ADR-016 removeu. A execução agora é serverless no Vercel, cujo perfil de conexão é outro. A ordem de preferência abaixo precisa ser reavaliada no Epic 0, item 8, ao configurar Drizzle Kit com conexão direta para migration e pooler transaction para runtime;
+2. o orçamento de conexões ser excedido sob carga real;
+3. a latência acrescentada pelo pooler passar a aparecer no p95 de uma rota de produto.

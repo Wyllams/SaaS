@@ -515,10 +515,12 @@ Todos **adiados, não cancelados**. Retornam por decisão explícita registrada 
 
 # 18. Decisões abertas
 
+> Reprodução da lista autoritativa de `CURRENT-DECISIONS.md` §Decisões em aberto.
+> Os rótulos são idênticos de propósito, para que a divergência seja detectável.
+
 | Item | Situação |
 |---|---|
-| Marca | Não definida |
-| Valores e limites dos planos | Estrutura definida, números em aberto |
-| Extensão da UI de multi-location | `location_id` permanece no modelo; alcance na interface em aberto |
-| Período de exportação e retenção | Em aberto — motivo de `SCR-SET-013` estar adiada |
-| Escopo exato da administração da plataforma | `SCR-SA-001` e `002` propostos como rotas protegidas; confirmar |
+| Marca do produto | Não definida. Todo identificador permanece brand-neutral; o UI/UX usa o placeholder `[MARCA]` |
+| Valores e limites dos planos | Estrutura definida, números em aberto. Não bloqueia o Epic 4: limite é dado em `Entitlement`, nunca condicional por nome de plano |
+| Extensão da UI de multi-location | `location_id` permanece no modelo; o alcance na interface da V1 está em aberto |
+| Período de exportação e retenção | Em aberto — é o motivo de `SCR-SET-013` estar adiada |

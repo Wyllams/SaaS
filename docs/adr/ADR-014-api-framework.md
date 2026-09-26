@@ -1,6 +1,8 @@
 # ADR-014 — API Framework
 
-- **Status:** Superseded by ADR-016
+- **Status:** Superseded by ADR-016 e ADR-017
+- **Nota:** o ADR-016 removeu o Render e o runtime NestJS; o **ADR-017** substituiu
+  explicitamente a camada de API por Route Handlers e Server Actions no `apps/web`
 - **Date:** 2026-09-25
 - **Scope:** `apps/api`
 - **Validated by:** Epic 0 API framework validation
@@ -165,3 +167,11 @@ This ADR does not decide:
 - final product branding.
 
 This closes Epic 0 gate **G0.2**.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+**Não se aplica.** Esta decisão já foi superseded por ADR-016 e ADR-017. Reabri-la exige um ADR novo,
+não a reavaliação desta.

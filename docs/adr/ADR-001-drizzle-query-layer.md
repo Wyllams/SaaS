@@ -66,3 +66,14 @@ Prisma remains a technically capable alternative but scored lower for this produ
 - Successful CI run: `36082481586`.
 - Runtime tests: Drizzle and Prisma both passed RLS, transaction, JSONB, FTS and `pg_trgm` scenarios.
 - Project-specific score: Drizzle 96/100, Prisma 7 80/100.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. o Drizzle deixar de acompanhar a versão de PostgreSQL do projeto dentro de um ciclo de release;
+2. SQL cru deixar de ser exceção e virar a forma normal de escrever consulta, sinal de que a camada tipada não está pagando seu custo;
+3. o Drizzle Kit não conseguir expressar uma migration exigida por um Epic, obrigando a aplicar DDL fora do controle de versão.

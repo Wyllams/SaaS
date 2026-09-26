@@ -50,3 +50,14 @@ POC-03 demonstrated that the approved CrewCommand palette, spacing, radius and s
 - Vitest: 4/4 component tests passed;
 - token hard-code enforcement passed;
 - compiled CSS evidence artifact produced.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. um estado de UI exigido pelo App Flow não conseguir ser expresso por token semântico, forçando cor literal no componente;
+2. o produto passar a exigir tematização por tenant em tempo de execução, além do que CSS custom properties resolvem;
+3. o Tailwind 4 quebrar compatibilidade de forma que obrigue reescrever o mapeamento de tokens.

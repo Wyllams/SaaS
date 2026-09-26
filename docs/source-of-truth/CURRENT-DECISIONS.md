@@ -109,6 +109,27 @@ estado de entrega. As telas `SCR-INB-001` a `004` ficam reservadas.
 Consentimento e opt-out por contato e por canal são registrados **desde a V1**, mesmo sem
 SMS, porque consentimento retroativo é impossível de reconstruir.
 
+## Decisões em aberto
+
+**Esta é a lista autoritativa.** O PRD §15 e o App Flow §18 a reproduzem com os mesmos
+rótulos; qualquer divergência entre as três resolve-se a favor desta.
+
+Nenhum destes itens pode ser resolvido por inferência durante a implementação. O
+`AGENTS.md` §1 exige parar e registrar `BLOCKED — DOCUMENTATION DECISION REQUIRED`.
+
+| Item | Situação |
+|---|---|
+| Marca do produto | Não definida. Todo identificador permanece brand-neutral; o UI/UX usa o placeholder `[MARCA]` |
+| Valores e limites dos planos | Estrutura definida, números em aberto. Não bloqueia o Epic 4: limite é dado em `Entitlement`, nunca condicional por nome de plano |
+| Extensão da UI de multi-location | `location_id` permanece no modelo; o alcance na interface da V1 está em aberto |
+| Período de exportação e retenção | Em aberto — é o motivo de `SCR-SET-013` estar adiada |
+
+Idiomas **não** estão nesta lista: foram decididos em 2026-09-25 pelo ADR-023 — `en-US`
+e `es-US`, ambos completos. O escopo exato da administração da plataforma também saiu:
+`SCR-SA-001` e `SCR-SA-002` são superfícies de operador da plataforma, não de tenant.
+
+---
+
 ## Nome do produto
 
 **CrewCommand é nome histórico/provisório.** A marca final ainda não foi definida. Não propagar o nome automaticamente para novos packages, namespaces, domínios ou documentação.

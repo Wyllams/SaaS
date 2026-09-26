@@ -194,3 +194,14 @@ in a future explicitly approved product/business change.
 - Local hardened run: `36087490776`
 - Direct payment run: `36090007775`
 - Sandbox: CrewCommand Dev
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. um tenant exigir modelo de repasse que Direct Charges não atende;
+2. a responsabilidade por chargeback precisar migrar para a plataforma, o que muda o modelo de conta;
+3. o Stripe alterar a disponibilidade do Accounts v2 na região de operação.

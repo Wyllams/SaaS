@@ -151,3 +151,14 @@ Requirements:
 8. Keep Sentry SDK initialization/configuration outside business-domain logic.
 9. Store `SENTRY_DSN` only in secure environment/secret configuration.
 10. Do not enable additional Sentry products implicitly; validate them separately if needed.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. o custo por span ultrapassar o orçamento de observabilidade;
+2. o backend de ingestão deixar de aceitar OTLP sem tradução;
+3. a correlação entre log e trace deixar de funcionar na fronteira serverless, onde o contexto de execução é diferente do de um processo persistente.
