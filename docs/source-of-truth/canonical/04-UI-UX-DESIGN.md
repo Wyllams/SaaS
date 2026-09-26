@@ -136,7 +136,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 <thead>
 <tr class="header">
 <th><strong>Princípio-mestre<br />
-</strong>Consistência, clareza e velocidade operacional têm prioridade sobre decoração. Nenhuma decisão visual deve tornar o CrewCommand mais difícil de usar apenas para fazê-lo parecer mais sofisticado.</th>
+</strong>Consistência, clareza e velocidade operacional têm prioridade sobre decoração. Nenhuma decisão visual deve tornar o produto mais difícil de usar apenas para fazê-lo parecer mais sofisticado.</th>
 </tr>
 </thead>
 <tbody>
@@ -210,7 +210,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 <thead>
 <tr class="header">
 <th><strong>Regra oficial mobile<br />
-</strong>A experiência Field do CrewCommand deve ser possível de operar rapidamente com uma mão, com ações principais sempre próximas, textos objetivos e mínimo de navegação desnecessária.</th>
+</strong>A experiência Field do produto deve ser possível de operar rapidamente com uma mão, com ações principais sempre próximas, textos objetivos e mínimo de navegação desnecessária.</th>
 </tr>
 </thead>
 <tbody>
@@ -310,7 +310,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Administrativo é Desktop-first.
 
-- Field Worker e Client Portal são Mobile-first.
+- Crew (PWA de campo) e Client Portal são Mobile-first.
 
 - Tablet é tratado como experiência própria quando o comportamento muda significativamente.
 
@@ -364,10 +364,16 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 | **Role**        | **Navegação principal**                                                             |
 |-----------------|-------------------------------------------------------------------------------------|
-| Field Worker    | Hoje \| Projetos \| Chat \| Notificações \| Mais                                    |
-| Salesperson     | Início \| Leads \| Agenda \| Tarefas \| Mais                                        |
-| Project Manager | Experiência adaptada com maior densidade; Job/Approvals/Issues/Schedule em destaque |
-| Client Portal   | Início \| Projetos \| Documentos \| Financeiro \| Mais                              |
+| Crew            | Today \| Jobs \| Notifications \| More                                              |
+| Salesperson     | Dashboard \| CRM \| Sales \| Schedule                                               |
+| Supervisor      | Dashboard \| Jobs \| Schedule \| Team \| Purchases \| Approvals                      |
+| Client          | Portal: Início \| Projetos \| Documentos \| Financeiro \| Mais                      |
+
+> **Papéis corrigidos na v2.0.** Esta tabela usava "Field Worker", "Project Manager" e
+> "Client Portal" como papéis. Os papéis válidos são os sete do adendo A1: Owner, Admin,
+> Salesperson, Supervisor, Crew, Accounting e Client. A navegação acima passa a reproduzir o
+> App Flow v2.0 §2, que é a autoridade. Chat e Tarefas saíram porque seus módulos estão fora
+> da V1 — `SCR-INB-001` a `004` e `SCR-TASK-001` a `003`, adiados no App Flow §16.2.
 
 - Bottom Navigation terá no máximo 5 itens principais.
 
@@ -405,7 +411,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 | Avatar            | Foto ou iniciais; Crews usam ícone/iniciais próprias.                                                                    |
 | Charts            | Line, Bar, Area e Donut apenas quando útil; sem 3D ou excesso de cores.                                                  |
 
-## 4.1 Componentes próprios do CrewCommand
+## 4.1 Componentes próprios do produto
 
 - Job Card
 
@@ -472,7 +478,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 | Reports                    | Home por categorias. Dentro: filtros → KPIs → gráfico → tabela → drill-down.                                                                                           |
 | Settings                   | Navegação secundária vertical no desktop; menu/seletor em tablet/mobile.                                                                                               |
 | Client Portal              | Shell mais simples, com identidade da empresa, navegação horizontal no desktop e Bottom Navigation no mobile.                                                          |
-| Super Admin                | Shell separado e explicitamente identificado como CrewCommand Admin.                                                                                                   |
+| Super Admin                | **Operador da plataforma, não um dos sete papéis de tenant.** Shell separado, explicitamente identificado como administração da plataforma — `SCR-SA-001` e `SCR-SA-002`.                                                                                                   |
 
 ## 5.1 Regras de layout
 
@@ -492,13 +498,14 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 # 6. Mobile, Tablet e Field Experience
 
-## 6.1 Field Worker
+## 6.1 Crew — experiência de campo
 
 - Home padrão = Hoje.
 
 - Cards grandes mostram horário, Service, Customer, Property/endereço e Status; sem financeiro.
 
-- Ao abrir Service: header com Service + Status + Customer + Property; ações rápidas Ligar / Mensagem / Mapa.
+- Ao abrir Service: header com Service + Status + Customer + Property; ações rápidas Ligar / Mensagem / Mapa — "Mensagem" abre o discador ou o SMS do próprio
+  aparelho, não um chat interno, que está fora da V1.
 
 - Se houver múltiplos Services do mesmo Job, mostrar “Serviço X de Y” e seletor rápido.
 
@@ -508,7 +515,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Complete Service é ação própria/sticky e dispara revisão de pendências antes do fechamento.
 
-- Field Worker não vê valores financeiros ou administrativos sem permissão.
+- O Crew não vê valores financeiros ou administrativos sem permissão.
 
 ## 6.2 Daily Log mobile
 
@@ -529,7 +536,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 | **Fluxo**            | **UX mobile**                                                                              |
 |----------------------|--------------------------------------------------------------------------------------------|
 | Material Extra       | Material → Quantity → Reason → Photo → Notes → Send. Status acompanhável pelo solicitante. |
-| Change Order Request | Service → Description → Reason → Photos → Documents → Send. Field Worker não vê preço.     |
+| Change Order Request | Service → Description → Reason → Photos → Documents → Send. O Crew não vê preço.     |
 | Report Problem       | Escolha rápida de categoria → Description → Photos → Send. Formulário curto.               |
 
 ## 6.4 Conclusão e assinatura
@@ -556,7 +563,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Tablet suporta Portrait e Landscape; Schedule pode sugerir Landscape, sem bloquear Portrait.
 
-- Project Manager no tablet usa experiência mais próxima do desktop, respeitando permissões.
+- O Supervisor no tablet usa experiência mais próxima do desktop, respeitando permissões.
 
 # 7. Client Portal e estados globais
 
@@ -564,13 +571,13 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Visual mais simples que o administrativo: menos navegação, mais espaço em branco e CTAs claros.
 
-- Usa logo, nome, contato e cor principal da empresa; se não houver branding, usa CrewCommand padrão.
+- Usa logo, nome, contato e cor principal da empresa; se não houver branding, usa o padrão da plataforma — `[MARCA]`, ainda não definida.
 
 - A empresa escolhe cor principal e o sistema deriva variações seguras; não permitir combinações arbitrárias que prejudiquem contraste.
 
-- Estrutura UI continua sendo CrewCommand para garantir consistência e acessibilidade.
+- A estrutura de UI continua sendo a da plataforma, para garantir consistência e acessibilidade.
 
-- Indicação discreta “Powered by CrewCommand”, configurável por plano no futuro.
+- Indicação discreta “Powered by `[MARCA]`”, configurável por plano no futuro.
 
 ## 7.2 Navegação e Home
 
@@ -616,7 +623,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Pay Now aparece apenas se provider/método realmente estiver disponível.
 
-- Checkout utiliza componente seguro do provider; CrewCommand não coleta cartão fora do padrão seguro.
+- Checkout utiliza componente seguro do provider; a plataforma não coleta cartão fora do padrão seguro.
 
 ## 7.5 Estados globais de interface
 
@@ -688,7 +695,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 | 02 — Patterns       | Filtros, tabelas, drawers, forms, empty/error states, interactions    |
 | 03 — Desktop        | Telas administrativas desktop                                         |
 | 04 — Tablet         | Variantes tablet quando necessárias                                   |
-| 05 — Mobile / Field | Field Worker e Sales mobile                                           |
+| 05 — Mobile / Field | Crew e Salesperson no mobile                                           |
 | 06 — Client Portal  | Desktop/mobile do portal                                              |
 | 07 — Prototypes     | Fluxos clicáveis críticos                                             |
 | 08 — Archive        | Versões antigas e referências                                         |
@@ -882,12 +889,12 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 # 14. Princípios finais aprovados
 
-*“Nenhuma decisão visual deve tornar o CrewCommand mais difícil de usar apenas para fazê-lo parecer mais sofisticado.”*
+*“Nenhuma decisão visual deve tornar o produto mais difícil de usar apenas para fazê-lo parecer mais sofisticado.”*
 
 *“Consistência, clareza e velocidade operacional têm prioridade sobre decoração.”*
 
 *“Desktop, tablet, mobile de campo e Client Portal pertencem ao mesmo produto, mas cada experiência deve respeitar o contexto real de uso.”*
 
-*“O Client Portal deve permitir que o cliente encontre rapidamente o que precisa aprovar, pagar, acompanhar ou baixar, sem precisar entender a estrutura interna do CrewCommand.”*
+*“O Client Portal deve permitir que o cliente encontre rapidamente o que precisa aprovar, pagar, acompanhar ou baixar, sem precisar entender a estrutura interna do produto.”*
 
-*“A experiência do cliente deve parecer uma extensão digital da empresa prestadora do serviço, e não um painel administrativo do CrewCommand.”*
+*“A experiência do cliente deve parecer uma extensão digital da empresa prestadora do serviço, e não um painel administrativo da plataforma.”*
