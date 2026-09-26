@@ -5,7 +5,7 @@
 
 - **Data:** 2026-09-25
 - **Branch:** `epic/00-foundation`
-- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 - **Estado:** implementação técnica concluída; aguardando revisão/merge da branch
 - **Feature implementation:** ainda não iniciada
 - **CI final:** PASS — GitHub Actions run `36161167515`
@@ -21,7 +21,7 @@ Antes de qualquer decisão ou código posterior, consultar:
 5. `docs/source-of-truth/canonical/03-APP-FLOW-OFICIAL.md`
 6. `docs/source-of-truth/canonical/04-UI-UX-DESIGN.md`
 7. `docs/source-of-truth/canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md`
-8. `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+8. `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 9. `docs/architecture/TECHNICAL-ARCHITECTURE.md`
 10. `docs/adr/README.md` + ADRs aplicáveis
 11. este arquivo e `EPIC-00-QA.md`

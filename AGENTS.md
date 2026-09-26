@@ -60,7 +60,7 @@ Antes de editar qualquer arquivo, o agente deve ler, nesta ordem:
 
 1. `docs/source-of-truth/README.md`
 2. `docs/source-of-truth/CURRENT-DECISIONS.md`
-3. `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+3. `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 4. `docs/architecture/TECHNICAL-ARCHITECTURE.md`
 5. `docs/adr/README.md`
 6. ADRs aplicáveis à tarefa

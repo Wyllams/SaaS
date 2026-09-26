@@ -4,7 +4,7 @@
 
 
 - **Date:** 2026-09-25
-- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 - **State:** Slice 01 identity handoff has been migrated to the active Supabase Edge Function `identity-me`; the Render API is historical/superseded. Successful authenticated reconciliation still requires a controlled account proof.
 - **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
 
@@ -173,7 +173,7 @@ These remain Epic-level obligations; Slice 01 covers only the authentication/ide
 - `docs/source-of-truth/canonical/03-APP-FLOW-OFICIAL.md`
 - `docs/source-of-truth/canonical/04-UI-UX-DESIGN.md`
 - `docs/source-of-truth/canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md`
-- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 - `docs/architecture/TECHNICAL-ARCHITECTURE.md`
 - `docs/adr/README.md` and applicable ADRs
 - `docs/implementation/CHATGPT-CODEX-OPERATING-MODEL.md`
