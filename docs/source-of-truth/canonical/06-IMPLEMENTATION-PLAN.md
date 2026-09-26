@@ -282,7 +282,7 @@ Arredondamento e imposto em todos os modos · **isenção vencida não zera impo
 
 ## Superfícies
 
-`SCR-JOB-001` a `005`, `012` · `SCR-SCH-001` a `006` · `SCR-TEAM-001` a `005`
+`SCR-JOB-001` a `005`, `010`, `012` · `SCR-SCH-001` a `006` · `SCR-TEAM-001` a `005`
 
 ## Trabalho
 
@@ -295,6 +295,8 @@ Arredondamento e imposto em todos os modos · **isenção vencida não zera impo
 7. **Escadinha**: preview Before/After, preservação de intervalos, exclusão de concluídos, detecção de novos conflitos, aplicação atômica e desfazer.
 8. `StairStepChangeSet` com auditoria.
 9. Alerta e bloqueio ao atribuir crew com seguro vencido.
+10. Aba **Documents** do Job — `SCR-JOB-010`: upload, listagem e download por `FileService`, com
+    bucket privado, URL assinada temporária e permissão verificada no servidor.
 
 ## Testes obrigatórios
 
@@ -310,7 +312,7 @@ A Escadinha é demonstrável com preview, aplicação e desfazer, sob cenário c
 
 ## Superfícies
 
-`SCR-FIELD-001` a `007` · `SCR-JOB-006`, `007`, `009` · `SCR-APR-001`
+`SCR-FIELD-001` a `007` · `SCR-JOB-006`, `007`, `009`, `013` · `SCR-APR-001`
 
 ## Trabalho
 
@@ -325,6 +327,8 @@ A Escadinha é demonstrável com preview, aplicação e desfazer, sob cenário c
 9. Change Order completo: precificação, preview, envio, aprovação, assinatura e efeito no valor do Job.
 10. Central de aprovações com delegação.
 11. **Web Push** com VAPID e `PushSubscription`.
+12. **Project Progress Report** — `SCR-JOB-013`: oferecido na conclusão do Service, consolidando
+    progresso, fotos e Daily Logs do período, exportável e compartilhável pelo portal.
 
 ## Testes obrigatórios
 
@@ -352,7 +356,7 @@ Uma solicitação gera várias compras · compra sem solicitação exige permiss
 
 ## Superfícies
 
-`SCR-FIN-001` a `007`
+`SCR-FIN-001` a `007` · `SCR-SET-011`
 
 ## Trabalho
 
@@ -364,6 +368,8 @@ Uma solicitação gera várias compras · compra sem solicitação exige permiss
 6. AR com aging e lembretes que param ao ficar pago.
 7. Comissões com as cinco formas de cálculo, gatilho configurável, estados e congelamento em Paid.
 8. QuickBooks: OAuth com rotação de refresh token, mapeamento explícito, sincronização de Invoice e Payment, webhook como sinal com refetch autoritativo, reconciliação periódica e tratamento de conflito de versão.
+9. Tela de **Integrações** — `SCR-SET-011`: estado da conexão, conta vinculada, última sincronização,
+   erros pendentes e ação de reconectar ou desconectar.
 
 ## Testes obrigatórios
 
@@ -399,7 +405,7 @@ Grant expirado, já consumido e revogado · grant de um cliente **não acessa da
 
 ## Superfícies
 
-`SCR-DASH-001`
+`SCR-DASH-001` · `SCR-NOT-001` · `SCR-REP-001` · `SCR-SEARCH-001` · `SCR-HELP-001` · `SCR-SET-010` · `SCR-SA-001`, `002`
 
 > O **dashboard único** (App Flow §4) agrega avisos de trial e setup, aprovações, jobs e agenda do dia,
 > conflitos, pipeline e follow-ups, estimates aguardando resposta, resumo financeiro e AR, comissão e
@@ -416,8 +422,14 @@ Grant expirado, já consumido e revogado · grant de um cliente **não acessa da
 6. **Dashboard único `SCR-DASH-001`**: blocos por permissão conforme a tabela do App Flow §4, filtro de
    período, widgets reorganizáveis e ocultáveis por usuário, padrão por papel definido pela empresa, e
    drawer de "Requer Atenção" com motivo concreto e ação rápida.
-7. Busca global com atalho, agrupamento por entidade e respeito a escopo.
-8. Administração da plataforma em rotas protegidas, com acesso de suporte autorizado, registrado e com banner permanente.
+7. **Central de Notificações** — `SCR-NOT-001`: lista por origem, estado lido e não lido, marcação
+   em massa, e link que revalida autorização ao abrir o registro.
+8. Busca global com atalho, agrupamento por entidade e respeito a escopo.
+9. Administração da plataforma em rotas protegidas — `SCR-SA-001` e `SCR-SA-002` — com acesso de
+   suporte autorizado, registrado e com banner permanente.
+10. Configurações de **Comunicações** — `SCR-SET-010`: remetente, assinatura e template por idioma,
+    coerentes com os catálogos do item 1.
+11. **Ajuda e Suporte** — `SCR-HELP-001`: superfície global de ajuda e abertura de chamado.
 
 ## Testes obrigatórios
 

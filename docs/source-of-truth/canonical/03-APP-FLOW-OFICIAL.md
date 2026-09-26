@@ -203,7 +203,20 @@ Abre em Kanban — `SCR-JOB-001`, com alternativa em lista — `SCR-JOB-002`.
 
 Card: cliente, Property, Total Contract Value quando permitido, status, vendedor e alertas. Arrastar muda status; Waiting pode pedir motivo.
 
-**Detalhe** — `SCR-JOB-003`: Overview, Services, Schedule, Financial, Change Orders, Materials, Daily Logs, Photos, Documents, Activity.
+**Detalhe** — `SCR-JOB-003`. Cada aba tem Screen ID próprio, e são esses IDs que o catálogo §16.1 conta:
+
+| Aba | Screen ID |
+|---|---|
+| Overview | `SCR-JOB-003` |
+| Services | `SCR-JOB-004` |
+| Schedule | sem ID próprio — renderiza `SCR-SCH-001` com escopo do Job |
+| Financial | sem ID próprio — renderiza `SCR-FIN-*` com escopo do Job |
+| Change Orders | `SCR-JOB-007` |
+| Materials | `SCR-JOB-008` |
+| Daily Logs | `SCR-JOB-006` — consolidado do Job |
+| Photos | `SCR-JOB-009` |
+| Documents | `SCR-JOB-010` |
+| Activity | `SCR-JOB-012` |
 
 O cabeçalho **não exibe o valor do contrato**. Milestones ficam na Overview com "ver tudo".
 
@@ -262,7 +275,11 @@ Comportamento obrigatório:
 5. permite desfazer imediatamente;
 6. registra quem, quando e por quê.
 
-## 8.5 Crews e parceiros — `SCR-TEAM-002`, `SCR-TEAM-003`, `SCR-TEAM-004`
+## 8.5 Equipe, Crews e parceiros — `SCR-TEAM-001` a `SCR-TEAM-005`
+
+**Usuários** — `SCR-TEAM-001`: lista de usuários do Workspace com papel, Locations de escopo e estado de Membership. É a aba de entrada do módulo Equipe; convite, papel e suspensão obedecem ao Epic 1.
+
+**Crews e Teams** — `SCR-TEAM-002`: lista de Crews e Teams do Workspace, com membros, Location e estado de disponibilidade. **Detalhe da Crew** — `SCR-TEAM-003`: membros, histórico de atribuições, capacidade por `ProductionUnit` e documentos quando a Crew for parceira.
 
 Uma Crew pode pertencer a mais de um Team. Ao atribuir um Team, escolhe-se quais Crews participam. Primary Crew mais adicionais é permitido.
 
