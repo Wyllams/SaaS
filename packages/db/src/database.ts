@@ -24,10 +24,19 @@ export function createDatabase(connectionString: string) {
   const certificateAuthority = process.env.SUPABASE_DB_CA;
 
   if (!certificateAuthority) {
+    // Fecha em produção. O fallback sem verificação existe para desenvolvimento e
+    // validação, e não pode alcançar tráfego real por esquecimento.
+    if (process.env.APP_ENV === "production") {
+      throw new Error(
+        "SUPABASE_DB_CA is required when APP_ENV=production: refusing to open an " +
+          "unverified TLS connection to the database.",
+      );
+    }
+
     console.warn(
       "database tls: server identity is NOT verified because SUPABASE_DB_CA is absent. " +
         "Traffic is encrypted, but the connection is exposed to an in-path attacker. " +
-        "Set SUPABASE_DB_CA before production traffic.",
+        "This fallback is refused when APP_ENV=production.",
     );
   }
 
