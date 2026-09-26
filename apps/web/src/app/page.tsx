@@ -12,7 +12,13 @@ export default function FoundationPage() {
           This is an infrastructure validation surface only. Product features start
           after the Epic 0 exit gate.
         </p>
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="/login"
+            className="rounded bg-app-primary px-4 py-2 text-white hover:opacity-90"
+          >
+            Go to sign in
+          </a>
           <Button disabled>Feature work not started</Button>
         </div>
       </section>
