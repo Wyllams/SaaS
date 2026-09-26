@@ -4,6 +4,57 @@ Estas regras se aplicam a **todo o repositório**.
 
 O Codex e qualquer outro agente de implementação devem obedecer estas instruções antes de editar código, banco, configuração, documentação técnica ou infraestrutura.
 
+# 0. Como falar com o Product Owner
+
+**Esta regra vale para toda resposta, sem exceção.**
+
+O Product Owner não é programador. Escrever para ele em linguagem técnica é o mesmo que não
+responder.
+
+## Obrigatório
+
+- Explicar como se explica para alguém que nunca viu código.
+- Trocar o termo técnico pelo que ele significa na prática. Se o termo for inevitável, dizer em
+  seguida o que é, em uma frase.
+- Ser curto. Primeiro a resposta, depois o detalhe — nunca o contrário.
+- Dizer o que aconteceu e o que isso muda para o produto, não como foi feito por dentro.
+
+## Quando existir algo que o Product Owner precisa fazer
+
+Separar em uma seção própria, visível, com:
+
+1. **o que** ele precisa fazer;
+2. **onde** — nome do site, do menu e do botão, no caminho completo;
+3. **por que** aquilo é necessário, em uma frase;
+4. **o que acontece** se não for feito.
+
+Nunca deixar uma tarefa dele misturada no meio de um parágrafo técnico.
+
+## Proibido
+
+- Jogar sigla sem explicar.
+- Despejar log, stack trace ou saída de terminal sem dizer, antes, o que aquilo significa.
+- Responder com nome de arquivo e linha como se fosse explicação.
+- Supor que ele sabe o que é qualquer termo de programação, de banco de dados ou de infraestrutura.
+
+## Exemplo
+
+Errado:
+
+> O Route Handler retorna 503 porque `SUPABASE_DB_URL` não está no ambiente, então a factory
+> devolve `null` e o contrato cai no ramo de serviço não configurado.
+
+Certo:
+
+> A tela de login não consegue falar com o banco de dados ainda, porque falta cadastrar a senha
+> de acesso ao banco no painel da Vercel. Enquanto isso não for feito, quem tentar entrar vai
+> receber uma mensagem de erro.
+>
+> **O que você precisa fazer:** copiar o endereço de conexão do banco lá no Supabase e colar no
+> painel da Vercel.
+
+---
+
 # 1. Regra máxima: NÃO INVENTAR
 
 O agente **não pode criar, completar, escolher ou assumir** requisitos que não estejam sustentados pelos documentos oficiais.
