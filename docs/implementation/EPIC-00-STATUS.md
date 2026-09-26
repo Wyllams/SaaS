@@ -93,7 +93,7 @@ Derivado do Implementation Plan v2.0, seção "Epic 0 — Fundação e migraçã
 - [ ] **4.** Avaliar a remoção de `pg_net`, que deixa de ser necessário para fila.
 - [ ] **5.** Criar `packages/domain` e `packages/i18n`.
 - [ ] **6.** Reavaliar `packages/api-client` e `packages/domain-types`. Ver §6.2 — ambos são exigidos por `verify-structure`.
-- [ ] **7.** Decidir e registrar o destino de `apps/mobile` — fora da V1 pelo ADR-018. Ver §6.3. **BLOCKED**.
+- [x] **7.** Destino de `apps/mobile` decidido pelo Product Owner em 2026-09-26: **removido** do Git, do workspace e da CI. Ver §6.3.
 - [ ] **8.** Configurar Drizzle Kit com conexão direta para migration e pooler transaction para runtime.
 - [ ] **9.** Estabelecer o contrato de configuração por ambiente e a política de secret.
 - [ ] **10.** Ativar observabilidade: `request_id`, logs estruturados, Sentry e OpenTelemetry.
@@ -113,7 +113,7 @@ Derivado do Implementation Plan v2.0, seção "Epic 0 — Fundação e migraçã
 
 ### Gate de saída da Fase 2
 
-- [ ] um único app implantável, construído a partir de lockfile commitado;
+- [x] um único app implantável, construído a partir de lockfile commitado — `apps/web`, verificado em 2026-09-26 com `--frozen-lockfile` e `pnpm run ci` completos;
 - [x] nenhum vestígio de NestJS, BullMQ ou Valkey nos manifests versionados — verificado 2026-09-25;
 - [ ] `identity-me` servido por Route Handler, com a Edge Function desativada;
 - [ ] worker de fila acionado por Vercel Cron, verificado sob falha e reinício;
@@ -128,12 +128,11 @@ Derivado do Implementation Plan v2.0, seção "Epic 0 — Fundação e migraçã
 Verificação feita no commit `76ad33b` por inspeção direta de `git ls-files`,
 `pnpm-workspace.yaml`, `scripts/verify-structure.mjs` e `.github/workflows/ci.yml`.
 
-**Workspaces versionados: 10.**
+**Workspaces versionados: 9.**
 
 ```text
 apps/
   web/       Next.js App Router — único app implantável
-  mobile/    Expo — AINDA versionado e no workspace; fora da V1 pelo ADR-018
 
 packages/
   api-client/      domain-types/     observability/
@@ -169,17 +168,25 @@ morto no Git só para satisfazer a CI — contradiz o gate de saída.
 
 ### 6.2 Armadilha — `verify-structure` congela a lista de packages
 
-`scripts/verify-structure.mjs` exige **exatamente** os 10 workspaces atuais, com nome e
-`private: true`. Os itens 5, 6 e 7 da Fase 2 alteram essa lista: criam `packages/domain` e
-`packages/i18n`, podem remover `packages/api-client` e `packages/domain-types`, e podem remover
-`apps/mobile`. Cada uma dessas mudanças exige atualizar o script no mesmo commit.
+`scripts/verify-structure.mjs` exige **exatamente** os 9 workspaces atuais, com nome e
+`private: true`. Os itens 5 e 6 da Fase 2 ainda alteram essa lista: criam `packages/domain` e
+`packages/i18n`, e podem remover `packages/api-client` e `packages/domain-types`. Cada uma dessas
+mudanças exige atualizar o script no mesmo commit.
 
-### 6.3 `apps/mobile` contradiz o ADR-018
+O item 7 já passou por aqui: a remoção de `apps/mobile` em 2026-09-26 levou o script de 10 para
+9 workspaces, no mesmo commit da remoção — exatamente o procedimento que esta seção exige.
 
-O ADR-018 tira `apps/mobile` do escopo da V1, mas ele permanece versionado (7 arquivos), listado
-em `pnpm-workspace.yaml` e **exigido** por `verify-structure.mjs`. O item 7 existe para resolver
-isso. Enquanto não houver decisão registrada, o repositório afirma duas coisas incompatíveis.
-O `AGENTS.md` §1 proíbe o Codex escolher sozinho entre remover, arquivar ou congelar.
+### 6.3 `apps/mobile` — removido em 2026-09-26
+
+O ADR-018 tirou `apps/mobile` do escopo da V1, mas ele permanecia versionado, no workspace e
+exigido pela CI — o repositório afirmava duas coisas incompatíveis. O Product Owner decidiu
+**remover**, e a remoção foi executada: 7 arquivos versionados apagados, entrada retirada de
+`pnpm-workspace.yaml` e de `scripts/verify-structure.mjs`, e `pnpm-lock.yaml` regenerado.
+
+Nada ficou órfão: `@saas/api-client` e `@saas/design-tokens` continuam consumidos por
+`apps/web` e por `@saas/ui-web`. O `turbo.json` e o workflow de CI nunca referenciaram mobile.
+
+Recuperar o app, se um dia voltar, é `git show` no commit anterior à remoção.
 
 ### 6.4 Resíduo local, não versionado
 
@@ -276,9 +283,11 @@ O Task Packet precisa autorizar explicitamente:
 
 ### Blockers
 
-`BLOCKED — DOCUMENTATION DECISION REQUIRED` · **destino de `apps/mobile`**
+**Nenhum em aberto.**
 
-1. **Decisão faltante:** remover do Git, arquivar fora do workspace, ou manter congelado com justificativa registrada.
-2. **Documentos consultados:** ADR-018, ADR-011, `06-IMPLEMENTATION-PLAN.md` item 7 do Epic 0, `pnpm-workspace.yaml`, `scripts/verify-structure.mjs`.
-3. **Conflito:** o ADR-018 exclui `apps/mobile` da V1, mas ele segue versionado, no workspace e exigido pela CI.
-4. **Bloqueia:** item 7 da Fase 2 e o gate de saída "um único app implantável". Arquivos afetados: `apps/mobile/**`, `pnpm-workspace.yaml`, `scripts/verify-structure.mjs`.
+Resolvidos em 2026-09-26:
+
+- **destino de `apps/mobile`** — Product Owner decidiu remover; executado. Ver §6.3.
+- **ADR-002 descrevia o Render como runtime** — emendado. O ramo "Persistent API and Workers"
+  foi marcado como não aplicável e o ramo serverless passou a ser o operativo, coerente com o
+  item 8. Sem essa emenda, o item 8 pararia por conflito entre plano e ADR.

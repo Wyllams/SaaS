@@ -33,6 +33,11 @@ A experiência de campo é **PWA instalável**, servida no mesmo deploy do `apps
 
 `apps/mobile` sai do escopo da V1.
 
+**Executado em 2026-09-26:** o workspace foi **removido** do repositório por decisão do Product
+Owner — 7 arquivos versionados, a entrada em `pnpm-workspace.yaml`, a entrada em
+`scripts/verify-structure.mjs` e o importer correspondente em `pnpm-lock.yaml`. O monorepo passa
+de 10 para 9 workspaces. O histórico preserva o código caso a decisão seja revista.
+
 ## Evidence
 
 Decisão do Product Owner em 2026-09-25. O POC-11 validou os requisitos funcionais de campo —

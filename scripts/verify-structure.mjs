@@ -4,7 +4,6 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const expected = new Map([
   ["apps/web", "@saas/web"],
-  ["apps/mobile", "@saas/mobile"],
   ["packages/api-client", "@saas/api-client"],
   ["packages/config", "@saas/config"],
   ["packages/db", "@saas/db"],

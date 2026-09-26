@@ -1,7 +1,8 @@
 # ADR-002 — Supabase Connection Modes and Pooling
 
-- **Status:** Accepted
+- **Status:** Accepted, **com emenda de 2026-09-26**
 - **Date:** 2026-09-24
+- **Emenda:** o ramo "Persistent API and Workers" não se aplica mais — ver abaixo
 - **Validated by:** POC-02
 - **Depends on:** ADR-001 (Drizzle ORM + Drizzle Kit)
 
@@ -56,18 +57,32 @@ A prepared statement and session state happened to succeed in the test, but thos
 
 ## Decision
 
-### Persistent CrewCommand API and Workers
+### ~~Persistent API and Workers~~ — não se aplica desde 2026-09-25
 
-Use this preference order:
+> **Emenda de 2026-09-26.** Esta seção foi escrita para uma API NestJS e workers BullMQ
+> persistentes no **Render**. O **ADR-016** removeu o Render e essas duas unidades de runtime;
+> o **ADR-017** colocou a execução HTTP de negócio em Route Handlers e Server Actions no
+> `apps/web`, servidos por funções serverless na Vercel. **Não existe serviço persistente na
+> arquitetura vigente**, então a ordem de preferência abaixo não tem a quem se aplicar.
+>
+> O ramo operativo passa a ser "Short-lived / serverless connections", logo a seguir. Isso é
+> coerente com o item 8 do Epic 0 — conexão direta para migration, pooler **transaction** para
+> runtime. A decisão técnica não muda; muda qual dos dois ramos vale.
 
-1. Direct connection if the deployment network has validated IPv6 reachability and direct Postgres connection usage fits the connection budget.
-2. Otherwise use **Shared Supavisor Session mode** for persistent IPv4-connected services.
+O texto original fica preservado como registro:
 
-Session mode is the validated safe choice for the initial Render backend if Direct networking is unavailable.
+1. ~~Direct connection if the deployment network has validated IPv6 reachability and direct Postgres connection usage fits the connection budget.~~
+2. ~~Otherwise use **Shared Supavisor Session mode** for persistent IPv4-connected services.~~
 
-### Short-lived / serverless connections
+~~Session mode is the validated safe choice for the initial Render backend if Direct networking is unavailable.~~
+
+### Short-lived / serverless connections — **ramo operativo**
 
 Use **Shared Supavisor Transaction mode** only for workloads whose lifecycle and concurrency pattern benefit from transaction pooling.
+
+Desde a emenda acima, **é este o caso de toda execução de runtime do produto**: Route Handlers,
+Server Actions e a rota de worker acionada por Vercel Cron. Migration continua em conexão direta
+pelo Drizzle Kit, nunca pelo pooler.
 
 Code using Transaction mode must:
 
