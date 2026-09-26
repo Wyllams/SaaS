@@ -395,7 +395,16 @@ Grant expirado, já consumido e revogado · grant de um cliente **não acessa da
 
 ---
 
-# Epic 11 — i18n, Relatórios e Administração
+# Epic 11 — i18n, Dashboard, Relatórios e Administração
+
+## Superfícies
+
+`SCR-DASH-001`
+
+> O **dashboard único** (App Flow §4) agrega avisos de trial e setup, aprovações, jobs e agenda do dia,
+> conflitos, pipeline e follow-ups, estimates aguardando resposta, resumo financeiro e AR, comissão e
+> atividade recente. Depende de Epic 4, 5, 6, 7 e 9, e por isso só fica completo aqui. O Crew não usa
+> esta tela — sua entrada é `SCR-FIELD-001`.
 
 ## Trabalho
 
@@ -404,12 +413,15 @@ Grant expirado, já consumido e revogado · grant de um cliente **não acessa da
 3. Tradução do conteúdo que sai: template de e-mail, PDF do Estimate, rótulos do portal e notificações.
 4. Preferência de idioma no Workspace, no usuário e no contato do portal.
 5. Três relatórios fixos: conversão de vendas, jobs por status e atraso, AR com aging. Exportáveis.
-6. Busca global com atalho, agrupamento por entidade e respeito a escopo.
-7. Administração da plataforma em rotas protegidas, com acesso de suporte autorizado, registrado e com banner permanente.
+6. **Dashboard único `SCR-DASH-001`**: blocos por permissão conforme a tabela do App Flow §4, filtro de
+   período, widgets reorganizáveis e ocultáveis por usuário, padrão por papel definido pela empresa, e
+   drawer de "Requer Atenção" com motivo concreto e ação rápida.
+7. Busca global com atalho, agrupamento por entidade e respeito a escopo.
+8. Administração da plataforma em rotas protegidas, com acesso de suporte autorizado, registrado e com banner permanente.
 
 ## Testes obrigatórios
 
-Nenhuma chave sem tradução · data, número e moeda corretos em ambas as locales · e-mail e PDF saem no idioma do destinatário · **busca não retorna registro fora do escopo** · acesso de suporte é registrado e expira.
+Nenhuma chave sem tradução · data, número e moeda corretos em ambas as locales · e-mail e PDF saem no idioma do destinatário · **busca não retorna registro fora do escopo** · **nenhum bloco do dashboard aparece para papel sem permissão** · Crew autenticado não alcança `SCR-DASH-001` · acesso de suporte é registrado e expira.
 
 ---
 
