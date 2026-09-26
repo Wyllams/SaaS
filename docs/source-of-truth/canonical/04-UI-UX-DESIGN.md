@@ -109,8 +109,12 @@ Somam-se aos componentes próprios já listados:
 ## A8. Componentes que saem com o escopo
 
 Chat (mensagem, áudio, reactions, pinned, read receipts), builder de automação, construtor
-de relatório e seleção de financiamento saem da V1 junto com seus módulos. As definições
-permanecem no documento para quando voltarem.
+de relatório, seleção de financiamento e **o módulo de Tarefas** saem da V1 junto com seus
+módulos. As definições permanecem no documento para quando voltarem.
+
+Tarefas sai porque `SCR-TASK-001` a `003` estão adiadas no App Flow v2.0 §16.2 — o follow-up
+permanece como **campo do CRM**, não como módulo. Onde este documento descrever layout, lista
+ou navegação de Tarefas, vale esta revogação.
 
 ## A9. Correção de rastreabilidade
 
@@ -121,7 +125,7 @@ App Flow v2.0 §16.
 ## A10. Escopo visual excluído da V1
 
 Ao Dark Mode, Offline Sync e Time Tracking, já listados, somam-se: chat interno, builder de
-automação, construtor de relatório e telas de financiamento.
+automação, construtor de relatório, telas de financiamento e **telas do módulo de Tarefas**.
 
 ---
 
@@ -460,7 +464,7 @@ automação, construtor de relatório e telas de financiamento.
 | Job Overview               | Área principal: Summary/Progress/Services/Milestones/Next Actions. Lateral: Needs Attention/Project Team/Recent Activity.                                              |
 | Service Detail             | Mantém breadcrumb/contexto do Job. Header com status, Crew/Team, datas e progresso. Tabs operacionais.                                                                 |
 | Schedule                   | Máxima área útil; Week como padrão; toolbar completa. Evento abre Drawer. Conflito abre Modal maior. Escadinha usa Before → After.                                     |
-| Tasks                      | Table/List com Saved Views. Task simples abre Drawer.                                                                                                                  |
+| ~~Tasks~~                  | **Fora da V1** por A8 — `SCR-TASK-001` a `003` adiadas. Definição preservada: Table/List com Saved Views; Task simples abre Drawer.                                                                                                                  |
 | Inbox                      | Desktop em 3 painéis: lista/filtros, conversa, contexto. Customer e Internal separados. Mobile usa uma tela por vez.                                                   |
 | Team                       | Tabs Users/Crews/Subcontractors/Availability. Crew Detail em página completa.                                                                                          |
 | Purchases                  | Tabs Purchases/Purchase Orders/Vendors. Tabelas como base; Vendor Detail em página completa.                                                                           |
