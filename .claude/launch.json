@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "pnpm@12.6.0", "--filter", "@saas/web", "dev"],
+      "port": 3000
+    }
+  ]
+}
