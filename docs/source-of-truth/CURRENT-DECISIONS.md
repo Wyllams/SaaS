@@ -69,6 +69,46 @@ recorrentes.
 
 Esses itens estão **adiados, não cancelados**. Retornam por decisão explícita.
 
+### Idiomas
+
+**English (US) e Español, ambos completos**, no produto inteiro.
+
+PT-BR **sai do escopo**: não tem comprador num produto para o mercado americano. A
+referência a três idiomas no App Flow v1.0 é superseded.
+
+O TRD precisa definir a arquitetura de i18n, que nunca existiu em documento algum.
+
+### Dashboard
+
+**Uma única tela**, com blocos exibidos conforme a permissão de quem entra. Substitui os
+cinco dashboards por papel do App Flow v1.0 (`SCR-DASH-002` a `005` ficam reservados e
+sem uso).
+
+O Crew não usa o dashboard; sua entrada é `SCR-FIELD-001`.
+
+### Acesso do cliente ao Portal
+
+**Magic link para aprovar, senha opcional.**
+
+O cliente recebe link assinado com validade e aprova Estimate ou Change Order **sem criar
+conta**. Definir senha é opcional e serve para acompanhamento recorrente.
+
+Razão: exigir cadastro do dono do imóvel no momento da assinatura é atrito no ponto exato
+de conversão. O link revalida autorização no servidor e nunca dá acesso a dado de outro
+cliente.
+
+Substitui a exigência de e-mail e senha do App Flow v1.0 e do PRD v1.0.
+
+### Comunicação com o cliente na V1
+
+Sem inbound, não existe conversa bidirecional — portanto **não há módulo de Inbox na V1**.
+
+O histórico de envio aparece como aba Communications dentro do Customer e do Job, com
+estado de entrega. As telas `SCR-INB-001` a `004` ficam reservadas.
+
+Consentimento e opt-out por contato e por canal são registrados **desde a V1**, mesmo sem
+SMS, porque consentimento retroativo é impossível de reconstruir.
+
 ## Nome do produto
 
 **CrewCommand é nome histórico/provisório.** A marca final ainda não foi definida. Não propagar o nome automaticamente para novos packages, namespaces, domínios ou documentação.
