@@ -471,7 +471,7 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 | Service Detail             | Mantém breadcrumb/contexto do Job. Header com status, Crew/Team, datas e progresso. Tabs operacionais.                                                                 |
 | Schedule                   | Máxima área útil; Week como padrão; toolbar completa. Evento abre Drawer. Conflito abre Modal maior. Escadinha usa Before → After.                                     |
 | ~~Tasks~~                  | **Fora da V1** por A8 — `SCR-TASK-001` a `003` adiadas. Definição preservada: Table/List com Saved Views; Task simples abre Drawer.                                                                                                                  |
-| Inbox                      | Desktop em 3 painéis: lista/filtros, conversa, contexto. Customer e Internal separados. Mobile usa uma tela por vez.                                                   |
+| ~~Inbox~~                  | **Fora da V1** por A8 — `SCR-INB-001` a `004` adiadas. Definição preservada: desktop em 3 painéis (lista/filtros, conversa, contexto), Customer e Internal separados, mobile uma tela por vez. A comunicação com o cliente na V1 vive no App Flow §13.1, não em módulo próprio. |
 | Team                       | Tabs Users/Crews/Subcontractors/Availability. Crew Detail em página completa.                                                                                          |
 | Purchases                  | Tabs Purchases/Purchase Orders/Vendors. Tabelas como base; Vendor Detail em página completa.                                                                           |
 | Financial                  | Tabs Invoices/Payments/Accounts Receivable/Commissions/Financing. Resumo curto no topo.                                                                                |
@@ -654,7 +654,18 @@ automação, construtor de relatório, telas de financiamento e **telas do módu
 
 - Após aprovação do low-fi, aplicar Design System e criar high-fidelity.
 
-- Primeira leva: Login/Trial/Onboarding, Dashboard, CRM List, Client Detail, Sales Pipeline, Estimate Editor, Job Kanban, Job Detail, Service Detail, Schedule, Daily Log mobile, Client Portal, Financial, Inbox, Settings.
+- Primeira leva: Login/Trial/Onboarding, Dashboard, CRM List, Client Detail, Sales Pipeline, Estimate Editor, Job Kanban, Job Detail, Service Detail, Schedule, Daily Log mobile, Client Portal, Financial, ~~Inbox~~, Settings.
+
+  **Correção de escopo — 2026-09-26.** O Inbox sai desta leva: `SCR-INB-001` a `004` estão
+  adiadas no App Flow §16.2 e revogadas pelo A8 deste documento. A leva passa a ter **14
+  telas**. Desenhar o Inbox seria produzir tela que não existe na V1.
+
+- **A etapa low-fidelity desta seção já está cumprida.** O catálogo em
+  `docs/reference/wireframes/historical/2026-09-25/` cobre as **91 telas da V1**, verificado
+  por contagem de Screen ID contra o App Flow §16.1. Ele também desenha as 25 telas adiadas,
+  que devem ser ignoradas, e contém material revogado — SMS/Twilio, Chat, Automações e
+  Financing. O trabalho pendente é o high-fidelity sobre esse low-fi, reconciliado contra o
+  App Flow v2.0.
 
 - Depois, expandir telas secundárias reutilizando padrões já validados.
 
