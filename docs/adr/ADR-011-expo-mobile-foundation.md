@@ -1,6 +1,7 @@
 # ADR-011 — Expo Mobile Foundation
 
-- **Status:** **Superseded by ADR-018** (PWA) no escopo da V1, em 2026-09-25
+- **Status:** Superseded by ADR-018
+- **Superseded em:** 2026-09-25, no escopo da V1 — a superfície de campo passa a ser PWA
 - **Status original:** Accepted
 - **Date:** 2026-09-25
 - **Validated by:** POC-11
@@ -138,3 +139,11 @@ Those are required when the product reaches device distribution and store releas
 7. Mobile and Web may share contracts/tokens, but UI implementation is not forced to be shared.
 8. Store/build credentials remain outside source control.
 9. Product branding, bundle identifiers and production URL schemes require their own explicit decision.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+**Não se aplica.** Esta decisão já foi superseded por ADR-018. Reabri-la exige um ADR novo,
+não a reavaliação desta.

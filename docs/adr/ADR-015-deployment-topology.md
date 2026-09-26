@@ -234,3 +234,11 @@ At acceptance time:
 - Expo EAS continues to provide Build, Submit and Update workflows.
 
 This closes Epic 0 gate **G0.3**.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+**Não se aplica.** Esta decisão já foi superseded por ADR-016. Reabri-la exige um ADR novo,
+não a reavaliação desta.

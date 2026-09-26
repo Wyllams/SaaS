@@ -238,3 +238,14 @@ Authority used:
 4. the patched baseline remains 16.3.6 as of 2026-09-25, with 16.3.7 scheduled for 2026-09-30.
 
 This closes Epic 0 gate G0.1.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. o Next.js encerrar o suporte Active LTS da linha adotada;
+2. o alvo de hospedagem deixar de ser o Vercel, o que muda as premissas de runtime e de cache;
+3. uma exigência do produto não ser atendível pelo App Router sem contornar o framework.

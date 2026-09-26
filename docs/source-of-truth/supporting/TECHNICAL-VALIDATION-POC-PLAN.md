@@ -1000,3 +1000,86 @@ Criar \`ADR-OBSERVABILITY-STACK\` consolidando Pino, OpenTelemetry, Sentry, corr
 | 10     | Resend                    | 04                   | A / B              | Email                 |
 | 11     | Expo Mobile               | 04 + API/Auth mínima | A / B              | Mobile                |
 | 12     | Observability E2E         | 04,05 + provider     | B                  | Observability         |
+
+---
+
+> **Restauração — 2026-09-25.** As seções 19 a 23 estavam ausentes desde a importação: o
+> documento terminava na matriz do §18. Foram reextraídas do `.docx` de origem
+> `CrewCommand_Technical_Validation_PoC_Plan_v1.0.docx`, cujo SHA-256 registrado em
+> `PROVENANCE.md` — `abdac805…3949` — foi reconferido e confere.
+
+# 19. Regras de Ambiente e Dados dos PoCs
+
+- Nunca utilizar banco, storage ou credentials Production.
+- Stripe, QuickBooks, Twilio e Resend utilizam Test/Sandbox/ambiente controlado apropriado.
+- Dados sintéticos devem representar múltiplos Workspaces, Locations e Roles quando o PoC tocar autorização/tenant scope.
+- Segredos permanecem no secret store do ambiente; nenhuma evidência deve capturá-los.
+- Os PoCs podem reutilizar Staging técnico, mas devem possuir nomes/IDs que permitam limpar artefatos após a validação.
+- Experimentos destrutivos ficam isolados em Development/PoC environment quando necessário.
+
+# 20. Registro de Decisão e ADR Handoff
+
+Cada PoC aprovado gera um registro de decisão. O ADR deve ser curto, mas suficiente para impedir que a equipe rediscuta a escolha sem novos dados.
+
+| Campo ADR | Obrigatório |
+|---|---|
+| Context | Problema e requisito do produto que motivou a decisão. |
+| Options Considered | Opções realmente testadas/avaliadas. |
+| Decision | Escolha final e versão/provider validado no kickoff. |
+| Evidence | Links para PoC, testes, métricas, traces e screenshots. |
+| Consequences | Trade-offs, limitações, custos e riscos. |
+| Guardrails | Regras que a implementação deve respeitar. |
+| **Revisit Trigger** | **Condição objetiva que justificaria reavaliar a decisão.** |
+
+# 21. Definition of Done da Validação Técnica
+
+- [ ] POC-01 a POC-12 possuem status final PASS ou PASS WITH CONDITIONS, ou alternativa substituta formalmente aprovada.
+- [ ] Nenhum PoC crítico está em FAIL/BLOCKED sem owner e decisão de arquitetura.
+- [ ] ADRs fundamentais foram criados e linkam as evidências dos PoCs.
+- [ ] Development e Staging bootstrap estão definidos/reproduzíveis.
+- [ ] Versões efetivamente validadas de runtime/providers estão registradas.
+- [ ] Riscos e limitações descobertos foram convertidos em constraints/tasks do Implementation Plan.
+- [ ] Custos/limites observados nos providers foram anotados para Capacity Planning.
+- [ ] Nenhum segredo ou dado Production aparece nas evidências.
+
+# 22. Handoff para o Implementation Plan
+
+> **Ordem correta:** PoCs → ADRs → Implementation Plan → Feature Implementation. Um
+> Implementation Plan preliminar pode ser esboçado durante a validação, mas a ordem e as
+> dependências definitivas só devem ser congeladas depois dos resultados dos PoCs críticos.
+
+## 22.1 O que o Implementation Plan receberá deste documento
+
+- Stack e providers confirmados na prática.
+- Decisões de ORM/query layer, pooling e styling finalmente fechadas.
+- Dependências reais de infraestrutura e integração.
+- Tasks de hardening descobertas nos PoCs.
+- Riscos técnicos com mitigação explícita.
+- ADRs como referência para desenvolvimento e code review.
+- Critérios técnicos que podem virar acceptance criteria e QA gates.
+
+## 22.2 Ordem recomendada para o Implementation Plan após os PoCs
+
+> **Histórica e superseded.** Esta ordem é a da v1.0. O Implementation Plan v2.0 reorganizou o
+> trabalho em treze Epics, acrescentou o Walking Skeleton como Epic 3 e removeu os módulos de
+> Inbox, Tasks, Automations e Mobile do escopo da V1. Vale o plano vigente, não esta lista.
+
+1. Foundation / Monorepo / CI / Environments
+2. Identity / Workspace / Membership / Permissions
+3. Data Architecture / Database / Storage / Audit
+4. CRM + Sales foundations
+5. Jobs + Services + Scheduling core
+6. Field Operations / Daily Logs / Change Orders / Materials
+7. Financial / Payments / Accounting integrations
+8. Communications / Inbox / Tasks / Automations
+9. Client Portal
+10. Mobile hardening / Push / deep links
+11. Reports / Super Admin / Entitlements
+12. Security hardening / Performance / GA readiness
+
+# 23. Princípio Final
+
+> **Technical Validation Principle.** O produto não transforma preferência técnica em
+> arquitetura aprovada sem evidência. Todo PoC crítico deve produzir uma decisão reproduzível,
+> documentada e conectada ao risco real do produto. O objetivo é reduzir retrabalho antes da
+> implementação, não criar protótipos que se tornem Production por acidente.

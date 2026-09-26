@@ -86,3 +86,14 @@ On 2026-09-25:
 5. Secrets remain server-side.
 6. No Render dependency may be added without a new explicit ADR.
 7. Historical Render/Valkey evidence is not current implementation guidance.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. um limite do Supabase — conexões, duração de função, tamanho de storage — bloquear um requisito da V1;
+2. surgir exigência de residência de dados que o projeto contratado não atenda;
+3. o custo do plano crescer além do previsto com o volume real de tenants.
