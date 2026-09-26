@@ -1,245 +1,324 @@
-# Epic 1 — Identity / Workspace / Membership / Permissions — Status
+# Epic 1 — Identidade, Workspace, Membership e Permissões — Status de Continuidade
 
-> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
+- **Última reconciliação:** 2026-09-25
+- **Implementation Plan vigente:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
+- **Estado:** Slice 01 **parcialmente concluído**; demais fatias não iniciadas
+- **Dependência bloqueante:** o Slice 01 só encerra **depois** do Epic 0 / Fase 2 / item 1 — ver §3
+- **Runtime atual do handoff:** Edge Function `identity-me` (transitória, será substituída por Route Handler)
 
+---
 
-- **Date:** 2026-09-25
-- **Implementation Plan:** `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
-- **State:** Slice 01 identity handoff has been migrated to the active Supabase Edge Function `identity-me`; the Render API is historical/superseded. Successful authenticated reconciliation still requires a controlled account proof.
-- **Foundation:** Product Owner reports Epic 0 integrated to `main`; this local checkout was initialized as a new empty Git repository on 2026-09-25, so that history has not been verified locally.
+## 1. Aviso de leitura — duas revogações sucessivas
 
-## Scope of the Epic
+Este arquivo acumulou evidência de três runtimes diferentes. A ordem real é:
 
-Epic 1 establishes the tenancy and authorization foundation required by all later tenant-owned domains:
+```
+NestJS no Render  →  Edge Function no Supabase  →  Route Handler em apps/web
+  (Fase 1)              (ADR-016, atual)              (ADR-017, alvo)
+  histórico             transitório                   vigente
+```
 
-- User / external identity separation;
-- Workspace, Location and Membership;
-- Role, Permission and scopes;
-- Invite lifecycle;
-- portal-access separation;
-- consent/onboarding state;
-- backend/database authorization and RLS;
-- privileged-change security/audit events.
+- A topologia **Render/NestJS/BullMQ/Valkey** é histórica, revogada pelo ADR-016.
+- A **Edge Function `identity-me`** é o runtime que está no ar hoje, mas **não é o destino**:
+  o ADR-017 coloca a execução HTTP de negócio em Route Handlers dentro do `apps/web`, e o
+  Epic 0 / Fase 2 / item 1 é exatamente essa migração.
+- Evidência de Render e de Edge Function permanece registrada porque é prova real do que foi
+  executado. Nenhuma das duas orienta implementação nova.
 
-Primary product surfaces are `SCR-AUTH-001..008`, `SCR-ONB-001..002`, and user/workspace/location controls used by Settings and the global shell.
+A versão anterior deste arquivo tratava a Edge Function como estado final. Isso está corrigido.
 
-## Approved decomposition — first slice
+---
 
-### EPIC-01-SLICE-01 — Authentication and server-side identity boundary
+## 2. Escopo do Epic — conforme Implementation Plan v2.0
 
-**Objective:** implement a real email/password authentication entry point for `SCR-AUTH-001`, backed by Supabase Auth and a server-side global User identity reconciliation boundary.
+Epic 1 estabelece a fundação de tenancy e autorização exigida por todos os domínios posteriores.
 
-**Included:**
+**Superfícies:** `SCR-AUTH-001`, `005`, `006` · `SCR-ONB-001`, `002` · `SCR-SET-001` a `004`.
 
-- email/password authentication only;
-- server-side session validation;
-- external identity kept separate from the business User identity;
-- `SCR-AUTH-001` connected to the real contract, not fixture state;
-- approved authentication error behavior and tests appropriate to the implemented contract.
+**Trabalho definido no plano:**
 
-**Explicitly excluded:**
+1. Autenticação por e-mail e senha via Supabase Auth.
+2. Separar identidade externa (`UserAuthIdentity`) do `User` de negócio.
+3. Workspace, Location, Membership e `UserLocation`.
+4. **Sete papéis de sistema** com permissões e escopos: Owner, Admin, Salesperson, Supervisor, Crew, Accounting, Client.
+5. Função única de autorização chamada pelos Application Services.
+6. **RLS default-deny** em toda tabela de tenant.
+7. Ciclo de convite com expiração e proteção contra replay.
+8. Seleção e troca de Workspace, com invalidação de contexto.
+9. Invariante de Primary Owner e transferência auditada.
+10. Resolução de deep link que revalida autorização.
+11. Eventos de auditoria para mudança privilegiada.
+12. Onboarding com checklist persistente, **incluindo a etapa de imposto**.
 
-- Google OAuth;
-- password recovery;
-- trial/plan selection and billing;
-- Workspace, Location, Membership, Role, Permission and scope implementation;
-- RLS for tenant-owned data;
-- onboarding, consent flow and invites;
-- portal access;
-- remote Supabase/Auth configuration and privileged credentials.
+### Mudanças de escopo trazidas pela base v2.0
 
-Google OAuth was deliberately deferred by the Product Owner on 2026-09-25. It cannot enter this slice without a later approved Task Packet.
+| Item | Antes | Agora |
+|---|---|---|
+| Papéis | não enumerados | **sete**, nomeados no PRD v2.0 e no Domain Model v2.0 |
+| Acesso do cliente | "portal-access separation" genérico | **magic link** por `PortalGrant` — ADR-022; pertence ao **Epic 10**, não ao Epic 1 |
+| Onboarding | checklist genérico | inclui **etapa de imposto** — TaxTreatment e nexus |
+| Identidade externa | mapping ad hoc do Slice 01 | entidade `UserAuthIdentity` do Domain Model v2.0 §A |
 
-## Checklist de acompanhamento
+O acesso do Cliente saiu do Epic 1. A separação portal-access continua sendo obrigação de
+modelagem aqui, mas a implementação do portal é Epic 10.
 
-**Legenda:** `[x]` concluído com evidência registrada; `[-]` em andamento; `[ ]` ainda não iniciado; `BLOCKED` depende de decisão ou autorização externa.
+---
+
+## 3. Dependência entre Slice 01 e o Epic 0
+
+O Slice 01 tem exatamente uma obrigação em aberto: **provar uma reconciliação autenticada
+bem-sucedida de ponta a ponta**. Essa prova estava pendente contra o Render, depois passou a
+pender contra a Edge Function, e a Edge Function está para ser substituída.
+
+O Epic 0 / Fase 2 / item 1 exige migrar `identity-me` para Route Handler *"preservando o
+contrato do Slice 01, com paridade comprovada por teste"*. Essa paridade **é** a prova que falta.
+
+**Decisão de sequenciamento registrada aqui:** não repetir a prova autenticada contra a Edge
+Function. Executá-la uma única vez, contra o Route Handler, como critério de aceite do Epic 0 /
+Fase 2 / item 1. O Slice 01 é encerrado por esse mesmo teste.
+
+Isso evita gastar uma credencial controlada validando um runtime que será desligado no item 2.
+
+---
+
+## 4. Fatia aprovada — EPIC-01-SLICE-01
+
+**Objetivo:** ponto de entrada real de autenticação e-mail/senha para `SCR-AUTH-001`, com
+Supabase Auth e uma boundary server-side de reconciliação da identidade global `User`.
+
+**Incluído:** somente e-mail/senha · validação de sessão server-side · identidade externa
+separada da identidade de negócio · `SCR-AUTH-001` ligado ao contrato real, não a fixture ·
+comportamento de erro aprovado e testes do contrato implementado.
+
+**Explicitamente fora:** Google OAuth · recuperação de senha · trial/plano/billing · Workspace,
+Location, Membership, Role, Permission e scopes · RLS de dados de tenant · onboarding, consent
+e convites · portal access · configuração remota de Supabase/Auth e credenciais privilegiadas.
+
+Google OAuth foi deferido pelo Product Owner em 2026-09-25 e não entra sem novo Task Packet.
+
+---
+
+## 5. Checklist de acompanhamento
+
+**Legenda:** `[x]` concluído com evidência · `[-]` em andamento · `[ ]` não iniciado · `BLOCKED` depende de decisão ou autorização externa.
 
 ### Governança e planejamento
 
 - [x] Confirmar o Epic 1 como próximo passo pelo Implementation Plan aprovado.
 - [x] Cruzar as fontes oficiais aplicáveis e registrar a precedência documental.
-- [x] Criar `EPIC-01-STATUS.md`.
-- [x] Criar `EPIC-01-QA.md` sem declarar testes não executados como aprovados.
+- [x] Criar `EPIC-01-STATUS.md` e `EPIC-01-QA.md` sem declarar como aprovado teste não executado.
 - [x] Definir `EPIC-01-SLICE-01` e registrar Google OAuth como adiado.
-- [x] Inicializar o repositório Git local a pedido do Product Owner, sem commit, branch remota ou histórico importado.
-- [x] Aprovar o contrato de identidade: User interno separado e mapeamento dedicado para a identidade externa Supabase Auth.
-- [x] Preparar o rascunho do Task Packet para `EPIC-01-SLICE-01`.
+- [x] Aprovar o contrato de identidade: `User` interno separado, com mapeamento dedicado para a identidade externa do Supabase Auth.
 - [x] Obter aprovação explícita do Task Packet antes de implementar.
+- [ ] **Reconciliar o Slice 01 com a base documental v2.0** — o contrato de `User` precisa ser confrontado com `UserAuthIdentity` do Domain Model v2.0 §A antes de as fatias seguintes começarem.
 
-### Slice 01 — Authentication and server-side identity boundary
+### Slice 01 — autenticação e boundary de identidade server-side
 
-- [x] Arquivar os wireframes fornecidos pelo Product Owner em `docs/reference/wireframes/historical/2026-09-25/`, com manifesto e hashes de integridade; referência histórica, não fonte de autoridade.
-- [x] Confirmar no código os pontos exatos de integração Web/API/DB autorizados pelo Task Packet.
+- [x] Arquivar os wireframes do Product Owner em `docs/reference/wireframes/historical/2026-09-25/`, com manifesto e hashes. Referência histórica, não fonte de autoridade.
+- [x] Confirmar no código os pontos de integração Web/API/DB autorizados pelo Task Packet.
 - [x] Resolver a estratégia UUIDv7: geração na aplicação por dependência revisada, sem extensão nem alteração remota no PostgreSQL.
-- [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0; dependências restauradas com lockfile congelado.
-- [-] Implementar somente o contrato de autenticação email/password e identidade server-side autorizado. Tela, reconciliação e o handoff `identity-me` estão implementados em Supabase Edge Functions; falta exclusivamente a prova integrada com conta controlada.
-- [x] Definir estado/lifecycle inicial e a representação persistida de `User`, aprovado pelo Product Owner em 2026-09-25.
-- [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies públicas.
-- [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi fornecido: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível; Google OAuth e recuperação permanecem fora do slice.
-- [x] Criar boundary autenticada: token ausente/inválido é rejeitado antes da reconciliação; token verificado entrega somente sujeito e e-mail ao use case.
-- [x] Implementar repositório transacional local para `subject → User`, com conflito de concorrência tratado pela chave única do mapping; typecheck do pacote de banco PASS.
-- [-] Integrar `SCR-AUTH-001` à configuração Vercel/Supabase publicada: Production e Preview agora possuem URL e publishable key; erro seguro de credencial inválida foi comprovado. O caminho de sucesso permanece pendente de conta controlada e configuração server-side de identidade/database.
-- [x] Definir e implementar o contrato de transporte autorizado para `GET /identity/me`: somente Bearer token, verificação server-side e retorno mínimo do User interno; sem Workspace/RBAC. O contrato está registrado no Task Packet e a API compilada devolveu 401/`UNAUTHENTICATED` para uma chamada sem credencial.
-- [x] Criar e executar os testes unitários inicialmente possíveis do Slice 01: 12/12 PASS (token negativo, identidade verificada, criação, repetição, concorrência, campos não confiáveis ignorados, token vazio, parsing do Bearer e respostas HTTP 401/503/200); typecheck e build da API PASS. Web typecheck e build PASS.
-- [x] Executar QA de navegador do estado seguro sem configuração: 320, 375, 768, 1024 e 1440 px sem overflow horizontal; campos e botão indisponíveis; console sem warnings/errors.
-- [-] Executar QA de navegador autenticado, console e rede: Production foi verificado para configuração, erro seguro, console e responsividade; login bem-sucedido e reconciliação persistida exigem conta controlada e configuração server-side de identidade/database.
-- [x] Revisar escopo, segurança e resultados; Status e QA atualizados com a migration e as evidências. `verify:structure`, `verify:secrets`, lint, testes, typecheck e build completos passaram. Diff sem erros de whitespace, baseline de secrets e alterações revisadas antes dos commits publicados em `main`.
-- [x] Publicar o Web SaaS no Vercel Production após gates locais, usando o projeto `saas` e commit `105012c`.
+- [x] Preparar runtime local isolado: Node 24.21.0 + pnpm 12.6.0, dependências com lockfile congelado.
+- [x] Definir o lifecycle e a representação persistida de `User`, aprovados em 2026-09-25.
+- [x] Criar e aplicar a migration de identidade autorizada: `users` e `user_supabase_identities`, PKs, FK restritiva, check de status e RLS default-deny. Validação remota confirmou as duas tabelas, RLS ativo e zero policies.
+- [x] Implementar `SCR-AUTH-001` a partir do wireframe low-fi: e-mail, senha, submit, loading, erro genérico e estado de configuração indisponível.
+- [x] Criar boundary autenticada: token ausente ou inválido é rejeitado antes da reconciliação; token verificado entrega somente sujeito e e-mail ao use case.
+- [x] Implementar repositório transacional para `subject → User`, com conflito de concorrência tratado pela chave única do mapping.
+- [x] Definir e implementar o contrato de transporte de `GET /identity/me`: somente Bearer token, verificação server-side, retorno mínimo do `User` interno, sem Workspace/RBAC.
+- [x] Criar e executar os testes unitários possíveis do Slice 01 — 12/12 PASS. Ver §8.
+- [x] Executar QA de navegador do estado seguro sem configuração — ver §10.
+- [x] Publicar o Web SaaS no Vercel Production após gates locais.
+- [-] **Migrar o handoff para o runtime vigente.** Implementado em Edge Function `identity-me` v1 ACTIVE. Destino final é Route Handler — Epic 0 / Fase 2 / item 1.
+- [ ] **BLOCKED** — Reconciliação autenticada bem-sucedida comprovada de ponta a ponta. Ver §3 e §13.
 
 ### Obrigações restantes do Epic 1
 
-Os itens abaixo são exigências do Implementation Plan. A ordem dos próximos slices será definida somente depois de cada Task Packet aprovado.
+Ordem das próximas fatias definida somente após cada Task Packet aprovado.
 
-- [ ] Implementar métodos de autenticação aprovados restantes, quando cada um receber seu slice e autorização.
-- [ ] Criar contratos de Workspace, Membership e Location scope.
-- [ ] Implementar Roles, Permissions e scopes granulares.
-- [ ] Implementar ciclo de vida de Invite.
-- [ ] Implementar seleção e troca segura de múltiplos Workspaces.
-- [ ] Aplicar RLS e autorização no backend/banco.
-- [ ] Estabelecer a invariante de Primary Owner.
-- [ ] Implementar resolução segura de deep links.
-- [ ] Emitir eventos de segurança/auditoria para alterações privilegiadas.
-- [ ] Executar e registrar todos os testes negativos obrigatórios do Epic.
-- [ ] Confirmar o gate de saída: testes cross-tenant e de permissões negativas aprovados antes de qualquer mutação tenant-owned posterior.
+- [ ] Métodos de autenticação restantes, cada um com sua fatia e autorização.
+- [ ] Contratos de Workspace, Membership, Location e `UserLocation`.
+- [ ] **Sete papéis de sistema** com permissions e scopes granulares.
+- [ ] Função única de autorização chamada pelos Application Services.
+- [ ] Ciclo de vida de Invite com expiração e proteção contra replay.
+- [ ] Seleção e troca segura de múltiplos Workspaces, com invalidação de contexto.
+- [ ] RLS default-deny em toda tabela de tenant.
+- [ ] Invariante de Primary Owner e transferência auditada.
+- [ ] Resolução segura de deep links que revalida autorização.
+- [ ] Eventos de auditoria para alterações privilegiadas.
+- [ ] Onboarding com checklist persistente, incluindo a **etapa de imposto**.
+- [ ] Todos os testes negativos obrigatórios do Epic — ver §6.
+- [ ] Gate de saída: testes cross-tenant e de permissão negativa aprovados antes de qualquer mutação tenant-owned.
 
-### Ações explicitamente não autorizadas neste momento
+### Ações não autorizadas neste momento
 
-- [x] Executar exclusivamente a migration remota revisada de identidade, autorizada pelo Product Owner em 2026-09-25; incluir RLS default-deny e validar tabelas/RLS após a aplicação.
-- [x] Publicar em GitHub `main` e Vercel Production, explicitamente autorizado pelo Product Owner em 2026-09-25.
-- [x] Evidência histórica: o backend NestJS chegou a ser publicado no Render. **Superseded:** ADR-016 migrou o handoff para Supabase Edge Functions; Render não é mais runtime atual.
-- [ ] **Não executar sem nova decisão específica:** criação/alteração de conta Auth controlada ou qualquer mudança privilegiada fora do contrato aprovado.
+- [x] Migration remota de identidade — autorizada e executada uma única vez em 2026-09-25, com RLS default-deny e validação posterior.
+- [x] Publicação em GitHub `main` e Vercel Production — autorizada explicitamente em 2026-09-25.
+- [ ] **Não executar sem nova decisão:** criação ou alteração de conta Auth controlada, e qualquer mudança privilegiada fora do contrato aprovado.
 
-## Required next artifact
+---
 
-The Task Packet draft is `docs/implementation/EPIC-01-SLICE-01-TASK-PACKET.md`. It requires Product Owner approval before Codex edits product code, schema, Auth configuration or a remote environment.
+## 6. Testes obrigatórios do Epic
 
-## Identity mapping decision
+Rastreados para as fatias posteriores. O Slice 01 cobre apenas os testes de autenticação e
+identidade do seu escopo.
 
-**Confirmed:** `packages/db/src/schema.ts` intentionally contains no physical domain tables, and the foundation has no Supabase Auth SDK/adapter. The Domain Model specifies a global business `User`; the TRD requires business relationships to use the internal `user.id`, not the authentication-provider ID.
+Não autenticado · autenticado sem Membership · um Workspace · vários Workspaces · Membership
+suspensa · **tentativa cross-workspace por ID direto** · violação de escopo de Location ·
+tentativa de auto-elevação · convite expirado e reusado · invariante de Primary Owner ·
+permissão alterada durante sessão ativa.
 
-**Approved by Product Owner on 2026-09-25:** Slice 01 may introduce a dedicated external-identity mapping owned by the identity domain. The internal business User remains distinct from the Supabase Auth UUID. The corresponding migration was initially local/Git only; the Product Owner subsequently authorized its one-time remote execution after review. It created only `users` and `user_supabase_identities`, enabled RLS on both, created no policy and changed no existing records. The Supabase SQL editor confirmed both tables have `rls_enabled = true` and `policy_count = 0`.
+---
 
-**Task Packet approval:** received from the Product Owner on 2026-09-25. Codex must not infer identity lifecycle, schema-state or provider details absent from the approved documents.
+## 7. Decisões de identidade registradas
 
-## UUIDv7 implementation blocker
+**Mapeamento de identidade.** `packages/db/src/schema.ts` não continha tabela física de domínio
+e a fundação não tinha adapter de Supabase Auth. O Domain Model especifica um `User` de negócio
+global; o TRD exige que relações de negócio usem o `user.id` interno, nunca o ID do provedor.
 
-The approved internal-ID direction is UUIDv7. The registered Supabase PostgreSQL version is 17.6; PostgreSQL 17 documentation does not provide native `uuidv7()`, while PostgreSQL 18 does. The Task Packet therefore blocks implementation rather than silently using UUIDv4.
+Aprovado em 2026-09-25: o Slice 01 introduz um mapeamento dedicado de identidade externa, de
+posse do domínio de identidade. O `User` interno permanece distinto do UUID do Supabase Auth.
+A migration correspondente foi inicialmente local/Git; a execução remota foi autorizada depois,
+uma única vez, após revisão. Criou somente `users` e `user_supabase_identities`, habilitou RLS
+em ambas, não criou policy e não alterou registro existente.
 
-**Decision required:** authorize either (a) a reviewed application-level UUIDv7 dependency for the identity domain, or (b) a reviewed PostgreSQL extension/function available in the Development environment. No remote database change is authorized by either option.
+**Pendência de reconciliação:** o Domain Model v2.0 §A nomeia essa entidade `UserAuthIdentity`.
+A tabela criada chama-se `user_supabase_identities`. A diferença precisa ser resolvida — por
+renomeação ou por registro explícito do nome físico — antes das fatias de Workspace/RBAC.
 
-**Resolved by Product Owner on 2026-09-25:** use a reviewed application-level UUIDv7 dependency. No PostgreSQL extension/function or remote change is authorized.
+**UUIDv7 — resolvido.** O PostgreSQL 17.6 do projeto não oferece `uuidv7()` nativo (PG 18
+oferece). O Task Packet bloqueou em vez de cair silenciosamente em UUIDv4. Resolvido em
+2026-09-25: dependência de aplicação revisada, sem extensão e sem mudança remota.
 
-## Runtime blocker — resolved
+**Runtime — resolvido.** A fundação fixa Node `>=24.21.0 <25` e pnpm `12.6.0`; o wrapper de
+sistema falhava antes de executar. Resolvido com runtime local isolado Node 24.21.0 e Corepack
+pnpm 12.6.0, restaurando dependências com `--frozen-lockfile`. Não alterou Supabase, Vercel,
+remotes nem configuração de runtime do repositório.
 
-The foundation pins Node.js `>=24.21.0 <25` and pnpm `12.6.0`. The active system pnpm 12.6 wrapper fails before executing commands; the available fallback uses Node 24.19.0 and pnpm 11.19.0. The first TDD test therefore did not reach the expected missing-feature failure.
+**Schema — resolvido.** `User` tem `id` e `email` obrigatórios, `name` e `photo` opcionais, e
+`status` global restrito a `active` e `suspended`, com `active` como estado inicial. A identidade
+do provedor permanece apenas no mapping dedicado.
 
-Resolved on 2026-09-25 with an isolated local Node 24.21.0 runtime and Corepack pnpm 12.6.0. Existing dependencies were restored using `pnpm install --frozen-lockfile`. This did not alter Supabase, Vercel, Git remotes or repository runtime configuration.
+---
 
-## Schema documentation blocker — resolved
+## 8. Evidência — testes e gates locais
 
-Resolved by Product Owner on 2026-09-25: `User` has required `id` and `email`, optional `name` and `photo`, and global `status` restricted to `active` and `suspended` with `active` as initial state. The provider identity remains only in the dedicated Supabase mapping. This decision was added to the Task Packet before the schema was created.
+**Testes unitários do Slice 01: 12/12 PASS** — token negativo, identidade verificada, criação,
+repetição, concorrência, campos não confiáveis ignorados, token vazio, parsing do Bearer e
+respostas HTTP 401/503/200.
 
-## Mandatory Epic tests tracked for later slices
+**Gate local final da época:**
 
-- unauthenticated;
-- authenticated without membership;
-- one and multiple workspaces;
-- suspended membership;
-- cross-workspace direct-ID attempt;
-- location-scope violation;
-- self-elevation;
-- invite replay/expiry;
-- Primary Owner transfer invariant;
-- permission change during an active session.
+| Gate | Resultado |
+|---|---|
+| Structure | PASS — **12 workspaces** brand-neutral |
+| Secrets baseline | PASS — nenhum secret reportado |
+| Lint | PASS com warnings; o warning em código novo foi corrigido, os demais pertencem ao acervo imutável de wireframes |
+| Tests | PASS — 12 da API, 3 de config, 1 de observability |
+| Typecheck | PASS — 12 workspaces |
+| Build | PASS — 12 workspaces; Next.js gerou `/login` |
+| Git review | diff sem whitespace errors; sem force push, sem merge de PR |
 
-These remain Epic-level obligations; Slice 01 covers only the authentication/identity tests supported by its approved scope.
+> **Contagem desatualizada:** a evidência acima registra **12 workspaces**, correto na data. Com
+> a remoção de `apps/api` e `apps/worker` pelo ADR-016, o repositório tem **10**. Qualquer
+> reexecução deve reportar 10 até o Epic 0 / Fase 2 alterar a lista de novo.
 
-## Boundaries and decisions
+---
 
-- Supabase Auth is the approved authentication provider for V1.
-- The login screen is implemented at `/login`; its browser client uses only the publishable-key boundary and the API verifier uses server-only environment variables plus `auth.getUser(token)`.
-- Historical wireframes are searchable in `docs/reference/wireframes/`, but must be reconciled with current decisions and the Task Packet before any visual implementation.
-- Workspace remains the tenant boundary.
-- Authentication is not authorization: later slices must enforce Membership, Permission and Location scope at backend/database boundaries.
-- UI visibility and deep links never grant authorization.
-- No Stripe, QuickBooks, Resend, SMS/Twilio, provider billing, or business domain work belongs to Epic 1 Slice 01.
+## 9. Evidência — migration remota
 
-## Documentation consulted
+- **Alvo:** projeto Supabase `obpncbnzwrocvgngtodg`, branch main/Production.
+- **Aplicada:** 2026-09-25 pelo SQL editor, após autorização explícita do Product Owner.
+- **Objetos criados:** `public.users`, `public.user_supabase_identities`.
+- **Integridade:** `users_pkey`, `users_status_check`, `user_supabase_identities_subject_pk` e `user_supabase_identities_user_id_users_id_fk` presentes.
+- **RLS:** `true` nas duas tabelas; contagem de policies públicas `0` em ambas.
+- **Correção registrada:** o `CHECK` gerado inicialmente qualificava `users.status` de forma incorreta; o PostgreSQL rejeitou e nenhuma tabela foi criada. Schema e migration local foram corrigidos para `CHECK ("status" IN (...))` e a execução final rodou em uma transação atômica.
 
-- `docs/source-of-truth/README.md`
-- `docs/source-of-truth/CURRENT-DECISIONS.md`
-- `docs/source-of-truth/canonical/01-PRD.md`
-- `docs/source-of-truth/canonical/02-TRD-OFICIAL.md`
-- `docs/source-of-truth/canonical/03-APP-FLOW-OFICIAL.md`
-- `docs/source-of-truth/canonical/04-UI-UX-DESIGN.md`
-- `docs/source-of-truth/canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md`
-- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
-- `docs/architecture/TECHNICAL-ARCHITECTURE.md`
-- `docs/adr/README.md` and applicable ADRs
-- `docs/implementation/CHATGPT-CODEX-OPERATING-MODEL.md`
-- `docs/implementation/CODEX-TASK-TEMPLATE.md`
+---
 
-## Current blockers
+## 10. Evidência — QA de navegador, estado seguro sem configuração
 
-- `BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`: a conta controlada e a configuração server-side já existem, mas a prova final requer que o Product Owner envie uma vez as credenciais controladas na Web Production depois do deploy `4f912b1`. O Codex não recebe nem solicita a senha.
+- **URL:** `http://localhost:3000/login`
+- **Viewports:** 320×640, 375×812, 768×900, 1024×900, 1440×1000
+- **Observado:** `SCR-AUTH-001` com labels e campos de e-mail e senha, feedback explicativo de configuração indisponível e botão desabilitado, em todos os viewports, sem overflow horizontal.
+- **Console:** zero warnings e errors.
+- **Não provado:** autenticação bem-sucedida, comportamento de resposta e redirect autenticado.
 
-## Remote migration evidence
+---
 
-- **Target:** Supabase project `obpncbnzwrocvgngtodg` (SaaS), main/Production branch selected in the dashboard.
-- **Applied:** 2026-09-25 through the Supabase SQL editor, after explicit Product Owner authorization.
-- **Objects created:** `public.users`, `public.user_supabase_identities`.
-- **Integrity verified:** `users_pkey`, `users_status_check`, `user_supabase_identities_subject_pk`, and `user_supabase_identities_user_id_users_id_fk` are present.
-- **RLS verified:** both tables report `true`; public policy count is `0` for each table.
-- **Correction recorded:** the initially generated local `CHECK` incorrectly qualified `users.status`; PostgreSQL rejected it and no tables were created. The source schema and local migration were corrected to `CHECK ("status" IN (...))`; the final remote execution used one atomic transaction and succeeded.
+## 11. Evidência — publicação em Production
 
-## Browser evidence — safe unavailable-configuration state
+- **GitHub:** `main` avançada por fast-forward, sem force push. Contrato de transporte de identidade em `1e1cf9c`.
+- **Projeto Vercel:** `wyllams-projects/saas`, root `apps/web`, Node.js 24.x.
+- **Ambiente:** somente `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em Production e Preview. Nenhum secret ou service key.
+- **Deployment:** `https://saas-pi-one-31.vercel.app`, Ready.
+- **QA ao vivo:** `/login` renderizou inputs configurados e submit habilitado. Uma conta controlada inexistente retornou a mensagem genérica aprovada. Sem warnings ou errors no console.
+- **QA responsivo:** sem overflow horizontal nos cinco viewports.
 
-- **URL:** `http://localhost:3000/login`.
-- **Viewports:** 320×640, 375×812, 768×900, 1024×900 and 1440×1000.
-- **Observed:** `SCR-AUTH-001`, e-mail and senha labels/fields, explanatory unavailable-configuration feedback, and disabled sign-in button rendered at every viewport without horizontal overflow.
-- **Console:** zero warnings and errors captured.
-- **Not proved:** successful authentication, request response behavior and authenticated redirect; these require a configured Development environment.
+---
 
-## Production publication evidence
+## 12. Evidência histórica — runtimes revogados
 
-- **GitHub:** `main` advanced by fast-forward without force push. The identity transport contract is in `1e1cf9c` (`feat(epic-01): add identity transport boundary`).
-- **Vercel project:** `wyllams-projects/saas`, root directory `apps/web`, Node.js 24.x.
-- **Environment:** only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` were added for Production and Preview; no secret/service key was used.
-- **Deployment:** `https://saas-pi-one-31.vercel.app`, Ready; deployment `dpl_85kkG2rPrYRZeqhjD8idV1n6Dzk3`.
-- **Live QA:** `/login` rendered configured e-mail/password inputs and enabled submit. One controlled non-existent account returned the generic message `Unable to sign in. Check your email and password.`; no console warnings/errors were captured.
-- **Responsive QA:** Production `/login` had no horizontal overflow at 320×640, 375×812, 768×900, 1024×900 and 1440×1000.
+### 12.1 Render / NestJS — revogado pelo ADR-016
 
-## Render API deployment evidence
+- **Serviço:** `saas-api`, Render Virginia, plano Free. Instâncias Free hibernam por inatividade.
+- **Origem:** `Wyllams/SaaS` em `main`, commit `a8ac097`; Node 24.21.0; `APP_ENV=production`; nenhum secret inserido.
+- **Deploy:** `dep-darek8gjo6nc73flk0eg`, `Deploy succeeded | Live`.
+- **Checks externos:** `GET /health` 200 `{"status":"ok","service":"api"}` · `GET /ready` 503 com `database: missing` e `queue: missing` · `GET /identity/me` sem Bearer 401 `UNAUTHENTICATED`. Não houve token, banco, secret nem reconciliação positiva.
+- **Handoff autenticado:** `SCR-AUTH-001` passou a entregar o access token por `Authorization: Bearer`; Render recebeu `WEB_ORIGIN` com a origem exata, sem wildcard e sem cookies credenciados; deploy `4f912b1` ficou Live; preflight retornou `204` com `Access-Control-Allow-Origin` exato, `Allow-Headers: authorization` e `Allow-Methods: GET`.
 
-- **Service:** `saas-api`, Render Virginia (US East), plano Free; aviso da plataforma: instâncias Free hibernam por inatividade e podem atrasar uma solicitação por 50 segundos ou mais.
-- **Source / runtime:** `Wyllams/SaaS` em `main`, commit `a8ac097`; Node 24.21.0; `APP_ENV=production`; nenhum secret foi inserido.
-- **Runtime build:** os pacotes internos de runtime `@saas/config`, `@saas/db` e `@saas/observability` são compilados antes de `@saas/api`; a inicialização chama diretamente `node apps/api/dist/main.js`, evitando o consumo de memória do pnpm no boot Free.
-- **Live deployment:** `dep-darek8gjo6nc73flk0eg`, `Deploy succeeded | Live`; origem `https://saas-api-0jkv.onrender.com`.
-- **External checks:** `GET /health` retornou 200 `{"status":"ok","service":"api"}`; `GET /ready` retornou 503 com `database: missing` e `queue: missing`; `GET /identity/me` sem Bearer retornou 401 `UNAUTHENTICATED`. Não houve token, banco, secret ou reconciliação positiva nessas verificações.
+Nada disso é runtime atual.
 
-## Final local gate evidence
+### 12.2 Edge Function Supabase — transitória
 
-- **Structure:** PASS — 12 workspaces brand-neutral verified.
-- **Secrets baseline:** PASS — zero tracked implementation files scanned; no secret reported.
-- **Lint:** PASS with warnings only. One warning in code novo foi corrigido; os avisos restantes pertencem ao acervo histórico imutável de wireframes.
-- **Tests:** PASS — Turbo executou 12 testes da API, 3 de config e 1 de observability; todos passaram.
-- **Typecheck:** PASS — 12 workspaces.
-- **Build:** PASS — 12 workspaces; Next.js gerou `/login`.
-- **Git review:** diff sem whitespace errors, baseline de secrets aprovada e alterações do contrato de transporte revisadas antes do commit. `1e1cf9c` foi enviado a `origin/main`; não houve force push, merge de PR nem deploy de API.
-
-## Authenticated handoff completion — 2026-09-25
-
-- [x] **Web handoff:** depois de `signInWithPassword`, `SCR-AUTH-001` entrega somente o access token da sessão ao `GET /identity/me` por `Authorization: Bearer`; falha de transporte permanece no erro genérico aprovado.
-- [x] **CORS Production:** Render recebeu `WEB_ORIGIN` com a origem Production exata; não há wildcard nem cookies credenciados.
-- [x] **API deploy:** Render publicou `4f912b1` como `dep-darfav142hec73agseng`, com estado `Deploy succeeded | Live`.
-- [x] **CORS proof:** preflight de `https://saas-pi-one-31.vercel.app` para `/identity/me` retornou `204`, `Access-Control-Allow-Origin` exato, `Access-Control-Allow-Headers: authorization` e `Access-Control-Allow-Methods: GET`. Um Origin externo recebeu o cabeçalho da origem oficial e, por não corresponder à própria origem, é bloqueado pelo navegador.
-- [-] **Live successful reconciliation:** pendente apenas de um novo submit da conta controlada na Web publicada e posterior inspeção de request/log/mapeamento. Nenhuma senha, token ou secret será solicitado, exibido ou registrado.
-
-## Migração Supabase-only — 2026-09-25
-
-- Edge Function `identity-me` versão 1: ACTIVE no projeto Supabase `obpncbnzwrocvgngtodg`.
+- Edge Function `identity-me` versão 1: **ACTIVE** no projeto `obpncbnzwrocvgngtodg`.
 - `pgmq`, `pg_cron` e `pg_net` habilitados.
 - Web atualizado para invocar `identity-me` pelo cliente Supabase; `NEXT_PUBLIC_API_BASE_URL` removida.
 - `apps/api` e `apps/worker` removidos como unidades de runtime/workspace.
-- ADR-016 passa a ser a autoridade de backend.
-- Antiga evidência Render permanece abaixo apenas como histórico.
+- ADR-016 é a autoridade de backend; **ADR-017 move a execução HTTP de negócio para Route Handlers**, e é por isso que este runtime é transitório.
+
+---
+
+## 13. Blockers
+
+`BLOCKED — SUCCESSFUL AUTHENTICATION EVIDENCE REQUIRED`
+
+1. **Decisão/ação faltante:** uma reconciliação autenticada bem-sucedida, comprovada por inspeção de request, log e mapeamento persistido.
+2. **Documentos consultados:** `EPIC-01-SLICE-01-TASK-PACKET.md`, `06-IMPLEMENTATION-PLAN.md` Epic 0 item 1 e Epic 1, ADR-016, ADR-017.
+3. **Situação:** a conta controlada e a configuração server-side existem. A prova depende de o Product Owner submeter uma única vez as credenciais controladas na Web publicada. O Codex não recebe, exibe, registra nem solicita a senha.
+4. **Sequenciamento:** conforme §3, essa prova deve ser executada **contra o Route Handler**, como critério de aceite do Epic 0 / Fase 2 / item 1 — não contra a Edge Function, que será desativada no item 2.
+5. **Bloqueia:** encerramento do Slice 01 e, por consequência, o início das fatias de Workspace/Membership/RBAC.
+
+---
+
+## 14. Boundaries e decisões em vigor
+
+- Supabase Auth é o provedor de autenticação aprovado para a V1.
+- A tela de login está em `/login`; o cliente de navegador usa somente a boundary de publishable key, e o verificador server-side usa variáveis server-only mais `auth.getUser(token)`.
+- Wireframes históricos são pesquisáveis em `docs/reference/wireframes/`, mas precisam ser reconciliados com as decisões atuais e com o Task Packet antes de qualquer implementação visual.
+- Workspace é a fronteira de tenant.
+- **Autenticação não é autorização:** as fatias seguintes precisam impor Membership, Permission e escopo de Location nas boundaries de backend e banco.
+- Visibilidade de UI e deep link nunca concedem autorização.
+- Nenhum trabalho de Stripe, QuickBooks, Resend, SMS/Twilio, billing de provedor ou domínio de negócio pertence ao Epic 1.
+- O acesso do Cliente por magic link (`PortalGrant`, ADR-022) pertence ao **Epic 10**.
+
+---
+
+## 15. Documentação consultada
+
+`docs/source-of-truth/README.md` · `CURRENT-DECISIONS.md` · `canonical/01-PRD.md` ·
+`02-TRD-OFICIAL.md` · `03-APP-FLOW-OFICIAL.md` · `04-UI-UX-DESIGN.md` ·
+`05-BACKEND-SCHEMA-DOMAIN-MODEL.md` · `06-IMPLEMENTATION-PLAN.md` ·
+`docs/architecture/TECHNICAL-ARCHITECTURE.md` · `docs/adr/README.md` e ADRs aplicáveis ·
+`docs/implementation/CHATGPT-CODEX-OPERATING-MODEL.md` · `CODEX-TASK-TEMPLATE.md` ·
+`EPIC-00-STATUS.md`
+
+---
+
+## 16. Próximo passo exato
+
+O Epic 1 **não avança** antes do Epic 0 / Fase 2. A ordem é:
+
+1. Task Packet do Epic 0 / Fase 2 / item 1 — Route Handler com paridade testada.
+2. A prova autenticada do Slice 01 é o critério de aceite desse item (§3).
+3. Item 2 do Epic 0 — desativar a Edge Function e atualizar os dois verificadores de CI.
+4. Só então emitir o Task Packet da fatia de Workspace/Membership/Location, já reconciliada com
+   `UserAuthIdentity` do Domain Model v2.0 (§7).
