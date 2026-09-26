@@ -43,9 +43,23 @@ export function createDatabase(connectionString: string) {
   const pool = new Pool({
     connectionString,
     max: 5,
+
+    // Sem estes limites o `pg` espera indefinidamente por uma conexão que talvez
+    // nunca se estabeleça, e a função serverless fica pendurada até o teto da
+    // plataforma. Falhar em segundos, com erro legível, é melhor que pendurar.
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 10_000,
+    query_timeout: 15_000,
+    statement_timeout: 15_000,
+
     ssl: certificateAuthority
       ? { ca: certificateAuthority, rejectUnauthorized: true }
       : { rejectUnauthorized: false },
+  });
+
+  // Erro em conexão ociosa do pool não pode derrubar o processo inteiro.
+  pool.on("error", (error) => {
+    console.error("database pool error", { error: error.message });
   });
 
   return drizzle({ client: pool });
