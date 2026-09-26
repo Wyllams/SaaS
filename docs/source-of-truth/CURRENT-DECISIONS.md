@@ -2,6 +2,113 @@
 
 Este arquivo não altera os documentos originais. Ele registra decisões posteriores que devem ser aplicadas ao consultá-los.
 
+## Reorientação de produto e stack — 2026-09-25
+
+Decisões do Product Owner que **prevalecem sobre os documentos canônicos e sobre ADRs
+anteriormente Accepted**. Os ADRs afetados precisam ser formalmente superseded por novos
+ADRs antes da próxima implementação que dependa deles.
+
+### ICP
+
+O produto atende **exterior contractors**: Roofing, Gutters, Siding, Windows, Doors,
+Decks e Landscaping de instalação. Roofing lidera.
+
+Verticais de chamado avulso — limpeza, pool service, handyman, HVAC, encanamento e
+elétrica — estão **fora do ICP**. Referências a elas no PRD v1.0 são superseded.
+
+### Papéis
+
+Sete papéis: **Owner, Admin, Salesperson, Supervisor, Crew, Accounting e Client**.
+
+Substitui os oito perfis do App Flow Oficial. `Supervisor` assume o papel antes chamado
+Gerente de Projeto. `Super Admin` deixa de ser aplicação separada na V1.
+
+Crew pode ser própria ou **parceira (subcontratada)**, com controle de seguro, validade,
+W-9 e licença.
+
+### Stack
+
+| Decisão | Escolha | ADR afetado |
+|---|---|---|
+| Lógica de negócio | Next.js Route Handlers + Server Actions na Vercel, com Drizzle | supersede ADR-014 (NestJS + Fastify) |
+| Background jobs e filas | **pgmq + pg_cron** no Supabase | supersede ADR-005 (BullMQ + Valkey) |
+| Infraestrutura | **Supabase + Vercel + GitHub** apenas | supersede ADR-015 (Render) |
+| Campo / mobile | **PWA instalável** na Vercel | supersede ADR-011 (Expo/EAS) na V1 |
+| E-mail | Resend como provider único, inclusive SMTP do Supabase Auth | fecha ADR-010, outbound apenas |
+
+Consequência do pgmq: o registro de negócio, o evento de Outbox e o enfileiramento
+ocorrem na **mesma transação**. Nenhuma implementação deve reintroduzir fila externa
+sem nova decisão.
+
+Domínio próprio será adquirido apenas na entrada em produção.
+
+### Imposto (novo)
+
+Sales tax é **configurado pela empresa**, não calculado por motor genérico: alíquota por
+Location com override por Estimate, separação entre mão de obra e material, e isenção por
+Customer com certificado e validade. Implementação atrás de um contrato `TaxProvider`.
+
+### Assinatura da Plataforma (novo)
+
+**Stripe Billing completo** na V1: Trial de 14 dias com cartão, cobrança recorrente,
+Grace de 3 dias, Read-only e Suspended.
+
+É **independente do Stripe Connect** usado para os pagamentos dos clientes finais. Duas
+integrações distintas no mesmo provider; não compartilham código de domínio.
+
+### Escopo da V1
+
+Incluído: Identidade e Workspace, Assinatura, CRM, Sales e Estimates, Jobs e Services,
+Schedule com capacidade e Escadinha, Field em PWA, Change Orders, **Materiais e Compras**,
+Financial com Invoice/Payment/AR/Commissions, Client Portal e as integrações Stripe,
+QuickBooks e Resend.
+
+Fora da V1: Chat interno, Automation Engine, Reports como módulo, Public API, Webhooks de
+saída, MCP, Super Admin como aplicação separada, Financing, e-mail inbound e serviços
+recorrentes.
+
+Esses itens estão **adiados, não cancelados**. Retornam por decisão explícita.
+
+### Idiomas
+
+**English (US) e Español, ambos completos**, no produto inteiro.
+
+PT-BR **sai do escopo**: não tem comprador num produto para o mercado americano. A
+referência a três idiomas no App Flow v1.0 é superseded.
+
+O TRD precisa definir a arquitetura de i18n, que nunca existiu em documento algum.
+
+### Dashboard
+
+**Uma única tela**, com blocos exibidos conforme a permissão de quem entra. Substitui os
+cinco dashboards por papel do App Flow v1.0 (`SCR-DASH-002` a `005` ficam reservados e
+sem uso).
+
+O Crew não usa o dashboard; sua entrada é `SCR-FIELD-001`.
+
+### Acesso do cliente ao Portal
+
+**Magic link para aprovar, senha opcional.**
+
+O cliente recebe link assinado com validade e aprova Estimate ou Change Order **sem criar
+conta**. Definir senha é opcional e serve para acompanhamento recorrente.
+
+Razão: exigir cadastro do dono do imóvel no momento da assinatura é atrito no ponto exato
+de conversão. O link revalida autorização no servidor e nunca dá acesso a dado de outro
+cliente.
+
+Substitui a exigência de e-mail e senha do App Flow v1.0 e do PRD v1.0.
+
+### Comunicação com o cliente na V1
+
+Sem inbound, não existe conversa bidirecional — portanto **não há módulo de Inbox na V1**.
+
+O histórico de envio aparece como aba Communications dentro do Customer e do Job, com
+estado de entrega. As telas `SCR-INB-001` a `004` ficam reservadas.
+
+Consentimento e opt-out por contato e por canal são registrados **desde a V1**, mesmo sem
+SMS, porque consentimento retroativo é impossível de reconstruir.
+
 ## Nome do produto
 
 **CrewCommand é nome histórico/provisório.** A marca final ainda não foi definida. Não propagar o nome automaticamente para novos packages, namespaces, domínios ou documentação.

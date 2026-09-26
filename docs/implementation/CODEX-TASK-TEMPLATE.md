@@ -22,7 +22,7 @@ Exemplo:
 
 - `AGENTS.md`
 - `docs/source-of-truth/CURRENT-DECISIONS.md`
-- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`
+- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`
 - App Flow — Screen IDs relevantes
 - UI/UX — seção relevante
 - Backend Domain Model — entidades relevantes

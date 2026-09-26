@@ -22,7 +22,7 @@ Deliver `SCR-AUTH-001` as an email/password sign-in surface connected to Supabas
 - `docs/source-of-truth/canonical/03-APP-FLOW-OFICIAL.md`, sections 2 and 4.2; `SCR-AUTH-001`
 - `docs/source-of-truth/canonical/04-UI-UX-DESIGN.md`, sections 2, 3 and 10
 - `docs/source-of-truth/canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md`, sections 2 and A
-- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN-v1.0.md`, Epic 1
+- `docs/source-of-truth/canonical/06-IMPLEMENTATION-PLAN.md`, Epic 1
 - `docs/architecture/TECHNICAL-ARCHITECTURE.md`, database, security and application-boundary sections
 - `docs/adr/ADR-002-supabase-connection-pooling.md`
 - `docs/adr/ADR-003-tailwind-semantic-design-system.md`

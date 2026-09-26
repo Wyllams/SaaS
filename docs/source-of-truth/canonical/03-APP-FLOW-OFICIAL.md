@@ -1,662 +1,507 @@
-**CrewCommand**
+# APP FLOW OFICIAL
 
-APP FLOW OFICIAL
+**v2.0** — Navegação, telas, papéis, fluxos e exceções
 
-Arquitetura de navegação, telas, papéis, fluxos e casos de exceção do CrewCommand
+| Campo | Definição |
+|---|---|
+| Versão | 2.0 |
+| Status | Substitui o App Flow v1.0 |
+| Data | 2026-09-25 |
+| Marca | Não definida; nomes brand-neutral |
+| Base | PRD v2.0 + decisões do Product Owner de 2026-09-25 |
+| Idiomas do produto | English (US) e Español — ambos completos |
+| Telas na V1 | 91 |
+| Telas adiadas | 25 |
 
-| **Versão**              | 1.0                                              |
-|-------------------------|--------------------------------------------------|
-| **Status**              | Oficial                                          |
-| **Base**                | PRD + Product Discovery + App Flow (Blocos 1–10) |
-| **Idioma do documento** | Português (Brasil)                               |
+> **O que mudou em relação à v1.0.** Sete papéis no lugar de oito. Dashboard único com blocos por permissão no lugar de cinco dashboards. Portal do cliente por magic link. Saem Chat interno, Automation Engine, Inbox bidirecional, Public API, Webhooks, MCP, Super Admin como aplicação separada, Financing, serviços recorrentes, Custom Fields e o módulo de Tarefas. Entram Materiais e Compras, assinatura via Stripe Billing e o controle de Crew parceira.
+>
+> **Screen IDs foram preservados.** Telas adiadas mantêm o ID reservado e aparecem no §16 marcadas como fora da V1, para não quebrar rastreabilidade nem reaproveitar número.
 
-# 1. Objetivo e status do documento
+---
 
-Este documento consolida as decisões tomadas durante o PRD e os 10 blocos de descoberta do App Flow. Ele substitui o formato de questionário por uma especificação operacional: quais telas existem, como os usuários navegam, quais ações são permitidas, como os módulos se conectam e quais exceções devem ser tratadas.
+# 1. Princípios globais
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><p><strong>Regra de precedência</strong></p>
-<p>Quando uma resposta específica do Product Owner divergir de uma recomendação genérica do questionário, a resposta específica prevalece. O App Flow Oficial registra a decisão final, não a recomendação original.</p></th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+- Desktop administrativo com Sidebar recolhível e Topbar. Campo e Portal são mobile-first.
+- Seletor de Location visível para quem tem acesso a mais de uma. "All Locations" consolida **apenas** as Locations do usuário.
+- O sistema lembra a última Location e o último Workspace.
+- "+ Novo" mostra somente ações permitidas pelo papel.
+- Busca global, notificações, ajuda e perfil ficam na Topbar.
+- Deep link leva ao registro e **revalida permissão** antes de abrir.
+- Ao voltar para uma lista, filtros, ordenação e posição de rolagem são preservados.
+- **Valor financeiro desaparece por completo** para quem não tem permissão financeira — não borrado, não zerado.
+- Estados de vazio, carregamento, erro recuperável e confirmação de ação destrutiva são obrigatórios.
+- Sem Offline Mode: falha de conexão é explícita e nunca sugere que salvou.
+- Todo texto existe em inglês e espanhol.
 
-<img src="media/image1.png" style="width:6.55in;height:0.30768in" />
+---
 
-Fluxo principal do negócio: do Lead ao Pagamento.
+# 2. Navegação por papel
 
-# 2. Princípios globais de experiência
+| Papel | Navegação | Superfície |
+|---|---|---|
+| **Owner** | Dashboard, CRM, Sales, Jobs, Schedule, Team, Purchases, Financial, Reports, Settings | Desktop |
+| **Admin** | Igual ao Owner, limitado ao que o Owner liberar | Desktop |
+| **Salesperson** | Dashboard, CRM, Sales, Schedule | Desktop + tablet + PWA |
+| **Supervisor** | Dashboard, Jobs, Schedule, Team, Purchases, Approvals | Desktop + tablet |
+| **Crew** | Today, Jobs, Notifications, More | **PWA, mobile-first** |
+| **Accounting** | Dashboard, Financial, Purchases, Reports | Desktop |
+| **Client** | Portal: Início, Projetos, Documentos, Financeiro, Mais | Mobile-first |
 
-- Arquitetura desktop principal: Sidebar recolhível + Topbar.
+Navegação com três níveis é evitada. Submódulo usa aba interna.
 
-- O seletor de Filial/Location permanece visível para usuários com acesso a múltiplas filiais; “Todas as Filiais” consolida dados e uma filial específica restringe o contexto.
+Bottom navigation tem no máximo cinco itens. Drawer de desktop vira tela cheia no mobile.
 
-- O sistema lembra a última Filial e, quando aplicável, o último Workspace utilizado.
+---
 
-- O botão global “+ Novo” exibe apenas ações permitidas pela Função/Role do usuário.
+# 3. Autenticação, assinatura e onboarding
 
-- Busca Global, Notificações, Ajuda e Perfil ficam na Topbar.
+## 3.1 Cadastro e Trial — `SCR-AUTH-002`, `SCR-AUTH-003`, `SCR-AUTH-004`
 
-- Deep Links levam diretamente ao registro/aba relacionada, sempre revalidando permissões.
+O usuário informa nome, sobrenome, empresa, e-mail, telefone e senha. Antes do envio da verificação, o sistema avisa que um e-mail válido será necessário e permite revisar o endereço.
 
-- Ao voltar para listas, o sistema preserva filtros, ordenação e posição de rolagem.
+Escolhe Starter, Growth, Pro ou Enterprise antes de iniciar.
 
-- Todos os módulos respeitam Workspace, Filial, Role e permissões granulares.
+**Trial de 14 dias, com cartão.** A interface informa explicitamente que não haverá cobrança antes do fim do período. O Trial libera apenas os recursos do plano escolhido e exibe contagem regressiva. O banner pode ser ocultado temporariamente e volta ao recarregar.
 
-- Valores financeiros desaparecem completamente para usuários sem permissão financeira.
+## 3.2 Ciclo da assinatura — `SCR-AUTH-007`, `SCR-AUTH-008`
 
-- Empty States, Loading States, erros recuperáveis e confirmações de ações destrutivas são padrões obrigatórios.
+```
+Trial → Active
+Payment Failed → Grace (3 dias) → Read-only → Suspended → Active
+```
 
-- Web/PWA e tablet são responsivos; experiências mobile variam por Role.
+Em Read-only, banner persistente e ações de edição desabilitadas. Em Suspended, usuários comuns não entram e o Owner vê a tela de regularização.
 
-- Offline Mode e Time Tracking ficam fora da V1.
+**Dados nunca são apagados.** O acesso retorna com o pagamento. Cancelamento pelo Owner leva a um período somente de exportação antes da exclusão definitiva.
 
-# 3. Navegação principal por perfil
+## 3.3 Login e Workspaces — `SCR-AUTH-001`, `SCR-AUTH-005`, `SCR-AUTH-006`
 
-| **Perfil**               | **Navegação principal**                                                                                                     | **Regra**                                                                      |
-|--------------------------|-----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| Owner                    | Dashboard, CRM, Vendas, Projetos, Agenda, Tarefas, Caixa de Entrada, Equipe, Compras, Financeiro, Relatórios, Configurações | Acesso total, limitado apenas por regras de plataforma.                        |
-| Admin                    | Mesma base do Owner                                                                                                         | Vê apenas configurações e módulos liberados pelo Owner.                        |
-| Vendedor                 | Dashboard adaptado, CRM, Vendas, Agenda, Tarefas, Caixa de Entrada                                                          | Somente Leads/Clientes e conversas atribuídos, salvo permissão ampliada.       |
-| Gerente de Projeto       | Dashboard adaptado, Projetos, Agenda, Tarefas, Caixa de Entrada, Equipe                                                     | Foco em execução, aprovações operacionais e alocação.                          |
-| Financeiro/Contabilidade | Dashboard adaptado, Financeiro, Compras, Relatórios                                                                         | Acesso financeiro conforme permissão; sem necessidade de módulos de campo.     |
-| Funcionário de Campo     | Hoje, Projetos/Serviços atribuídos, Caixa de Entrada/Chat, Notificações, Mais                                               | Interface simplificada; sem financeiro/comissões.                              |
-| Cliente                  | Portal do Cliente                                                                                                           | Somente dados próprios e visibilidades liberadas pela empresa.                 |
-| Super Admin CrewCommand  | Aplicação separada                                                                                                          | Administração da plataforma, planos, limites, suporte e saúde das integrações. |
+Login por e-mail e senha. Recuperação envia link, permite definir nova senha e volta ao login.
 
-# 4. Autenticação, Trial, Workspaces e Onboarding
+Um usuário pode pertencer a vários Workspaces. Havendo mais de um, aparece a escolha; depois a troca fica no perfil. Dados, permissões, notificações e contexto **nunca se misturam** entre Workspaces.
 
-## 4.1 Cadastro e Trial
+## 3.4 Onboarding — `SCR-ONB-001`, `SCR-ONB-002`
 
-1.  Usuário inicia em “Start Free Trial” e informa nome, sobrenome, empresa, e-mail, telefone e senha.
+Welcome com "Start Setup" ou "Fazer depois", avisando que recursos dependentes podem não funcionar enquanto etapas forem puladas.
 
-2.  Antes do envio da verificação, o sistema alerta que um e-mail válido será necessário e permite revisar o endereço digitado.
+Checklist persistente com percentual, acessível depois em Settings.
 
-3.  Usuário escolhe Starter, Growth, Pro ou Enterprise antes de iniciar o Trial.
-
-4.  O Trial dura 14 dias e exige cartão. A interface informa explicitamente que não haverá cobrança antes do fim do Trial.
-
-5.  O Trial libera apenas recursos do plano escolhido e exibe contagem regressiva. O banner pode ser ocultado temporariamente, mas retorna ao recarregar.
-
-6.  Sem pagamento ao fim do Trial, dados permanecem; a conta fica bloqueada até regularização/assinatura.
-
-## 4.2 Login e múltiplos Workspaces
-
-- Login: E-mail + Senha ou Google.
-
-- Fluxo “Esqueci minha senha” envia link, permite definir nova senha e retorna ao Login.
-
-- Usuários convidados que usam Google com o mesmo e-mail são vinculados ao convite existente.
-
-- Um usuário pode pertencer a vários Workspaces/empresas. Se houver mais de um, existe “Escolher Workspace”; depois a troca também fica disponível no perfil/topbar.
-
-- Dados, permissões, notificações e contexto nunca se misturam entre Workspaces.
-
-## 4.3 Onboarding
-
-- Welcome Screen: “Start Setup” ou “Fazer depois”. O sistema avisa que recursos dependentes de configuração podem não funcionar enquanto etapas forem puladas.
-
-- Checklist persistente de Setup mostra percentual e pendências; permanece acessível em Configurações \> Guia de Configuração.
-
-- Etapas: Empresa → Filiais → Serviços → Crews/Equipes → Usuários → Pagamentos → Integrações → Templates → Pronto.
+Etapas: **Empresa → Locations → Serviços → Crews → Usuários → Imposto → Pagamentos → Integrações → Templates → Pronto.**
 
 - Company Info: nome, logo, telefone, e-mail, site, endereço, timezone, idioma e moeda.
+- A primeira Location nasce do endereço da empresa como "Main Location".
+- Serviços vêm de sugestões por vertical ou são criados manualmente; no onboarding exige-se apenas nome, categoria, unidade e status padrão.
+- Crews podem nascer vazias. Já no onboarding a Crew é marcada como **própria ou parceira**.
+- **Imposto** é etapa própria: alíquota por Location, tratamento de mão de obra e material.
+- Convites levam e-mail, papel e Location; podem ser reenviados e cancelados.
+- Importação CSV/Excel: Upload → Preview → Mapping → revisão de duplicados → resumo.
 
-- Tipo de negócio é opcional e permite selecionar múltiplos segmentos; serve para sugerir serviços e templates.
+---
 
-- A primeira Filial nasce do endereço da empresa como “Main Location”. Filiais adicionais respeitam limite do plano.
+# 4. Dashboard — `SCR-DASH-001`
 
-- Serviços podem ser escolhidos de sugestões ou criados manualmente; no onboarding só se exigem nome, categoria, unidade e status padrão.
+**Uma única tela.** Os blocos aparecem conforme a permissão de quem entrou.
 
-- Crews podem ser criadas vazias; a empresa pode trabalhar com Crew individual ou Equipe composta por várias Crews.
+Topo: saudação, Location, data e filtro de período (Hoje, Semana, Mês, Personalizado).
 
-- Convites de usuários recebem e-mail, Role e Filial; podem ser reenviados/cancelados.
+| Bloco | Aparece para |
+|---|---|
+| Avisos de Trial e Setup | Owner, Admin |
+| Command Center — Requer Atenção | Todos, filtrado por escopo |
+| Aprovações pendentes | Owner, Admin, Supervisor |
+| Jobs e agenda do dia | Owner, Admin, Supervisor |
+| Conflitos de agenda | Owner, Admin, Supervisor |
+| Pipeline e follow-ups | Owner, Admin, Salesperson |
+| Estimates aguardando resposta | Owner, Admin, Salesperson |
+| Resumo financeiro e AR | Owner, Admin, Accounting |
+| Minha comissão | Salesperson (apenas a própria) |
+| Atividade recente | Todos, respeitando permissão |
 
-- Importação CSV/Excel usa Upload → Preview → Mapping → revisão de duplicados → resumo de importação.
+Widgets são reorganizáveis e ocultáveis por usuário; a empresa pode definir um padrão por papel.
 
-- Integrações são opcionais; funções dependentes explicam o que falta e oferecem “Configurar agora”.
+"Requer Atenção" abre drawer com "ver tudo"; cada item mostra motivo concreto e ação rápida. Aprovação simples resolve no drawer; Change Order abre o detalhe completo.
 
-- Demo Data pode criar um Workspace fictício claramente marcado como demonstração e removível sem afetar dados reais.
+O Crew não usa esta tela — sua entrada é `SCR-FIELD-001`.
 
-# 5. Dashboard / Command Center
+---
 
-- Primeira tela para Owner/Admin: Dashboard adaptado à Role.
+# 5. CRM
 
-- No topo: saudação, Filial, data e filtro de período (Hoje, Semana, Mês, Personalizado).
+Tela principal em tabela, com busca, filtros, Saved Views, colunas configuráveis e importação — `SCR-CRM-001`, `SCR-CRM-005`.
 
-- Widgets são reorganizáveis, ocultáveis e salvos por usuário; a empresa pode definir um padrão por Role.
+CRM único: Lead e Customer são o mesmo cadastro. **Lifecycle: Lead → Customer → Past Customer.**
 
-- Ordem recomendada: avisos Trial/Setup → Command Center → KPIs → Jobs/Agenda do dia → Vendas → Financeiro → Tarefas → Atividade Recente.
+Criação manual pergunta o lifecycle inicial. Obrigatórios: nome, sobrenome, telefone, e-mail, endereço completo e serviço de interesse — `SCR-CRM-002`.
 
-- Command Center: Requer Atenção, Aprovações, Tarefas Atrasadas, Jobs do Dia, Compromissos de Vendas e Próximos Prazos.
+Endereço é estruturado e o primeiro cria automaticamente a primeira Property. Duplicidade por e-mail, telefone ou endereço gera aviso antes de salvar ou importar.
 
-- Requer Atenção abre Drawer rápido com “Ver tudo”; itens mostram motivo concreto e ações rápidas.
+**Detalhe** — `SCR-CRM-003`: abas Overview, Properties, Sales, Documents, Communications e Activity.
 
-- Aprovações simples podem ser feitas em Drawer; Change Orders e itens complexos abrem detalhe completo.
+Overview traz contato, lead source, vendedor, serviço de interesse, tags, follow-up, notas e Total Contract Value dos negócios aprovados.
 
-- Today’s Jobs mostra status resumidos, mas não precisa exibir Crew no card. Conflitos de agenda são destacados.
+Lifecycle muda manualmente com permissão; Estimate aprovado converte para Customer automaticamente. Trocar o vendedor pergunta se os follow-ups do anterior vão junto.
 
-- My Tasks permite concluir tarefas diretamente e envia notificação de conclusão.
+Notas são permanentes, com menção e anexo. Um cliente tem várias Properties e vários contatos — Primary, Billing, Property, Other.
 
-- Recent Activity respeita permissões e pode ser filtrada por domínio.
+**Property** — `SCR-CRM-004`: Overview, Estimates, Jobs, Schedule, Photos, Documents, Activity e botão de abrir no mapa. Ao criar Estimate para cliente com várias Properties, escolher a Property é obrigatório.
 
-- Agenda compacta mostra Hoje/Próximos 7 dias; capacidade de Crew não precisa de widget próprio no Dashboard.
+Exclusão de histórico é restrita ao Owner. Cliente com registro financeiro ou assinado não é excluído.
 
-- No tablet/desktop do Field Worker, o Dashboard continua simplificado e semelhante à experiência de tablet.
+---
 
-# 6. CRM, Cliente, Lead e Propriedade
+# 6. Sales e Estimates
 
-- Existe um único CRM. Lead e Customer são o mesmo cadastro com Lifecycle/Status/Tags; filtros e Saved Views separam Leads, Customers e Past Customers.
+Abre no pipeline — `SCR-SALES-001`. Abas: Pipeline, Estimates, Appointments.
 
-- Tela principal em List/Table com filtros, Saved Views, colunas configuráveis, reordenáveis e ordenáveis.
+Arrastar muda estágio. Mover para Lost **exige motivo**. Won pode vir da aprovação do Estimate ou manualmente, com permissão.
 
-- Criação manual pergunta Lifecycle inicial (Lead ou Customer). Campos obrigatórios: nome, sobrenome, telefone, e-mail, endereço completo e serviço de interesse.
+Appointment — `SCR-SALES-002`: cliente, Property, vendedor, data, hora, duração, serviço de interesse, notas, Location, status e data de fechamento. Pode ser reagendado e gerar confirmação automática.
 
-- Endereço é armazenado estruturadamente; autocomplete é desejado. O primeiro endereço cria automaticamente a primeira Property.
+## 6.1 Editor — `SCR-SALES-004`
 
-- Duplicidades por e-mail/telefone/endereço geram aviso antes de salvar/importar.
+Começa pela Property, depois template ou em branco.
 
-- Lead/Client Detail: Overview, Properties, Sales, Tasks, Messages, Documents, Activity.
+Cabeçalho: número, cliente, Property, vendedor, Location, criação e expiração. Numeração automática com prefixo configurável.
 
-- Overview mostra contato, Lead Source, vendedor, serviço de interesse, tags, follow-up, notas, campos customizados e Total Contract Value de negócios aprovados/fechados.
+Linha de serviço: nome, descrição, quantidade, unidade, preço unitário, desconto, **imposto**, total e fotos. A descrição pode mudar sem alterar o catálogo. Serviço ad hoc pode ser criado ali e opcionalmente salvo.
 
-- Lifecycle pode ser alterado manualmente com permissão; Estimate aprovado converte automaticamente para Customer.
+**Imposto por linha distingue mão de obra e material**, e usa a alíquota da Location com override por Estimate. Cliente isento com certificado válido zera o imposto e registra o motivo.
 
-- Troca de vendedor pergunta se Tasks/Follow-ups do responsável anterior devem ser transferidos.
+Totais: Subtotal, Discount, Tax, Total Contract Value, Deposit Required, Remaining Balance.
 
-- Notes são permanentes e distintas de Chat; suportam @mentions, anexos e pin.
+Customer Notes, Terms & Conditions e Internal Notes são separados.
 
-- Um cliente pode ter várias Properties e vários contatos secundários (Primary, Billing, Property, Other).
+**Preview é obrigatório antes de qualquer envio** — `SCR-SALES-005`. PDF e impressão disponíveis.
 
-- A Property possui Overview, Estimates, Jobs, Schedule, Photos, Documents, Activity e botão para abrir Mapas.
+## 6.2 Envio e status — `SCR-SALES-003`, `SCR-SALES-006`
 
-- Ao criar Estimate para cliente com múltiplas Properties, o usuário precisa escolher a Property.
+Draft com autosave. Envio por e-mail, escolhendo os contatos e personalizando a mensagem.
 
-- Documentos do cliente permanecem contextuais; não existe biblioteca global para duplicar arquivos de Jobs/Properties.
+**Status:** Draft → Sent → Viewed → Awaiting Approval → Approved | Rejected | Expired | Cancelled.
 
-- Exclusão de histórico é restrita ao Owner ou quem ele permitir; clientes com registros legais/financeiros não são excluídos de forma comum.
+Cada visualização do cliente é registrada; a interface resume primeira e última. Versões antes da aprovação: o cliente vê só a versão ativa e é avisado quando uma versão enviada é substituída.
 
-# 7. Vendas, Compromissos e Orçamentos
+**Aprovado fica bloqueado.** Pode ser duplicado como novo Estimate independente ou convertido em template.
 
-- Sales abre por padrão no Pipeline/Kanban, com tabs Pipeline, Orçamentos, Compromissos e Follow-ups.
+## 6.3 Aprovação — `SCR-SALES-007`
 
-- Cards do pipeline são responsivos e configuráveis. Arrastar muda estágio; mover para Lost exige Lost Reason. Won pode ocorrer por aprovação do Estimate ou manualmente para usuários autorizados.
+O cliente abre o **magic link** e aprova sem precisar de conta. Ver §11.1.
 
-- Sales Appointment tem cliente/lead, Property, vendedor, data, hora, duração, serviço de interesse, notas, Filial, status e data em que o contrato foi fechado.
+Aprovação é do documento inteiro. O cliente escolhe payment term e método quando aplicável, assina desenhando ou digitando o nome, e o sistema registra signatário, data, hora, IP e metadados do dispositivo.
 
-- Compromissos podem ser reagendados por calendário e gerar confirmações/lembretes automáticos. Não há necessidade de CTA “Create Estimate” ao concluir appointment.
+Rejeição exige motivo e comentário opcional. **Não move automaticamente para Lost** — a decisão é do vendedor.
 
-- Estimate começa por seleção de Property, depois “Template” ou “Em branco”. Templates podem ser da empresa ou do vendedor, conforme permissão.
+Efeitos padrão, configuráveis: lifecycle vira Customer, pipeline vira Won, cria o Job copiando Property, serviços, valores, fotos e documentos, mantém o vendedor, calcula comissão, cria saldo de depósito e notifica Admin. Depois oferece "Agendar agora" ou "Fazer depois".
 
-- Header do Estimate contém número, cliente, Property, vendedor, Filial, criação e expiração. Numeração é automática e prefixo configurável.
+Outro Estimate aprovado para a mesma Property pode criar novo Job ou adicionar Services a um Job existente.
 
-- Cada linha de serviço possui nome, descrição, quantidade, unidade, preço unitário, desconto, imposto, total e fotos. Descrição pode ser alterada sem modificar o catálogo.
+---
 
-- Serviços ad hoc podem ser criados no Estimate e opcionalmente salvos no catálogo.
+# 7. Jobs e Services
 
-- Total: Subtotal, Discount, Tax, Total Contract Value, Deposit Required, Remaining Balance. Total Contract Value no CRM usa somente Estimates aprovados/Won.
+Abre em Kanban — `SCR-JOB-001`, com alternativa em lista — `SCR-JOB-002`.
 
-- Fotos podem existir no Estimate e por line item, mas templates não carregam fotos.
+Card: cliente, Property, Total Contract Value quando permitido, status, vendedor e alertas. Arrastar muda status; Waiting pode pedir motivo.
 
-- Customer Notes, Terms & Conditions e Internal Notes são separados. Terms podem usar template.
+**Detalhe** — `SCR-JOB-003`: Overview, Services, Schedule, Financial, Change Orders, Materials, Daily Logs, Photos, Documents, Activity.
 
-- Payment Terms cadastrados podem ser escolhidos pelo vendedor e, conforme configuração, também pelo cliente. Financing aparece quando disponível.
+O cabeçalho **não exibe o valor do contrato**. Milestones ficam na Overview com "ver tudo".
 
-- Antes de qualquer envio, Preview é obrigatório. Download PDF e Print ficam disponíveis.
+Overview: resumo, progresso, serviços, milestones, próximas ações, requer atenção, equipe e atividade recente. Mostra "X de Y serviços concluídos", percentual e próximo serviço. Atraso aparece como badge simples.
 
-- Estimate tem Draft, autosave e envio por Email, SMS ou ambos. O remetente escolhe os contatos e pode personalizar a mensagem.
+**Service** — `SCR-JOB-005`: Overview, Schedule, Checklist, Daily Logs, Materials, Photos, Documents, Activity.
 
-- Status: Draft, Sent, Viewed, Awaiting Approval, Approved, Rejected, Expired, Cancelled. Cada visualização do cliente é registrada; a UI resume First/Last Viewed.
+Overview do Service: status, Crew, datas planejadas e reais, quantidade, unidade, duração calculada, progresso, notas e responsáveis.
 
-- Follow-up pode ser automático e também manual.
+Quantidade é editável com permissão e auditoria. **Se a duração mudar, dispara a Escadinha** (§8.4).
 
-- Cliente abre link seguro → autentica no Portal → retorna ao Estimate. Aprovação/rejeição é do documento como um todo (sem Good/Better/Best).
+Progresso é manual ou calculado pelo checklist, com pesos de template. Supervisor e Admin ajustam manualmente com auditoria.
 
-- Rejeição exige motivo e comentário opcional; não move automaticamente para Lost, deixando a decisão ao vendedor.
+Antes de Completed o sistema verifica pendências; cada regra é aviso ou bloqueio conforme configuração. Completed oferece Progress Report — `SCR-JOB-013` — e criação de Invoice. Paid pode ser automático quando todas as invoices forem pagas.
 
-- Aprovação: cliente escolhe Payment Term/Method/Financing quando aplicável, assina desenhando ou digitando o nome, e o sistema registra signer, data/hora e metadados apropriados.
+Cliente e Property de Job com Estimate aprovado ficam bloqueados contra troca. Services vindos de Estimates posteriores registram a origem.
 
-- Depósito pode ser cobrado imediatamente ou depois conforme configuração; Cash/Check pode deixar Deposit Pending.
+---
 
-- Aprovação padrão: Lifecycle = Customer, Pipeline = Won, cria Job, copia Property/serviços/valores/fotos/documentos, registra vendedor, calcula comissão, cria saldo de depósito e notifica Admin. Automação pode ser desligada.
+# 8. Agenda, Crews e capacidade
 
-- Após criação do Job: “Agendar agora” ou “Fazer depois”.
+## 8.1 Calendário — `SCR-SCH-001`
 
-- Estimate pode ter múltiplas versões antes da aprovação; cliente vê somente a versão ativa e recebe aviso quando uma versão enviada é substituída.
+Abre em Week. Views: Day, Week, Month, Agenda, Employee, Crew, Salesperson, Service e Location.
 
-- Estimate aprovado é Locked; mudanças viram Change Order.
+Filtros rápidos, Saved Views, cores configuráveis e respeito ao seletor global de Location. Clique abre drawer — `SCR-SCH-002`. Arrastar muda data, redimensionar muda duração, mover entre linhas muda atribuição.
 
-- Estimate pode ser duplicado; nova cópia é independente. Também pode ser convertido em Template.
+## 8.2 Capacidade — `SCR-SCH-003`
 
-- Quando outro Estimate é aprovado para a mesma Property, pode criar novo Job ou adicionar Services a Job existente.
+O Service é agendado pelo Job, pelo detalhe do Service ou pela agenda. Data e Crew podem ser escolhidas em qualquer ordem, desde que ambas estejam válidas ao salvar.
 
-# 8. Projetos (Jobs) e Serviços
+```
+quantidade ÷ capacidade da Crew = duração em dias → End Date automática
+```
 
-- Projects abre por padrão no Kanban, com alternativa List e filtros/Saved Views.
+Unidades: SQ, linear feet, units, rooms, ft². Quando um Team reúne várias Crews, soma **apenas as Crews selecionadas e disponíveis**.
 
-- Card padrão do Kanban: Cliente, Propriedade, Valor Total do Contrato, Status, Vendedor do Projeto e alertas. A empresa pode personalizar os campos.
+O cálculo respeita dias e horários da Location, feriados e bloqueios. Capacidade fracionada usa incrementos simples, como meio dia. Sem capacidade configurada, a duração é manual. Override exige permissão, motivo e fica registrado.
 
-- Arrastar card altera status; Waiting pode solicitar motivo opcional.
+## 8.3 Conflito — `SCR-SCH-004`
 
-- Job Detail: Overview, Services, Schedule, Tasks, Financial, Change Orders, Materials, Photos, Documents, Messages, Activity e Daily Logs consolidados.
+Conflito **impede o salvamento imediato** e mostra o Job e o horário em choque. Opções: agendar mesmo assim, outra data, outra Crew. "Mesmo assim" exige segunda confirmação.
 
-- Milestones permanecem na Overview com “Ver tudo”, evitando nova tab principal.
+Conflito de Team identifica qual Crew está sobreposta. Conflito de pessoa também é detectado. **Nunca fica escondido.**
 
-- Overview: resumo, progresso, serviços, milestones, próximas ações, requer atenção, equipe e atividade recente.
+## 8.4 Escadinha — `SCR-SCH-005`
 
-- Mostra “X de Y serviços concluídos”, % do projeto e próximo serviço. Não mostra Planned/Estimated Completion; atraso pode aparecer como badge simples (ex.: “2 dias de atraso”).
+Disparada quando data ou duração mudam, por troca de Crew, mudança de quantidade ou arraste.
 
-- O cabeçalho do Projeto não precisa exibir Total Contract Value, mesmo para usuários financeiros; o valor continua disponível onde fizer sentido no fluxo.
+Comportamento obrigatório:
 
-- Cada Service possui Detail próprio: Overview, Schedule, Checklist, Daily Logs, Materials, Photos, Documents, Activity.
+1. considera apenas Services futuros **não concluídos**;
+2. preserva por padrão os intervalos relativos;
+3. mostra **Before → After**;
+4. lista todos os novos conflitos gerados;
+5. permite desfazer imediatamente;
+6. registra quem, quando e por quê.
 
-- Service Overview: status, Crew/Equipe, datas planejadas/reais, quantidade, unidade/capacidade, duração calculada, progresso, notas e responsáveis.
+## 8.5 Crews e parceiros — `SCR-TEAM-002`, `SCR-TEAM-003`, `SCR-TEAM-004`
 
-- Quantidade pode ser editada com permissão e Audit Log; se isso mudar duração, dispara Escadinha e pergunta se serviços seguintes devem mudar de data.
+Uma Crew pode pertencer a mais de um Team. Ao atribuir um Team, escolhe-se quais Crews participam. Primary Crew mais adicionais é permitido.
 
-- Progresso pode ser manual ou automático por Template; checklist pode ter pesos. Manager/Admin pode ajustar manualmente com auditoria.
+**Crew parceira (subcontratada)** — `SCR-TEAM-004`: empresa, contato, W-9, licença e **certificado de seguro com data de validade**.
 
-- Milestones podem vir de Template e ser adicionados manualmente.
+- A agenda marca visualmente o recurso externo.
+- Atribuir Crew com **seguro vencido** exibe alerta bloqueante configurável.
+- O sistema avisa com antecedência sobre vencimento próximo.
 
-- Um Daily Log por Service por dia; nova tentativa abre o existente. Depois de Service DONE, campos ficam read-only e apenas novas fotos podem ser adicionadas; reabertura exige Manager/Admin autorizado.
+Disponibilidade — `SCR-TEAM-005`: Available, Partially Booked, Fully Booked, Unavailable. Bloqueios por intervalo, dia inteiro, vários dias e recorrentes — `SCR-SCH-006`. Feriados globais com override por Location; criação posterior alerta os agendamentos afetados sem mover automaticamente.
 
-- Change Order nasce como solicitação sem preço no campo, passa por vendedor/Admin para precificação, Preview, cliente, aprovação/rejeição e assinatura. Pode ter múltiplos itens e múltiplas solicitações em lote.
+---
 
-- Materials separa Requests e Purchases; uma solicitação pode gerar múltiplas compras.
+# 9. Campo (PWA)
 
-- Photos usam galeria, categorias, filtros, bulk actions e restrição de exclusão para registros oficiais.
+Entrada em **Today** — `SCR-FIELD-001`. O Crew vê apenas Services atribuídos a ele ou à sua Crew.
 
-- Documents possuem categoria, visibilidade, vínculo e preview quando possível.
+Cards com horário, Service, cliente, Property e status. **Sem qualquer valor financeiro.**
 
-- Messages possui subtabs Customer e Internal; Job Chat automático abre na área interna.
+**Service** — `SCR-FIELD-002`: seções e cards, não uma fila de abas. Cabeçalho com Service, status, cliente e Property. Ações rápidas: ligar, mensagem, mapa. Havendo vários Services do mesmo Job, mostra "Serviço X de Y".
 
-- Tasks no Job são apenas as vinculadas ao projeto e registram conclusão no Activity Log.
+**Daily Log** — `SCR-FIELD-003`: um por Service por dia; nova tentativa abre o existente.
 
-- Activity é cronológica e filtrável.
+Preenchidos automaticamente: data, Job, Service, Crew, Property e usuário. Editáveis: trabalho realizado, progresso, problemas, materiais usados, fotos, próximos passos e observações. A empresa define obrigatórios. Upload múltiplo com compressão, miniatura e retry por arquivo.
 
-- Cliente/Property de Job com Estimate aprovado/documentos assinados fica bloqueado contra troca; qualquer exceção anterior a isso é fortemente restrita.
+Depois de DONE, fica somente leitura; só novas fotos podem ser anexadas. Reabrir exige Supervisor ou Admin com motivo.
 
-- Services adicionados por Estimates posteriores registram origem (Estimate ID).
+Outras ações: reportar problema — `SCR-FIELD-004`; solicitar Change Order sem ver preço — `SCR-FIELD-005`; solicitar material — `SCR-FIELD-006`. O solicitante acompanha o status do que enviou.
 
-- Antes de Completed, o sistema verifica pendências; cada regra pode ser warning ou blocking conforme configuração.
+**Conclusão** — `SCR-FIELD-007`: antes de concluir, bottom sheet lista pendências de checklist, Daily Log, Change Orders e fotos obrigatórias. Aviso permite continuar; bloqueio exige resolver. Assinatura em tela limpa, desenhada ou digitada. Cliente ausente gera pendência para o escritório.
 
-- Completed oferece Project Progress Report, Create Invoice e assinatura do cliente quando necessário. Invoice permanece manual.
+Reagendamento notifica quem for pertinente. O Crew recebe notificação com deep link.
 
-- Paid pode ser automático quando todos os invoices forem pagos; “Closed” é status administrativo opcional.
+---
 
-- Project pode ser favoritado, ter link interno copiável, resumo imprimível e ser arquivado sem perder histórico.
+# 10. Change Orders, materiais e compras
 
-# 9. Agenda, Crews/Equipes e Operações de Campo
+## 10.1 Change Order — `SCR-JOB-007`
 
-- Schedule abre em Week. Views: Day, Week, Month, Agenda/List, Employee, Crew/Team, Salesperson, Service e Location.
+Nasce no campo **sem preço**. Contém Service, descrição, motivo e fotos. Vendedor e Admin são notificados.
 
-- Filtros rápidos, Saved Views, cores configuráveis e respeito automático ao Location Selector global.
+Sales ou Admin revisam, precificam, geram preview e enviam. Pode ter várias linhas; um Job pode ter vários. O cliente aceita ou rejeita e assina — rejeição exige motivo.
 
-- Card do calendário é configurável. Clique abre Drawer de resumo com links para Service/Job.
+Aprovado fica bloqueado, aumenta o valor do Job e passa a ser faturável.
 
-- Drag & Drop altera data; resize altera duração; mover entre linhas altera atribuição. Duplicar agendamento fica fora da V1.
+## 10.2 Materiais e compras — `SCR-JOB-008`, `SCR-PUR-001` a `SCR-PUR-004`
 
-- Service pode ser agendado pelo Job, Service Detail ou Schedule. Pode-se agendar individualmente ou por wizard em sequência.
+Material Request: material, quantidade, motivo, foto e observações. Supervisor aprova.
 
-- Data e Crew/Team podem ser escolhidos em qualquer ordem, desde que ambos estejam válidos antes de salvar.
+Estados: Requested → Approved | Rejected → Purchased → Delivered.
 
-- Production Capacity: quantidade + unidade + capacidade da Crew/Team calculam duração e End Date automaticamente. Equipe soma apenas Crews efetivamente selecionadas/disponíveis.
+Purchases registra fornecedor, data, número de PO, valor, comprador, status de pagamento, recibo e observações. Uma solicitação pode gerar várias compras. Compra pode existir sem solicitação, com permissão.
 
-- Sem capacidade configurada, duração é manual. Override manual exige permissão; motivo e histórico são registrados.
+Vendors/Stores têm tela própria com histórico, total gasto e jobs relacionados.
 
-- Cálculo respeita dias/horários da Filial, feriados e bloqueios. Capacidade fracionada pode usar incrementos simples como 0,5 dia.
+---
 
-- Conflitos impedem salvamento imediato e mostram Job/Service conflitante. Opções: Agendar Mesmo Assim, Outra Data, Outra Crew/Equipe. “Mesmo assim” usa segunda confirmação.
+# 11. Client Portal
 
-- Conflitos de Equipe identificam qual Crew está sobreposta; conflitos de funcionário individual também são detectados e nunca são escondidos.
+## 11.1 Acesso — `SCR-PORT-001`
 
-- Trocar Crew/Team recalcula capacidade/duração. Se datas mudarem, a Escadinha dispara: considera apenas Services futuros não concluídos, preserva intervalos relativos, mostra Before/After, lista novos conflitos e permite Undo imediato.
+**Magic link para aprovar.** O cliente recebe link assinado com validade, abre e aprova sem criar conta. O link carrega contexto suficiente para resolver Workspace, Customer e documento, e **revalida autorização no servidor**.
 
-- Uma Crew pode pertencer a mais de uma Equipe. Ao atribuir Equipe, escolhem-se quais Crews participarão; capacidade usa apenas as escolhidas.
+Definir senha é **opcional** e serve para quem quer voltar a acompanhar a obra. Quem tem senha entra por e-mail e senha.
 
-- Primary Crew + Additional Crew/Workers é permitido. Subcontractors usam o mesmo mecanismo de agenda/capacidade, identificados como recursos externos.
+Link expirado oferece reenvio. Link nunca dá acesso a dado de outro cliente.
 
-- Disponibilidade: Available, Partially Booked, Fully Booked, Unavailable. Crew Detail mostra calendário, capacidade, Services, membros e próximos agendamentos.
+## 11.2 Portal
 
-- Bloqueios podem ser por intervalo, dia inteiro, vários dias e recorrentes. Feriados podem ser globais com override por Filial; criação posterior alerta agendamentos afetados, sem mover automaticamente.
+Visual da empresa prestadora, estrutura da plataforma, mobile-first.
 
-- Serviços recorrentes suportam padrões flexíveis. Editar ocorrência oferece “Somente esta”, “Esta e futuras” ou “Toda a série”. Feriado/bloqueio pede nova data.
+Home — `SCR-PORT-002`: aprovações pendentes → próximo serviço → projetos ativos → saldo e faturas → documentos recentes.
 
-- Field Worker entra em “Hoje”, vendo somente Services/Jobs atribuídos. Service mobile: Overview, Checklist, Daily Log, Materials, Photos, Change Order, Documents, Chat.
+Properties — `SCR-PORT-003`: o cliente vê todas as próprias. Nova Property vira **solicitação**, não criação direta.
 
-- Empresa controla quais status o trabalhador pode alterar. Todos os membros autorizados de uma Crew veem informações operacionais e podem atualizar o único Daily Log do dia.
+Project — `SCR-PORT-004`: Overview, Services, Photos, Documents, Financial. Daily Logs só se liberados.
 
-- Daily Log mobile pré-preenche contexto; campos podem ser obrigatórios. Upload múltiplo de imagens com compressão. Vídeo fica para depois.
+**Progresso fica oculto por padrão.** Quando liberado: barra, percentual e "X de Y serviços concluídos", sem expor pesos internos.
 
-- Report Problem é separado de Change Order e Material Request. Trabalhador vê o status das solicitações que enviou.
+**Nunca expor:** capacidade de crew, notas internas, comissões, custo de material, dados de Crew parceira e qualquer conteúdo não marcado como customer-visible.
 
-- Mark Service Complete valida checklist, Daily Log, Change Orders, materiais e regras configuradas. Assinatura usa template; se cliente não estiver presente, gera pendência posterior.
+Estimate — `SCR-PORT-005` — com aparência de proposta: Review → Payment Terms → Método → Assinar → Confirmar. Approve é primário; Reject é secundário e exige motivo. Change Order — `SCR-PORT-006` — usa o mesmo fluxo em versão compacta.
 
-- Reagendamentos podem notificar cliente/equipe/vendedor/PM/Admin; Field Worker recebe Push com Deep Link.
+Documentos — `SCR-PORT-007`: upload com nome e vínculo; o que for permitido pode ser baixado e impresso.
 
-- Endereço abre Google Maps ou Apple Maps. Mapa administrativo mostra pins do dia sem otimização automática de rota. Work Order e Checklist são imprimíveis.
+Financeiro — `SCR-PORT-008`: saldo em aberto, próximo pagamento, faturas, histórico. "Pay Now" aparece apenas se o provider estiver realmente disponível. Checkout usa componente seguro do provider. Linguagem nunca agressiva.
 
-# 10. Financeiro, Compras e Portal do Cliente
+**Falha de pagamento após a aprovação não desfaz a aprovação**; o depósito fica pendente ou falho.
 
-- Financial: Invoices, Payments, Accounts Receivable, Commissions, Financing. Resumo financeiro no topo respeita permissão.
+Solicitar serviço — `SCR-PORT-009`: vira solicitação interna para revisão, nunca Job automático.
 
-- Create Invoice pode partir do Job, Financial \> Invoices ou conclusão do Job; progress billing permite faturar antes de Completed.
+---
 
-- Usuário escolhe Services, Change Orders ou percentuais a faturar. Labels: Deposit, Progress, Final. Payment Terms usam datas e percentuais.
+# 12. Financeiro
 
-- Pode haver provider padrão e override autorizado. Antes de enviar: Review/Preview e Save Draft.
+Abas Invoices, Payments, Accounts Receivable e Commissions — `SCR-FIN-001`. Resumo no topo respeita permissão.
 
-- CrewCommand armazena vínculo externo, número, valor, vencimento, status, link e sync status. Webhooks/API atualizam status quando possível; Sync Failed oferece Retry.
+**Invoice** — `SCR-FIN-002`, `SCR-FIN-003`, `SCR-FIN-004`: criada pelo Job, pelo módulo ou pela conclusão. Faturamento parcial permite faturar antes do Job concluído.
 
-- Múltiplos invoices por Job; o sistema compara total faturado com Contract Value + approved Change Orders e bloqueia overbilling por padrão, salvo exceção autorizada e justificada.
+O usuário escolhe Services, Change Orders ou percentuais. Rótulos Deposit, Progress e Final. Review e preview antes de enviar.
 
-- Invoice pode ter ajustes autorizados sem alterar Estimate aprovado; destinatários são selecionáveis. Depois de criado externamente, aparece no Client Portal.
+O sistema compara o total faturado com Contract Value mais Change Orders aprovados e **bloqueia overbilling por padrão**. Exceção exige permissão e justificativa. Sincronização falha mostra motivo e reenvio.
 
-- Void/Cancel segue suporte do provider e preserva histórico.
+**Payments** — `SCR-FIN-005`: Card, ACH, Cash, Check, Zelle, Wire e custom. Sempre aplicado a uma Invoice específica. Registro manual exige permissão e gera recibo. **Overpayment bloqueado.** Refund é transação separada.
 
-- Payment Schedule mostra parcelas/percentuais/datas/status/saldo. Depósitos e pagamentos parciais reduzem saldos automaticamente.
+**AR** — `SCR-FIN-006`: aging Current, 1–30, 31–60, 61–90, 90+. Lembretes param ao ficar pago e podem ser pausados.
 
-- Approved Change Order aumenta saldo ainda não faturado. Job Finance mostra Contract Total, Invoiced, Paid e Open Balance.
+**Commissions** — `SCR-FIN-007`: percentual sobre venda, sobre margem, fixo, por serviço ou combinação. Gatilho configurável. Projected → Earned → Approved → Paid. **Paid congela.** Ajuste exige motivo. O Salesperson vê apenas a própria.
 
-- Payments: Card, ACH, Cash, Check, PayPal, Financing, Zelle, Wire e custom. Dados sensíveis de cartão ficam no provider.
+---
 
-- Record Payment manual exige permissão e gera recibo. Cada pagamento se aplica a Invoice específico; overpayment é bloqueado enquanto não houver Customer Credit.
+# 13. Comunicação, notificações e aprovações
 
-- Refund é transação separada. Timeline financeira registra eventos.
+## 13.1 Comunicação com o cliente
 
-- Financing providers são cadastráveis; cliente escolhe no Estimate/Portal. Status: Applied/Pending/Approved/Declined/Funded; valor aprovado pode ser menor que o contrato.
+**A V1 envia, mas não recebe.** Sem inbound, não há conversa bidirecional — portanto não há módulo de Inbox.
 
-- Accounts Receivable usa aging Current, 1–30, 31–60, 61–90, 90+; filtros e drill-down. Reminders param ao ficar Paid e podem ser pausados manualmente.
+O histórico de comunicação aparece **dentro do Customer e do Job**, como aba Communications: o que foi enviado, quando, para quem, por qual canal e o estado de entrega (enviado, entregue, aberto, devolvido, falhou). Falha mostra motivo e reenvio.
 
-- Commissions: Owner/Admin vê todas, vendedor só as próprias. Modelos: % sale, % gross profit, fixed, % by service, combination. Trigger configurável. Status Projected, Earned, Approved, Paid. Ajustes exigem motivo; Paid congela.
+Templates de mensagem são categorizados, usam variáveis e podem ser editados antes do envio.
 
-- Purchases: tabs Purchases, Purchase Orders, Vendors/Stores. Compra pode existir sem Material Request, com permissão. Vendor Detail mostra histórico e total gasto.
+Consentimento e opt-out são armazenados por contato e por canal **desde a V1**, mesmo sem SMS.
 
-- Client Portal: Email + Password, branding da empresa, múltiplas Properties, Home com projetos, próximos serviços, approvals, invoices e documentos.
+## 13.2 Notificações — `SCR-NOT-001`
 
-- Project progress fica oculto por padrão e pode ser liberado. Daily Log/Photos/Progress Report dependem de visibilidade configurada.
+Canais: in-app, e-mail e push via PWA. O usuário personaliza, exceto as obrigatórias. Deep link é padrão. Repetidas podem ser agrupadas. Quiet Hours valem para não críticas.
 
-- Portal Documents permite upload com nome e vínculo. Estimates/Change Orders/Invoices/Receipts permitidos podem ser baixados/impressos.
+## 13.3 Aprovações — `SCR-APR-001`
 
-- Cliente pode ver saldo, pagamentos, depósito, parcelas, método e financiamento; pode atualizar dados básicos do perfil.
+Centraliza Change Orders, Material Requests e ajustes de comissão. Contagem visível no Dashboard e na Sidebar. Rejeição exige motivo. Tudo auditado. Delegação temporária é permitida.
 
-- Nova Property no Portal vira solicitação para revisão da empresa, não criação direta.
+---
 
-- Request Service / Request Estimate entra na V1 como solicitação/Lead para revisão interna.
+# 14. Configurações e plataforma
 
-- Portal é totalmente responsivo.
+Todos têm configurações pessoais — `SCR-SET-001`. O Owner vê tudo; o Admin vê o que for liberado.
 
-# 11. Caixa de Entrada, Chat, Tarefas, Notificações e Automações
+| Tela | Conteúdo |
+|---|---|
+| `SCR-SET-002` Empresa | Dados, logo, branding, timezone, idioma |
+| `SCR-SET-003` Locations | Endereço, contato, timezone, horário, usuários, crews, feriados |
+| `SCR-SET-004` Usuários & Permissões | Papéis, permissões por módulo e ação, convites, multi-Location |
+| `SCR-SET-005` Serviços | Catálogo, unidades de produção, capacidade padrão |
+| `SCR-SET-006` Templates | Estimate, Job, checklist, mensagens |
+| `SCR-SET-007` Pipelines | Criar, renomear, reordenar e excluir com proteção |
+| `SCR-SET-009` Financeiro | Payment terms, **alíquotas por Location**, tratamento de labor e material, certificados de isenção |
+| `SCR-SET-010` Comunicações | Remetente, domínio verificado, templates de e-mail |
+| `SCR-SET-011` Integrações | Stripe Connect, QuickBooks, Resend, com estados Connected, Disconnected, Error e Needs Reauthorization |
+| `SCR-SET-012` Billing/Planos | Plano, uso, faturas da assinatura, método de pagamento |
 
-- Inbox é único, com separação clara entre Customer Communications e Internal Chat.
+Primary Owner pode ser transferido com confirmação forte e auditoria; só um por empresa.
 
-- Customer channels: SMS, Email, Portal. Filtros por canal, cliente, Job, usuário, Filial, lida/não lida e data.
+Atingir limite de plano bloqueia a ação com explicação e CTA de upgrade. O Owner vê o consumo.
 
-- Conversas têm responsável, transferência auditada, busca, arquivo sem exclusão e links para Customer/Property/Job.
+**Relatórios** — `SCR-REP-001`: a V1 entrega relatórios fixos, não construtor. São três: conversão de vendas por origem e vendedor, jobs por status e atraso, e AR com aging. Exportáveis.
 
-- SMS e Email são bidirecionais quando o provider permitir. Falhas aparecem com motivo e Retry. Delivery/Open/Bounce/Reply são registrados quando disponíveis.
+**Busca global** — `SCR-SEARCH-001`: atalho Ctrl/Cmd-K, resultados agrupados por entidade, respeitando Workspace, Location e permissão. Itens recentes antes de digitar.
 
-- Anexos são permitidos onde o canal suportar. Scheduled Messages respeitam fuso e preferências.
+**Ajuda** — `SCR-HELP-001`: artigos com texto e imagem, mais o guia de configuração.
 
-- Identidade padrão pode ser global com override por Filial.
+**Administração da plataforma** — `SCR-SA-001`, `SCR-SA-002`: rotas protegidas **dentro da própria aplicação**, não aplicação separada. Cobrem visão de empresas, assinaturas e trials para suporte. Acesso a dado privado não é padrão e exige autorização registrada, com banner permanente durante a sessão.
 
-- Message Templates são categorizados por canal, usam variáveis e podem ser editados antes do envio manual.
+---
 
-- Consentimento/opt-out é armazenado por contato e canal; envios proibidos são bloqueados com explicação.
+# 15. Fluxos críticos
 
-- Internal Chat: Direct, Groups, Job Chats, Crew Chats; criação automática de Job Chat; permissões controlam histórico e administração do grupo.
+| Fluxo | Happy path | Exceções |
+|---|---|---|
+| **F-01 Lead → Customer** | Criar ou importar → atribuir vendedor → follow-up → Estimate → cliente aprova e assina → Customer + Won + Job | Duplicado; várias Properties; Estimate expira ou é rejeitado; versão substituída |
+| **F-02 Estimate → Job** | Property → template ou branco → serviços → imposto → preview → envio → viewed → magic link → assinatura → Job | Contato sem Property; assinatura incompleta; aprovado fica bloqueado |
+| **F-03 Agendamento por capacidade** | Service + Crew → carrega capacidade → calcula duração e fim → valida calendário → salva | Sem capacidade vira manual; conflito exige decisão; override exige motivo; crew parceira com seguro vencido alerta |
+| **F-04 Escadinha** | Mudança altera duração → identifica Services futuros → preview Before/After → usuário decide → checa conflitos → aplica | Concluído não move; novos conflitos precisam ser resolvidos; desfazer disponível |
+| **F-05 Execução em campo** | Today → Service → checklist, Daily Log, fotos → issue, CO ou material → assinatura → Complete | Daily Log obrigatório ausente; cliente ausente gera pendência; reabertura só por Supervisor ou Admin |
+| **F-06 Change Order** | Pedido sem preço no campo → Sales precifica → preview → cliente → aceita → assina → valor do Job aumenta | Rejeição exige motivo; envio falha; aprovado fica bloqueado |
+| **F-07 Invoice → Pagamento** | Criar invoice → review → provider → sincroniza → cliente paga → saldo atualiza → Job pode chegar a Paid | Sync falha e reenvia; overbilling e overpayment bloqueados; refund preserva o original |
+| **F-08 Material → Compra** | Crew solicita → Supervisor aprova → compra registrada com recibo → vinculada ao Job | Rejeição exige motivo; compra sem solicitação exige permissão |
+| **F-09 Assinatura da plataforma** | Trial com cartão → cobrança → Active | Falha → Grace 3 dias → Read-only → Suspended → pagamento → restauração; sem exclusão automática |
 
-- Chat suporta imagens, áudio, documentos, @mentions, replies, pinned, read receipts, reactions, busca e mute. Editar mostra “Editada” e mantém histórico; delete usa soft delete autorizado.
+---
 
-- Tasks: My/All/Overdue/Completed; vínculo opcional com Lead, Client, Property, Estimate ou Job. Um responsável principal + Followers.
+# 16. Catálogo de telas
 
-- Task tem título, descrição, due date/time, prioridade, status, comentários, anexos, subtasks/checklist e recurrence. Bulk Actions e Templates são suportados.
+## 16.1 Na V1 — 91 telas
 
-- Notification Center: In-App, Email, SMS, Push. Usuário personaliza, exceto notificações obrigatórias. Deep Links são padrão; repetidas podem ser agrupadas; Quiet Hours valem para não críticas.
+| Módulo | IDs | Qtd |
+|---|---|---|
+| Autenticação | `SCR-AUTH-001` a `008` | 8 |
+| Onboarding | `SCR-ONB-001`, `002` | 2 |
+| Dashboard | `SCR-DASH-001` | 1 |
+| CRM | `SCR-CRM-001` a `005` | 5 |
+| Vendas | `SCR-SALES-001` a `007` | 7 |
+| Projetos | `SCR-JOB-001` a `010`, `012`, `013` | 12 |
+| Agenda | `SCR-SCH-001` a `006` | 6 |
+| Equipe | `SCR-TEAM-001` a `005` | 5 |
+| Campo | `SCR-FIELD-001` a `007` | 7 |
+| Financeiro | `SCR-FIN-001` a `007` | 7 |
+| Compras | `SCR-PUR-001` a `004` | 4 |
+| Portal | `SCR-PORT-001` a `009` | 9 |
+| Aprovações | `SCR-APR-001` | 1 |
+| Notificações | `SCR-NOT-001` | 1 |
+| Configurações | `SCR-SET-001` a `007`, `009` a `012` | 11 |
+| Relatórios | `SCR-REP-001` | 1 |
+| Busca | `SCR-SEARCH-001` | 1 |
+| Ajuda | `SCR-HELP-001` | 1 |
+| Administração | `SCR-SA-001`, `002` | 2 |
 
-- Approvals: Change Orders, Material Requests, Commission Adjustments e extensível. Dashboard/Sidebar mostra pendências. Reject exige Reason e tudo é auditado. Delegação temporária é permitida.
+## 16.2 Adiadas — IDs reservados, 25 telas
 
-- Automation Engine usa QUANDO → SE → ENTÃO, com automações prontas e custom.
+| ID | Tela | Motivo |
+|---|---|---|
+| `SCR-DASH-002` a `005` | Dashboards por papel | Substituídos por dashboard único |
+| `SCR-JOB-011` | Mensagens do Projeto | Sem inbound nem chat na V1 |
+| `SCR-FIN-008` | Financing | Fora da V1 |
+| `SCR-INB-001` a `004` | Inbox e Chat interno | Fora da V1 |
+| `SCR-TASK-001` a `003` | Módulo de Tarefas | Follow-up permanece como campo do CRM |
+| `SCR-AUT-001` a `004` | Automações | Fora da V1 |
+| `SCR-SET-008` | Custom Fields | Fora da V1 |
+| `SCR-SET-013` | Data & Retention | Política ainda em aberto |
+| `SCR-REP-002` | Drill-down de relatório | V1 tem relatórios fixos |
+| `SCR-SA-003` a `007` | Planos, Feature Flags, Saúde de Integrações, Support Access | Fora da V1 |
 
-- Triggers cobrem Lead, Estimate, Job, Service, Task, Invoice, Payment, Change Order, Material Request e Schedule; Conditions suportam AND/OR; Actions incluem Task, mensagem, notificação, assignment, status e tag.
+Esses IDs **não devem ser reaproveitados** para telas novas.
 
-- Automações suportam delay/wait, janelas de envio, prevenção de loops, enable/disable, modo de teste, histórico de execuções e limites por plano.
+---
 
-- Toda Task criada por automação informa sua origem; falhas alertam Owner/Admin e ficam visíveis. Falta de provider nunca é tratada como envio bem-sucedido.
+# 17. Fora da V1
 
-# 12. Configurações, Relatórios, Plataforma e Super Admin
+Offline Mode · Time Tracking · GPS contínuo · otimização de rota · vídeo em Daily Log · Good/Better/Best e itens opcionais · Customer Credit · split commission · duplicar agendamento · serviços recorrentes · envio recorrente de relatórios · status page pública · Dark Mode · multi-moeda · SMS e A2P 10DLC · e-mail inbound · Public API · webhooks de saída · MCP.
 
-- Todos têm Settings pessoais; Owner vê tudo; Admin vê somente tabs liberadas.
+Todos **adiados, não cancelados**. Retornam por decisão explícita registrada em `CURRENT-DECISIONS.md`.
 
-- Settings: Empresa, Filiais, Usuários & Permissões, Serviços, Templates, Pipelines, Custom Fields, Financeiro, Comunicações, Automações, Integrações, Billing, Data & Retention.
+---
 
-- Branding define logo e pontos de aplicação; detalhamento visual fica para UI/UX.
+# 18. Decisões abertas
 
-- Locations têm endereço, contato, timezone, horário, usuários, Crews e feriados.
-
-- Service Catalog e Production Units são configuráveis. Pipelines permitem criar, renomear, reordenar e excluir com proteção de registros existentes.
-
-- Roles padrão + Custom Roles; permissões granulares por módulo/ação. Usuário pode estar em múltiplas Filiais e Workspaces.
-
-- Primary Owner pode ser transferido com confirmação forte e auditoria; apenas um por empresa.
-
-- Integrations mostram Connected/Disconnected/Error/Needs Reauthorization; empresas conectam contas próprias via OAuth quando possível. Pode haver mais de um provider do mesmo tipo com default.
-
-- Public API, Webhooks e MCP são controlados por plano/permissão. API keys têm scopes e revogação; webhooks têm assinatura, delivery logs e retry; MCP respeita Workspace/usuário/escopos e pode ser desligado.
-
-- Planos provisórios: Starter, Growth, Pro, Enterprise; 5 usuários incluídos e cobrança adicional por usuário. Limites podem envolver Users, Locations, Storage, SMS, Automations, Custom Fields, Templates, Crews, Integrations, Advanced Reports, API e Webhooks.
-
-- Atingir limite bloqueia ação com explicação e CTA de upgrade. Owner vê Usage.
-
-- Payment Failed → Grace Period de 3 dias → Read-only → Suspended. Dados não são apagados e acesso retorna após pagamento.
-
-- Cancelamento direto pelo Owner; depois há período Export-only antes da exclusão definitiva.
-
-- Reports: Sales, Jobs, Crews, Operations, Financial. Filtros, Saved Views, PDF/Excel/CSV/Print, drill-down e comparação de período. Envio recorrente por e-mail fica para versão posterior.
-
-- Global Search agrupa resultados por entidade. Recent Items, Breadcrumbs e preservação de contexto são padrões.
-
-- Internal Announcements podem segmentar Role, Crew, Filial e usuários.
-
-- Audit Log global mostra Before → After, é exportável e não editável por usuários comuns. Soft Delete + Recycle Bin para registros apropriados; assinados/financeiros têm regras mais rígidas.
-
-- Idiomas V1: Inglês (padrão), Espanhol e Português-BR. USD padrão com arquitetura multi-moeda. Timezone por Filial. Unidades e formatos configuráveis.
-
-- Help & Support começa com artigos de texto e imagens; Setup Guide permanece disponível. Support Access exige autorização e auditoria.
-
-- Super Admin é aplicação separada com Companies, Users, Trials, Subscriptions, Plans, Limits, Storage, SMS usage, Integrations, Errors e Support; Feature Flags controlam rollout. Acesso a dados privados não é padrão e impersonation mostra banner permanente.
-
-# 13. Mapa de navegação por Role
-
-| **Role**             | **Caminho principal**                                                                         | **Prioridade de superfície** |
-|----------------------|-----------------------------------------------------------------------------------------------|------------------------------|
-| Owner/Admin          | Login → Workspace → Dashboard → qualquer módulo autorizado → registro → ação → Activity/Audit | Desktop-first / Responsivo   |
-| Vendedor             | Login → Dashboard de Vendas → CRM/Pipeline → Lead/Cliente → Estimate → Follow-up / Won → Job  | Desktop + Tablet + Mobile    |
-| Gerente de Projeto   | Login → Dashboard PM → Projetos/Agenda → Job/Service → Crew/Task/Approval → conclusão         | Desktop + Tablet             |
-| Funcionário de Campo | Login → Hoje → Service atribuído → Checklist/Daily Log/Photos/Issue/CO/Material → Complete    | Mobile-first / Tablet        |
-| Financeiro           | Login → Dashboard Financeiro → Invoices/Payments/AR/Commissions/Purchases → Reports           | Desktop-first                |
-| Cliente              | Portal Login → Home → Property → Project/Estimate/CO/Invoice/Documents → ação                 | Mobile + Web responsivo      |
-| Super Admin          | Admin Login → Platform Dashboard → Company/Subscription/Plan/Integration/Support              | Desktop-first                |
-
-# 14. Catálogo mestre de telas
-
-| **ID**         | **Tela**                     | **Módulo**    | **Prioridade** |
-|----------------|------------------------------|---------------|----------------|
-| SCR-AUTH-001   | Login                        | Autenticação  | Compartilhada  |
-| SCR-AUTH-002   | Cadastro / Trial             | Autenticação  | Web            |
-| SCR-AUTH-003   | Verificação de e-mail        | Autenticação  | Web            |
-| SCR-AUTH-004   | Escolha de plano             | Autenticação  | Web            |
-| SCR-AUTH-005   | Escolha de Workspace         | Autenticação  | Compartilhada  |
-| SCR-AUTH-006   | Recuperar senha              | Autenticação  | Compartilhada  |
-| SCR-AUTH-007   | Trial Expirado / Assinar     | Autenticação  | Web            |
-| SCR-AUTH-008   | Conta Suspensa / Pagamento   | Autenticação  | Web            |
-| SCR-ONB-001    | Onboarding / Setup Wizard    | Onboarding    | Web            |
-| SCR-ONB-002    | Guia de Configuração         | Onboarding    | Web            |
-| SCR-DASH-001   | Dashboard Owner/Admin        | Dashboard     | Desktop        |
-| SCR-DASH-002   | Dashboard Vendedor           | Dashboard     | Responsiva     |
-| SCR-DASH-003   | Dashboard Gerente de Projeto | Dashboard     | Responsiva     |
-| SCR-DASH-004   | Dashboard Financeiro         | Dashboard     | Desktop        |
-| SCR-DASH-005   | Home Funcionário de Campo    | Dashboard     | Mobile         |
-| SCR-CRM-001    | Lista CRM                    | CRM           | Desktop/Tablet |
-| SCR-CRM-002    | Novo Contato                 | CRM           | Compartilhada  |
-| SCR-CRM-003    | Detalhes Lead/Cliente        | CRM           | Compartilhada  |
-| SCR-CRM-004    | Detalhes Property            | CRM           | Compartilhada  |
-| SCR-CRM-005    | Importação CRM               | CRM           | Desktop        |
-| SCR-SALES-001  | Sales Pipeline               | Vendas        | Desktop/Tablet |
-| SCR-SALES-002  | Compromissos                 | Vendas        | Compartilhada  |
-| SCR-SALES-003  | Lista de Orçamentos          | Vendas        | Desktop/Tablet |
-| SCR-SALES-004  | Editor de Orçamento          | Vendas        | Compartilhada  |
-| SCR-SALES-005  | Preview de Orçamento         | Vendas        | Compartilhada  |
-| SCR-SALES-006  | Detalhe do Orçamento         | Vendas        | Compartilhada  |
-| SCR-SALES-007  | Aprovação do Cliente         | Vendas/Portal | Compartilhada  |
-| SCR-JOB-001    | Kanban de Projetos           | Projetos      | Desktop/Tablet |
-| SCR-JOB-002    | Lista de Projetos            | Projetos      | Desktop/Tablet |
-| SCR-JOB-003    | Visão Geral do Projeto       | Projetos      | Compartilhada  |
-| SCR-JOB-004    | Serviços do Projeto          | Projetos      | Compartilhada  |
-| SCR-JOB-005    | Detalhe do Serviço           | Projetos      | Compartilhada  |
-| SCR-JOB-006    | Daily Logs Consolidados      | Projetos      | Compartilhada  |
-| SCR-JOB-007    | Change Orders                | Projetos      | Compartilhada  |
-| SCR-JOB-008    | Materiais                    | Projetos      | Compartilhada  |
-| SCR-JOB-009    | Fotos                        | Projetos      | Compartilhada  |
-| SCR-JOB-010    | Documentos                   | Projetos      | Compartilhada  |
-| SCR-JOB-011    | Mensagens do Projeto         | Projetos      | Compartilhada  |
-| SCR-JOB-012    | Atividade do Projeto         | Projetos      | Compartilhada  |
-| SCR-JOB-013    | Project Progress Report      | Projetos      | Compartilhada  |
-| SCR-SCH-001    | Agenda                       | Agenda        | Desktop/Tablet |
-| SCR-SCH-002    | Drawer do agendamento        | Agenda        | Compartilhada  |
-| SCR-SCH-003    | Wizard de agendamento        | Agenda        | Compartilhada  |
-| SCR-SCH-004    | Conflito de Agenda           | Agenda        | Compartilhada  |
-| SCR-SCH-005    | Preview Escadinha            | Agenda        | Desktop/Tablet |
-| SCR-SCH-006    | Editor de Recorrência        | Agenda        | Compartilhada  |
-| SCR-TEAM-001   | Equipe / Usuários            | Equipe        | Desktop        |
-| SCR-TEAM-002   | Crews/Equipes                | Equipe        | Desktop/Tablet |
-| SCR-TEAM-003   | Detalhe da Crew              | Equipe        | Compartilhada  |
-| SCR-TEAM-004   | Subcontratados               | Equipe        | Desktop        |
-| SCR-TEAM-005   | Disponibilidade/Bloqueios    | Equipe        | Desktop/Tablet |
-| SCR-FIELD-001  | Hoje                         | Campo         | Mobile         |
-| SCR-FIELD-002  | Service Mobile               | Campo         | Mobile         |
-| SCR-FIELD-003  | Daily Log Mobile             | Campo         | Mobile         |
-| SCR-FIELD-004  | Reportar Problema            | Campo         | Mobile         |
-| SCR-FIELD-005  | Solicitar Change Order       | Campo         | Mobile         |
-| SCR-FIELD-006  | Solicitar Material           | Campo         | Mobile         |
-| SCR-FIELD-007  | Assinatura de Conclusão      | Campo         | Mobile/Tablet  |
-| SCR-FIN-001    | Financeiro Overview          | Financeiro    | Desktop        |
-| SCR-FIN-002    | Invoices                     | Financeiro    | Desktop        |
-| SCR-FIN-003    | Criar/Revisar Invoice        | Financeiro    | Desktop/Tablet |
-| SCR-FIN-004    | Detalhe Invoice              | Financeiro    | Compartilhada  |
-| SCR-FIN-005    | Payments                     | Financeiro    | Desktop        |
-| SCR-FIN-006    | Accounts Receivable          | Financeiro    | Desktop        |
-| SCR-FIN-007    | Commissions                  | Financeiro    | Desktop        |
-| SCR-FIN-008    | Financing                    | Financeiro    | Desktop        |
-| SCR-PUR-001    | Purchases                    | Compras       | Desktop        |
-| SCR-PUR-002    | Purchase Orders              | Compras       | Desktop        |
-| SCR-PUR-003    | Vendors/Stores               | Compras       | Desktop        |
-| SCR-PUR-004    | Detalhe Vendor               | Compras       | Desktop        |
-| SCR-PORT-001   | Portal Login                 | Portal        | Compartilhada  |
-| SCR-PORT-002   | Portal Home                  | Portal        | Compartilhada  |
-| SCR-PORT-003   | Portal Properties            | Portal        | Compartilhada  |
-| SCR-PORT-004   | Portal Project               | Portal        | Compartilhada  |
-| SCR-PORT-005   | Portal Estimate              | Portal        | Compartilhada  |
-| SCR-PORT-006   | Portal Change Order          | Portal        | Compartilhada  |
-| SCR-PORT-007   | Portal Documents             | Portal        | Compartilhada  |
-| SCR-PORT-008   | Portal Financeiro            | Portal        | Compartilhada  |
-| SCR-PORT-009   | Solicitar Serviço/Orçamento  | Portal        | Compartilhada  |
-| SCR-INB-001    | Customer Inbox               | Comunicação   | Desktop/Tablet |
-| SCR-INB-002    | Internal Chat                | Comunicação   | Compartilhada  |
-| SCR-INB-003    | Conversa                     | Comunicação   | Compartilhada  |
-| SCR-INB-004    | Grupo / Job Chat             | Comunicação   | Compartilhada  |
-| SCR-TASK-001   | Lista de Tarefas             | Tarefas       | Compartilhada  |
-| SCR-TASK-002   | Detalhe da Tarefa            | Tarefas       | Compartilhada  |
-| SCR-TASK-003   | Criar Tarefa                 | Tarefas       | Compartilhada  |
-| SCR-NOT-001    | Central de Notificações      | Notificações  | Compartilhada  |
-| SCR-APR-001    | Central de Aprovações        | Aprovações    | Desktop/Tablet |
-| SCR-AUT-001    | Lista de Automações          | Automações    | Desktop        |
-| SCR-AUT-002    | Builder de Automação         | Automações    | Desktop        |
-| SCR-AUT-003    | Teste de Automação           | Automações    | Desktop        |
-| SCR-AUT-004    | Histórico de Automações      | Automações    | Desktop        |
-| SCR-SET-001    | Configurações Pessoais       | Configurações | Compartilhada  |
-| SCR-SET-002    | Empresa                      | Configurações | Desktop        |
-| SCR-SET-003    | Filiais                      | Configurações | Desktop        |
-| SCR-SET-004    | Usuários & Permissões        | Configurações | Desktop        |
-| SCR-SET-005    | Serviços                     | Configurações | Desktop        |
-| SCR-SET-006    | Templates                    | Configurações | Desktop        |
-| SCR-SET-007    | Pipelines                    | Configurações | Desktop        |
-| SCR-SET-008    | Custom Fields                | Configurações | Desktop        |
-| SCR-SET-009    | Financeiro                   | Configurações | Desktop        |
-| SCR-SET-010    | Comunicações                 | Configurações | Desktop        |
-| SCR-SET-011    | Integrações                  | Configurações | Desktop        |
-| SCR-SET-012    | Billing/Planos               | Configurações | Desktop        |
-| SCR-SET-013    | Data & Retention             | Configurações | Desktop        |
-| SCR-REP-001    | Relatórios Home              | Relatórios    | Desktop        |
-| SCR-REP-002    | Relatório / Drill-down       | Relatórios    | Desktop        |
-| SCR-SEARCH-001 | Busca Global                 | Global        | Compartilhada  |
-| SCR-HELP-001   | Ajuda & Suporte              | Global        | Compartilhada  |
-| SCR-SA-001     | Super Admin Dashboard        | Super Admin   | Desktop        |
-| SCR-SA-002     | Empresas                     | Super Admin   | Desktop        |
-| SCR-SA-003     | Assinaturas/Trials           | Super Admin   | Desktop        |
-| SCR-SA-004     | Planos/Limites               | Super Admin   | Desktop        |
-| SCR-SA-005     | Feature Flags                | Super Admin   | Desktop        |
-| SCR-SA-006     | Saúde das Integrações        | Super Admin   | Desktop        |
-| SCR-SA-007     | Support Access               | Super Admin   | Desktop        |
-
-# 15. Fluxos críticos: Happy Path e principais exceções
-
-| **Fluxo**                       | **Happy Path**                                                                                                                                                       | **Principais exceções**                                                                                        |
-|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| F-01 Lead → Customer            | Criar/importar Lead → atribuir vendedor → follow-up → Estimate → cliente aprova/assina → Lifecycle Customer → Pipeline Won → Job criado.                             | Duplicado; múltiplas Properties; Estimate expira/rejeita; versão atualizada; pagamento/financing indisponível. |
-| F-02 Estimate → Job             | Escolher Property → Template/Blank → services → preview obrigatório → envio → viewed → approval/signature → Job.                                                     | Contato sem Property; provider ausente; assinatura incompleta; Estimate aprovado fica Locked.                  |
-| F-03 Agendamento por capacidade | Selecionar Service + Crew/Team → carregar capacity → calcular duração/end date → validar calendário → salvar.                                                        | Capacity ausente → duração manual; conflito → confirmar/alterar; override exige motivo.                        |
-| F-04 Escadinha                  | Mudança de quantidade/Crew/data altera duração → identificar Services futuros → Preview Before/After → usuário escolhe mover ou manter → checar conflitos → aplicar. | Service concluído não move; novos conflitos precisam ser resolvidos; Undo imediato disponível.                 |
-| F-05 Execução em campo          | Hoje → Service → checklist/Daily Log/fotos → issue/CO/material se necessário → assinatura → Complete.                                                                | Daily Log obrigatório ausente; cliente ausente; pedido pendente; reabertura só por Manager/Admin.              |
-| F-06 Change Order               | Field Request sem preço → Sales/Admin revisa e precifica → Preview → cliente → Accept/Reject → assinatura → valor do Job aumenta.                                    | Rejeição exige motivo; múltiplos itens; envio falha; aprovado fica Locked.                                     |
-| F-07 Invoice/Payment            | Create Invoice manual → Review → provider → sincronizar status → cliente paga → saldo atualiza → Job pode chegar a Paid.                                             | Sync Failed → Retry; overbilling bloqueado; overpayment bloqueado; refund preserva original.                   |
-| F-08 Comunicação                | Usuário envia por Inbox/entidade → provider → delivery event → resposta volta → histórico/Activity.                                                                  | Opt-out bloqueia; provider ausente/falha; mensagem programada respeita timezone.                               |
-| F-09 Automação                  | Trigger → conditions → actions → registrar run.                                                                                                                      | Loop detectado; provider ausente; condição deixa de existir durante Wait; erro alerta Owner/Admin.             |
-| F-10 Assinatura CrewCommand     | Trial → cobrança → ativo. Falha → 3 dias Grace → Read-only → Suspended → pagamento → restauração.                                                                    | Sem exclusão automática; cancelamento entra em Export-only antes de retenção final.                            |
-
-# 16. Itens explicitamente fora da V1
-
-- Offline Mode.
-
-- Time Tracking / Clock In-Clock Out.
-
-- GPS tracking contínuo.
-
-- Route optimization automática.
-
-- Vídeo em Daily Logs (fotos/documentos primeiro).
-
-- Good / Better / Best e itens opcionais no Estimate.
-
-- Customer Credit.
-
-- Duplicar agendamento.
-
-- Envio recorrente agendado de relatórios por e-mail.
-
-- Status Page pública.
-
-# 17. Decisões comerciais/técnicas ainda abertas
-
-- Preços exatos dos planos e usuário adicional.
-
-- Limites exatos de storage, SMS, Locations, automations e demais features por plano.
-
-- Provider inicial de SMS/e-mail e política comercial de SMS.
-
-- Providers financeiros prioritários no primeiro release.
-
-- Duração do período Export-only, Recycle Bin e políticas de retenção padrão.
-
-- Detalhes de stack, infraestrutura, banco, storage, push, observabilidade e estratégia mobile — definidos no TRD após o Domain Model e UI/UX.
-
-# 18. Próximo documento dependente
-
-O próximo documento é o Backend Schema / Domain Model. Ele transforma estas telas e fluxos em entidades, relacionamentos, estados e regras de consistência, sem ainda fechar tecnologia de banco ou framework.
+| Item | Situação |
+|---|---|
+| Marca | Não definida |
+| Valores e limites dos planos | Estrutura definida, números em aberto |
+| Extensão da UI de multi-location | `location_id` permanece no modelo; alcance na interface em aberto |
+| Período de exportação e retenção | Em aberto — motivo de `SCR-SET-013` estar adiada |
+| Escopo exato da administração da plataforma | `SCR-SA-001` e `002` propostos como rotas protegidas; confirmar |

@@ -1,923 +1,526 @@
-**CrewCommand**
-
-> **ATUALIZAÇÃO VIGENTE — 2026-09-25:** a topologia Render/NestJS/BullMQ/Valkey descrita abaixo é histórica e foi **superseded por ADR-016**. O backend vigente usa Supabase Edge Functions + Supabase Queues (PGMQ) + Supabase Cron, com PostgreSQL/Auth/Storage/Realtime no próprio Supabase. Referências antigas ao Render permanecem apenas como evidência do estado/testes anteriores e não orientam novas implementações.
-
-
-**TECHNICAL REQUIREMENTS DOCUMENT**
-
-**TRD Oficial — v1.0**
+# TECHNICAL REQUIREMENTS DOCUMENT
+
+**TRD Oficial — v2.0**
+
+| Campo | Definição |
+|---|---|
+| Versão | 2.0 |
+| Status | Substitui o TRD v1.0 |
+| Data | 2026-09-25 |
+| Marca | Não definida; nomes brand-neutral |
+| Mercado | Estados Unidos |
+| Base | PRD v2.0 + App Flow v2.0 + Domain Model v2.0 + decisões de 2026-09-25 |
+| Infraestrutura | **Supabase + Vercel + GitHub** |
+
+> **O que mudou.** A V1.0 previa Modular Monolith em NestJS no Render, com BullMQ e Valkey, mobile em Expo e Web na Vercel — quatro fornecedores e três alvos de deploy. A v2.0 concentra tudo em Supabase e Vercel. A lógica de negócio vive no Next.js, a fila vive no PostgreSQL e o campo é PWA.
+>
+> **O ADR-016 já havia removido o Render** e consolidado o backend no Supabase, superseding ADR-005, ADR-014 e ADR-015. Este TRD acrescenta duas emendas ao ADR-016, registradas no **ADR-017** (execução HTTP de negócio no Next.js, em vez de Edge Functions, e consumo de fila por Vercel Cron em vez de `pg_net`) e no **ADR-018** (campo em PWA, em vez de Expo/EAS). Todo o restante do ADR-016 permanece vigente.
+
+---
+
+# 1. Escopo técnico
+
+Este TRD define como a Plataforma é construída e operada. Não define preço, limite comercial de plano, desenho visual nem ordem de entrega.
 
-Arquitetura técnica consolidada a partir do PRD, App Flow, Backend Domain Model e UI/UX Design Document aprovados.
+## 1.1 Princípios
 
-| **Status**            | Aprovado                                            |
-|-----------------------|-----------------------------------------------------|
-| **Mercado inicial**   | Estados Unidos                                      |
-| **Arquitetura**       | Modular Monolith + Event-driven internamente        |
-| **Infraestrutura V1** | Vercel + Render + Supabase + Render Key Value + EAS |
+1. **Um alvo de deploy.** Web, API e jobs saem do mesmo build na Vercel.
+2. **PostgreSQL é a fonte de verdade transacional.** Realtime entrega, não decide.
+3. **Autorização é server-side.** Visibilidade de interface nunca é autorização. RLS é defesa em profundidade, não a camada primária.
+4. **Efeito externo é assíncrono e idempotente.**
+5. **Transação de banco não espera API externa lenta.**
+6. **Provider SDK não vira modelo de domínio.**
+7. **Regra de negócio não se duplica** entre web, rota e job.
+8. Secret nunca entra no Git nem no bundle do cliente.
+9. Production não reutiliza recurso ou credencial de Development ou Staging.
 
-# 1. Controle do Documento
+---
 
-| **Campo**             | **Definição**                                                       |
-|-----------------------|---------------------------------------------------------------------|
-| Documento             | Technical Requirements Document (TRD)                               |
-| Versão                | 1.0                                                                 |
-| Status                | Aprovado para orientar implementação                                |
-| Idioma do documento   | PT-BR; nomes técnicos e código em inglês                            |
-| Mercado da V1         | Estados Unidos                                                      |
-| Documentos de entrada | PRD, App Flow Oficial, Backend Domain Model e UI/UX Design Document |
-| Próximo documento     | Implementation Plan                                                 |
+# 2. Stack
 
-# 2. Objetivo e Escopo Técnico
+| Camada | Tecnologia | Observação |
+|---|---|---|
+| Linguagem | TypeScript | Em todo o repositório |
+| Web, API e PWA | **Next.js App Router** na Vercel | Route Handlers e Server Actions. ADR-013 |
+| Acesso a dados | **Drizzle ORM + Drizzle Kit** | SQL nativo permitido. ADR-001 |
+| Banco | **PostgreSQL no Supabase** | Fonte de verdade |
+| Autenticação | **Supabase Auth** | Identidade externa separada do User interno |
+| Storage | **Supabase Storage** | Atrás de um contrato `FileService` |
+| Realtime | **Supabase Realtime Broadcast** | Canais privados por tenant. ADR-006 |
+| Filas e agendamento | **pgmq + pg_cron** | Dentro do próprio PostgreSQL |
+| E-mail | **Resend** | Provider único, inclusive SMTP do Supabase Auth |
+| Pagamentos do cliente final | **Stripe Connect** | Accounts v2 + Direct Charges. ADR-007 |
+| Assinatura da Plataforma | **Stripe Billing** | Integração **separada** do Connect |
+| Contabilidade | **QuickBooks Online** | OAuth 2.0, atrás de adapter. ADR-008 |
+| Imposto | **Provider interno** atrás de `TaxProvider` | Tabelas próprias; externo plugável |
+| Estilo | **Tailwind CSS 4 + tokens semânticos** | ADR-003 |
+| Monorepo | **pnpm + Turborepo** | ADR-004 |
+| CI | **GitHub Actions** | — |
+| Erros | **Sentry** | Web e jobs |
+| Tracing e métricas | **OpenTelemetry** | ADR-012 |
+| Testes | **Vitest** e **Playwright** | Ver §12 |
 
-Este TRD define como o CrewCommand será construído e operado tecnicamente. Ele consolida as decisões de arquitetura, stack, autenticação, multi-tenancy, persistência, APIs, filas, realtime, integrações, mobile, segurança, observabilidade, testes, CI/CD, infraestrutura, escalabilidade e operação da V1.
+## 2.1 Fora da stack
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Princípio central<br />
-</strong>CrewCommand começa com uma arquitetura simples de operar, modular e escalável, evitando complexidade distribuída prematura, mas mantendo limites claros para evolução futura.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+Render · Valkey/Redis · BullMQ · NestJS · Expo/EAS · Twilio · k6 · Maestro.
 
-## 2.1 Fora do escopo deste TRD
+Nenhum deles retorna sem nova decisão registrada.
 
-- Definição comercial de preços e limites exatos dos planos.
+---
 
-- Design visual detalhado das telas, já definido no UI/UX Design Document.
+# 3. Arquitetura
 
-- Ordem de implementação por sprint/épico, que será definida no Implementation Plan.
+```
+┌───────────────────── Vercel ─────────────────────┐
+│  Next.js App Router                              │
+│   ├── UI (Server + Client Components)            │
+│   ├── Route Handlers  → contrato HTTP            │
+│   ├── Server Actions  → mutações da própria UI   │
+│   └── Application Services  ← regra de negócio   │
+│        └── Repositories (Drizzle)                │
+│  Vercel Cron → dispara o worker de fila          │
+└───────────────┬──────────────────────────────────┘
+                │
+┌───────────────▼──────────── Supabase ────────────┐
+│  PostgreSQL  ── Outbox ── pgmq ── pg_cron        │
+│  Auth · Storage · Realtime                       │
+└──────────────────────────────────────────────────┘
+```
 
-- SLA contratual Enterprise; o TRD define apenas SLOs técnicos iniciais.
+## 3.1 Onde a regra vive
 
-- Certificações formais como SOC 2 ou PCI; a arquitetura será preparada para requisitos compatíveis, sem declarar certificação antes de auditoria formal.
+**Application Services** são a única camada que contém regra de negócio. Route Handlers, Server Actions e workers são invocadores finos.
 
-# 3. Stack Técnica Aprovada
+Um Use Case é chamado de três lugares: da UI por Server Action, de fora por Route Handler, e do worker de fila. A regra é escrita uma vez.
 
-| **Camada**          | **Tecnologia / Provider**                  | **Decisão**                                |
-|---------------------|--------------------------------------------|--------------------------------------------|
-| Linguagem           | TypeScript                                 | Principal no Web, API, Workers e Mobile    |
-| Web/PWA/Portal      | Next.js + React + App Router               | Vercel                                     |
-| API                 | NestJS + FastifyAdapter                    | Modular Monolith                           |
-| Mobile              | React Native + Expo + Expo Router          | iOS e Android nativos via EAS              |
-| Banco               | PostgreSQL                                 | Fonte de verdade transacional              |
-| BaaS                | Supabase                                   | PostgreSQL, Auth, Storage e Realtime       |
-| Filas               | BullMQ                                     | Workers assíncronos                        |
-| Queue/Cache         | Render Key Value (Valkey/Redis-compatible) | Persistência para filas; cache seletivo    |
-| API/Workers Hosting | Render                                     | Containers separados                       |
-| Web Hosting         | Vercel                                     | Web/PWA/Portal                             |
-| Mobile CI/CD        | EAS                                        | Build, Update, Submit                      |
-| CI principal        | GitHub Actions                             | Monorepo                                   |
-| Logs                | Pino/Fastify                               | JSON estruturado                           |
-| Tracing/Metrics     | OpenTelemetry                              | Backend vendor-neutral                     |
-| Error Monitoring    | Sentry                                     | Web/API/Workers/Mobile                     |
-| Unit/Integration    | Vitest                                     | Coverage V8                                |
-| E2E Web             | Playwright                                 | Fluxos críticos                            |
-| E2E Mobile          | Maestro                                    | Builds reais de staging/preview            |
-| Performance         | k6                                         | API/load tests                             |
-| SMS                 | Twilio Programmable Messaging              | Bidirecional + A2P 10DLC                   |
-| E-mail              | Resend                                     | Envio, inbound e webhooks                  |
-| Payments            | Stripe Connect                             | Card + ACH; PayPal como provider adicional |
-| Accounting          | QuickBooks Online                          | OAuth 2.0                                  |
+| Camada | Pode | Não pode |
+|---|---|---|
+| Server / Client Component | Renderizar, chamar Server Action | Consultar banco direto, decidir autorização |
+| Server Action | Validar entrada, chamar Use Case | Conter regra de negócio |
+| Route Handler | Autenticar, validar, chamar Use Case | Conter regra de negócio |
+| Application Service | **Toda a regra**, transação, autorização | Conhecer HTTP ou SDK de provider |
+| Repository | Consulta e persistência | Regra de negócio |
+| Provider Adapter | Falar com Stripe, QuickBooks, Resend | Vazar tipo do SDK para o domínio |
 
-## 3.1 Decisões intencionalmente pendentes
+## 3.2 Módulos
 
-| **Item**                        | **Estado**         | **Critério de fechamento**                                                                                      |
-|---------------------------------|--------------------|-----------------------------------------------------------------------------------------------------------------|
-| ORM / typed query layer         | PoC obrigatório    | Comparar transactions, RLS, migrations, JSONB, FTS, pg_trgm, raw SQL e typing; não distorcer o schema pelo ORM. |
-| Styling Web                     | PoC obrigatório    | Validar Design System com abordagem token-based; opções como Tailwind/CSS Modules permanecem abertas.           |
-| Monorepo task runner            | Direção: Turborepo | Validar no bootstrap do repositório.                                                                            |
-| Node.js                         | Usar LTS ativa     | Fixar a versão no início real do desenvolvimento e versioná-la no projeto.                                      |
-| Supabase pooling mode           | PoC                | Escolher direct/session/transaction conforme driver e ORM selecionados.                                         |
-| Tamanhos de instâncias / planos | Capacity planning  | Definir com Alpha/Beta e métricas reais.                                                                        |
+`identity` · `billing` · `crm` · `sales` · `jobs` · `scheduling` · `field` · `financial` · `tax` · `purchasing` · `portal` · `communications` · `integrations` · `audit`
 
-# 4. Arquitetura de Alto Nível
+Módulo conversa com módulo por Use Case ou por evento, nunca por repositório alheio.
 
-A V1 utiliza um Modular Monolith para regras de negócio, com efeitos externos e workloads pesados desacoplados por eventos, Outbox, BullMQ e Workers. Web, API e Workers são implantados separadamente. PostgreSQL permanece a fonte de verdade.
+## 3.3 Contrato HTTP
 
-<img src="media/image1.png" style="width:6.8in;height:3.60235in" />
+Route Handlers sob `/api`. Erro padronizado com `code`, `message`, `details` e `request_id`.
 
-A camada Web não é a autoridade das regras críticas. Web e Mobile consomem a API compartilhada; o backend valida autorização, transições, cálculos financeiros, capacidade de Crew e invariantes de negócio.
+Códigos estáveis: `SCHEDULE_CONFLICT`, `PLAN_LIMIT_REACHED`, `INSUFFICIENT_PERMISSION`, `OVERBILLING_BLOCKED`, `OVERPAYMENT_BLOCKED`, `TAX_EXEMPTION_EXPIRED`, `SUBCONTRACTOR_INSURANCE_EXPIRED`, `PORTAL_GRANT_EXPIRED`.
 
-## 4.1 Princípios arquiteturais
+Transição de estado usa endpoint explícito: `POST /api/estimates/:id/approve`, `POST /api/services/:id/complete`.
 
-- Modular Monolith na V1; sem microservices prematuros.
+Paginação no servidor. Filtro e ordenação por whitelist — **nunca interpolar campo vindo do cliente**.
 
-- Sem Kubernetes na V1.
+---
 
-- Managed services first.
+# 4. Autenticação e autorização
 
-- API e Workers independentes.
+## 4.1 Identidade
 
-- Backend como fonte de verdade das regras críticas.
+Supabase Auth é o provider. Métodos da V1: e-mail e senha.
 
-- PostgreSQL como fonte de verdade dos dados transacionais.
+- Senha nunca é persistida em tabela própria.
+- `User` é identidade global; `UserAuthIdentity` mapeia o `subject` externo.
+- Relação de negócio usa `user.id` interno, jamais o ID do provider.
+- Ação crítica pode exigir reautenticação.
 
-- REST como API principal; OpenAPI como contrato/documentação.
+## 4.2 Tenancy
 
-- Event-driven internamente para automações, integrações, notificações e realtime.
+Shared database, shared schema. Toda entidade de tenant carrega `workspace_id`.
 
-- Idempotência obrigatória em operações críticas e efeitos externos.
+Todo request resolve o contexto **no servidor**: sessão → `User` → `Membership` ativa → papel → permissões → escopo de Location. O contexto nunca vem do cliente.
 
-- Realtime melhora UX, mas nunca substitui persistência.
+Trocar de Workspace invalida cache e recarrega permissões.
 
-# 5. Monorepo e Organização do Código
+## 4.3 Autorização
 
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Estrutura aprovada<br />
-</strong>Monorepo com pnpm workspaces. Turborepo é a direção inicial para task orchestration/cache, sujeito a PoC no bootstrap.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
+A verificação acontece no Application Service, antes de qualquer efeito:
 
-Estrutura conceitual:
+```ts
+await authorize(ctx, 'financial.payments.record', { locationId })
+```
 
-> crewcommand/  
-> apps/  
-> web/  
-> mobile/  
-> api/  
-> worker/  
-> packages/  
-> api-client/  
-> design-tokens/  
-> ui-web/  
-> domain-types/  
-> validation/  
-> config/
+Escopos: `own`, `assigned`, `location`, `workspace`.
 
-## 5.1 Backend por domínios
+**RLS fica habilitada em todas as tabelas de tenant**, com política default-deny. É a segunda barreira: se um Use Case esquecer o filtro, o banco nega. Não substitui a verificação na aplicação.
 
-| **Módulo**       | **Responsabilidades principais**                                                 |
-|------------------|----------------------------------------------------------------------------------|
-| identity         | Users, WorkspaceMemberships, roles, permissions, scopes, portal access.          |
-| crm              | Customers, contacts, properties, tags e custom fields relacionados.              |
-| sales            | Leads/opportunities, pipelines, estimates, versions, appointments e follow-ups.  |
-| jobs             | Jobs, services, milestones, progress e change orders.                            |
-| scheduling       | Schedule entries, recurrence, crew assignment, conflicts, capacity e Stair-Step. |
-| field-operations | Daily Logs, checklists, field issues, material requests e field actions.         |
-| financial        | Invoices, payments, AR, financing, commissions e purchases.                      |
-| communications   | Inbox, e-mail, SMS, chat, templates e consent.                                   |
-| tasks            | Tasks, subtasks, recurrence e watchers.                                          |
-| automations      | Definitions, triggers, conditions, actions e execution history.                  |
-| integrations     | Provider adapters, OAuth connections, mappings e synchronization.                |
-| audit            | Audit Log, Activity projection e security events.                                |
+Acesso por ID direto, deep link e notificação passam pela mesma verificação.
 
-# 6. Autenticação, Workspaces e Autorização
+## 4.4 Portal do cliente
 
-Supabase Auth será o provider de autenticação da V1. CrewCommand continua proprietário do modelo de Workspace, Membership, Locations, Roles, Permissions e scopes.
+Caminho separado, sem `Membership`.
 
-<img src="media/image2.png" style="width:6.5in;height:2.6868in" />
+`PortalGrant` é um token aleatório de alta entropia, guardado **apenas como hash**, com finalidade, entidade alvo, validade e uso único. Ao consumir: valida hash, validade e finalidade, cria `PortalSession` restrita ao próprio cliente e registra IP.
 
-## 6.1 Identidade
+Senha é opcional e leva ao mesmo escopo. O grant **nunca** concede acesso a dado de outro cliente, mesmo com ID válido.
 
-- Métodos V1: Email + Password e Continue with Google.
+---
 
-- E-mail verificado antes da ativação plena do cadastro por senha.
+# 5. Dados
 
-- Senhas não são persistidas em tabelas CrewCommand.
+## 5.1 Convenções
 
-- User é identidade global; o mesmo User pode participar de múltiplos Workspaces.
+`snake_case` no banco, `camelCase` no TypeScript, nomes em inglês. UUID não sequencial gerado na aplicação. Foreign keys reais. `timestamptz` para instante, `date` para data civil. Soft delete apenas onde faz sentido.
 
-- Relações de negócio usam user.id interno, não IDs diretos do auth provider.
+Migrations versionadas em Git via Drizzle Kit. **Nenhuma alteração manual em Production.**
 
-- MFA não faz parte da V1, porém ações críticas podem exigir reauthentication.
+## 5.2 Dinheiro
 
-## 6.2 Multi-workspace / tenancy
+**`integer` em cents.** Sem exceção, sem `float`, sem decimal ambíguo. `currency_code` acompanha o registro; a V1 opera em USD.
 
-- Workspace é o tenant principal.
+Percentual em basis points. Arredondamento é decidido no Use Case e testado.
 
-- Shared Database + Shared Schema.
+## 5.3 Conexão
 
-- Entidades tenant-owned carregam workspace_id.
+Runtime da Vercel usa o **pooler do Supabase em modo transaction**, adequado a função serverless. Migrations e tarefas administrativas usam conexão direta, com credencial separada. Ver ADR-002.
 
-- Todo request de negócio valida WorkspaceMembership no backend.
+O driver é configurado para não depender de prepared statement nomeado no modo transaction.
 
-- Troca de Workspace invalida contexto/cache e recarrega permissões/Locations.
+## 5.4 Busca
 
-- Uma empresa possui um Primary Owner único; transferência exige confirmação forte, reauthentication e Audit Log.
+Dentro do PostgreSQL: B-tree, Full-Text Search e `pg_trgm`, com campos normalizados para e-mail, telefone e endereço.
 
-## 6.3 Roles, Permissions e scopes
+Sempre com escopo de Workspace e, quando aplicável, de Location e permissão. Entidades: Customer, Contact, Property, Job, Estimate e Invoice.
 
-Roles são conjuntos de permissions; o backend verifica permissions e scopes, não nomes de Role hard-coded.
+## 5.5 Storage
 
-| **Conceito** | **Exemplo**                                            |
-|--------------|--------------------------------------------------------|
-| Permission   | crm.clients.view, jobs.edit, financial.payments.record |
-| Scope        | own, assigned, location, workspace                     |
-| Salesperson  | clients:view com scope assigned                        |
-| Owner        | clients:view com scope workspace                       |
-| Field Worker | Jobs/Services atribuídos ao usuário/Crew               |
+Supabase Storage atrás de `FileService`. Bucket privado; acesso por URL assinada temporária, **nunca persistida como URL permanente**.
 
-## 6.4 Client Portal
+Upload valida MIME real e tamanho. Foto gera variante comprimida; documento oficial preserva o original. O banco guarda metadados, nunca binário.
 
-- Client Portal Access é separado de WorkspaceMembership.
+Caminho do objeto inclui o `workspace_id` e a autorização é verificada na emissão da URL — **adivinhar caminho não dá acesso**.
 
-- Portal não utiliza Roles internos.
+---
 
-- Acesso é derivado do client contact, properties relacionadas, Customer Visible e portal settings.
+# 6. Filas, jobs e eventos
 
-- Uma pessoa pode ser employee de um Workspace e cliente de outro usando a mesma identidade global.
+## 6.1 Outbox transacional
 
-# 7. Banco de Dados e Data Architecture
+O ganho central da escolha de `pgmq`: dado de negócio, `OutboxEvent` e enfileiramento ocorrem **na mesma transação**.
 
-PostgreSQL é o banco transacional principal. A arquitetura é PostgreSQL-first; ORM/query layer será escolhido por PoC e SQL nativo continuará permitido quando recursos do PostgreSQL exigirem.
+```sql
+BEGIN;
+  UPDATE estimates SET status = 'APPROVED' ...;
+  INSERT INTO outbox_events ...;
+  SELECT pgmq.send('integrations', ...);
+COMMIT;
+```
 
-## 7.1 Convenções e integridade
+Some a classe de falha "salvou mas não enfileirou". Nenhuma implementação deve reintroduzir fila externa sem nova decisão.
 
-- snake_case no banco; camelCase no TypeScript.
+## 6.2 Filas
 
-- Nomes técnicos em inglês.
+`notifications` · `integrations` · `documents` · `media` · `maintenance`
 
-- UUIDv7 como direção para IDs internos; geração na aplicação se o provider não oferecer suporte nativo.
+Consumo por Vercel Cron, que invoca uma rota protegida de worker. A rota lê um lote com `pgmq.read`, processa e confirma com `pgmq.delete`. Falha deixa a mensagem voltar após o visibility timeout.
 
-- IDs amigáveis por Workspace: JOB-1054, EST-1048 etc.
+- Retry com backoff e limite. Esgotado, vai para fila morta e fica inspecionável.
+- **Todo worker é idempotente.** Chave de idempotência por `provider_event_id` ou por evento de Outbox.
+- Lote e timeout dimensionados para caber no limite de execução da função.
 
-- Foreign Keys reais nas relações principais.
+## 6.3 Periódicas
 
-- timestamptz para instantes; date para datas civis.
+`pg_cron` agenda: reconciliação com QuickBooks e Stripe, lembretes de cobrança, expiração de Trial e de grants do portal, **alerta de vencimento de seguro de subcontratado**, limpeza e agregações.
 
-- Soft delete apenas onde fizer sentido.
+O cron enfileira; o trabalho pesado roda no worker.
 
-- Versioned migrations em Git; nenhuma alteração manual de schema em Production como prática normal.
+## 6.4 Realtime
 
-## 7.2 Dinheiro e precisão
+Supabase Realtime Broadcast em canais privados por Workspace. Casos: atualização de Job e Service, notificações e status de integração.
 
-- Nunca usar floating point comum para dinheiro.
+**Postgres Changes não é habilitado indiscriminadamente.** Realtime é entrega; o estado autoritativo vem sempre da API após reconexão.
 
-- Preferir integer minor units quando a moeda permitir; numeric/decimal quando a precisão exigir.
+---
 
-- Currency code presente ou inequivocamente inferível nos registros financeiros.
+# 7. Integrações
 
-- Percentuais usam decimal controlado/basis points conforme o caso.
+Toda integração fica atrás de um contrato interno. O módulo de negócio não conhece SDK.
 
-## 7.3 JSONB, Custom Fields, Tags e Pipelines
+## 7.1 Stripe — duas integrações distintas
 
-- JSONB apenas para dados naturalmente flexíveis; não substituir modelagem relacional principal.
+| | Connect | Billing |
+|---|---|---|
+| Serve | Pagamentos dos clientes do contractor | Assinatura da Plataforma |
+| Modelo | Accounts v2 + Direct Charges | Customer, Subscription, Price |
+| Entidades | `IntegrationConnection`, `Payment`, `Refund` | `BillingCustomer`, `SubscriptionInvoice` |
+| Contrato | `PaymentProvider` | `BillingProvider` |
 
-- Custom Fields: definitions + values tipados; nenhuma coluna física nova por campo criado pelo cliente.
+**Não compartilham código de domínio.** Misturar os dois é erro de arquitetura.
 
-- Tags são entidades + assignments, permitindo rename/archive/filter/automation.
+A Plataforma não armazena PAN, CVC ou dado bancário completo. Confirmação depende do estado no provider, nunca do navegador.
 
-- Sales e Job Pipeline usam pipelines + pipeline_stages configuráveis; estados técnicos invariáveis podem usar enums controlados.
+## 7.2 Webhooks recebidos
 
-## 7.4 Snapshots e versionamento
+Route Handler dedicado por provider, com **verificação de assinatura obrigatória** antes de qualquer processamento.
 
-- Estimate aprovado preserva snapshot imutável da versão aceita.
+Fluxo: valida assinatura → grava `InboundWebhookEvent` com `UNIQUE(provider, provider_event_id)` → responde 2xx → enfileira o processamento.
 
-- Change Order aprovado/assinado preserva snapshot equivalente.
+Evento duplicado não reprocessa. Webhook perdido é recuperado por reconciliação periódica.
 
-- Invoice sincronizado preserva snapshot/metadados relevantes.
+## 7.3 QuickBooks Online
 
-- Alterações posteriores do Customer/Property não mudam retroativamente documentos assinados.
+A Plataforma é a fonte operacional; o QuickBooks é a fonte contábil dos objetos sincronizados.
 
-- estimate_versions mantém histórico; a versão aprovada é imutável.
+Invoice nasce por ação manual e vai ao QBO após revisão. Mapeamento explícito em `ExternalObjectLink` — **nunca casamento por nome**. Conflito de versão não sobrescreve silenciosamente. Refresh token rotacionado e persistido a cada uso.
 
-# 8. Storage, Search, Audit e Arquivos
+## 7.4 Resend
 
-## 8.1 Object Storage
+Provider único de e-mail, incluindo o SMTP do Supabase Auth — um domínio, uma reputação.
 
-- Supabase Storage é a primeira opção da V1, atrás de uma abstração FileService.
+Envio é sempre assíncrono, pela fila `notifications`. Eventos de entrega chegam por webhook e alimentam `MessageDeliveryEvent`. Domínio só envia após verificação.
 
-- Fotos, documentos, receipts e áudio de chat vivem em Object Storage, não no PostgreSQL.
+**Inbound está fora da V1.**
 
-- Banco guarda metadata: storage key, owner, workspace, category, visibility, checksum, size e MIME.
+## 7.5 Imposto
 
-- Arquivos privados usam signed URLs temporárias; signed URL nunca é persistida como URL permanente.
+`TaxProvider` com uma implementação interna baseada em `TaxRate`, `TaxExemption` e `TaxTreatment`.
 
-- Imagens podem ter original, optimized e thumbnail; documentos oficiais preservam original imutável.
+O cálculo recebe linhas com valor de mão de obra e material separados, o endereço da Property e a isenção vigente, e devolve o imposto por linha mais a explicação aplicada — que é persistida no documento para auditoria.
 
-- Upload valida tipo/tamanho e pode passar por malware scanning.
+---
 
-## 8.2 Busca
+# 8. Internacionalização
 
-- Global Search V1 dentro do PostgreSQL.
+Requisito sem projeto técnico na v1.0. Fechado aqui.
 
-- B-tree + Full-Text Search + pg_trgm + normalização adequada.
+- **Idiomas: `en-US` e `es-US`.** Ambos completos.
+- Roteamento por segmento de caminho no App Router, com detecção inicial por preferência do usuário e fallback para o padrão do Workspace.
+- Mensagens em catálogos versionados no repositório, com chave semântica. Chave sem tradução falha o build, não cai silenciosamente no inglês.
+- Data, número e moeda por `Intl`, com a locale efetiva e o timezone da Location.
+- **Conteúdo que sai do produto é traduzido:** template de e-mail, PDF do Estimate, rótulo do portal e notificação. `MessageTemplate` guarda um registro por idioma.
+- Preferência de idioma existe no Workspace e no usuário; o portal usa a do contato, com fallback para a do Workspace.
+- Texto vindo do cliente — descrição de serviço, notas — não é traduzido.
 
-- Search sempre workspace-scoped e também permission/location-scoped quando aplicável.
+---
 
-- Entidades iniciais: Customer/Contact, Property, Job, Estimate e Invoice.
+# 9. Web e PWA
 
-- Sem OCR/full-text de PDFs na V1.
+## 9.1 Next.js
 
-- Telefones e e-mails terão campos/representações normalizadas para busca.
+Server Components por padrão; Client Components em módulo interativo. TanStack Query para estado de servidor no cliente, com invalidação explícita.
 
-## 8.3 Audit Log vs Activity
+Design System em `packages/ui-web`, tokens em `packages/design-tokens`. Nenhuma tela cria estilo ad hoc.
 
-Activity Feed é amigável ao usuário; Audit Log é o registro técnico/administrativo estruturado e append-only para a aplicação normal.
+## 9.2 PWA de campo
 
-| **Audit Log mínimo**     | **Descrição**                        |
-|--------------------------|--------------------------------------|
-| actor_id                 | Usuário/agente responsável           |
-| workspace_id             | Tenant                               |
-| action                   | Ação estruturada                     |
-| entity_type / entity_id  | Registro afetado                     |
-| before_json / after_json | Com redaction de dados confidenciais |
-| occurred_at              | Timestamp                            |
-| request_id / source      | Correlação e origem                  |
+O campo é PWA instalável, no mesmo deploy.
 
-# 9. API, Transactions e Domain Events
+- Manifest com ícones e `display: standalone`.
+- Service Worker para shell e assets. **Sem sincronização offline de dados de negócio.**
+- Câmera e galeria por `input` com `capture`; compressão no dispositivo antes do upload; progresso e retry por arquivo.
+- **Web Push** com VAPID; a inscrição vive em `PushSubscription`. No iOS exige o app adicionado à tela inicial.
+- Falha de rede é explícita e **nunca sugere que salvou**.
+- Alvos de toque grandes, operação com uma mão, ação primária fixa no rodapé.
 
-## 9.1 API REST
+---
 
-- REST é a API principal; GraphQL não faz parte da V1.
+# 10. Segurança
 
-- Endpoints de domínio explícitos para transições relevantes: POST /estimates/:id/approve, POST /services/:id/complete etc.
+Baseline **OWASP ASVS**, com least privilege e default deny.
 
-- Schemas de request/response explícitos e OpenAPI.
+- Validação de todo payload externo no servidor, com schema compartilhado em `packages/validation`.
+- SQL parametrizado; sanitização de HTML rico; whitelist de redirect; headers e CSP.
+- Validação de arquivo por MIME real e tamanho, com bloqueio de tipo perigoso.
+- **Isolamento multi-tenant é propriedade crítica** e vale também em busca, relatório, exportação, Realtime e jobs.
+- Log com redaction: sem senha, PAN, CVC, token, cookie, `Authorization` ou PII não aprovada.
+- Secret em variável de ambiente da Vercel e do Supabase, por ambiente. **Chave de service role nunca no cliente.**
+- Rate limit em autenticação, emissão de grant do portal, webhook e rotas caras.
+- Token do portal com alta entropia, guardado como hash, com validade curta e uso único.
 
-- Erros padronizados: code, message, details e request_id.
+## 10.1 Backup e recuperação
 
-- Códigos estáveis: SCHEDULE_CONFLICT, PLAN_LIMIT_REACHED, INSUFFICIENT_PERMISSION etc.
+Backup gerenciado do Supabase, com PITR habilitado quando o estágio comercial justificar. Exercício de restauração periódico em ambiente isolado.
 
-- Paginação backend; cursor quando beneficia consistência/performance, offset quando contagem de páginas for relevante.
+Alvos: RPO ≤ 15 minutos e RTO ≤ 4 horas para Production madura.
 
-- Filtros/ordenação com whitelist; nunca interpolar campos SQL arbitrários vindos do cliente.
+Runbook cobre perda de banco, indisponibilidade de provider, deploy ruim e comprometimento de credencial.
 
-- Bulk operations com use cases/endpoints próprios; grandes volumes vão para Background Job.
+---
 
-## 9.2 Application Services e transações
+# 11. Observabilidade
 
-- Controllers finos; regras vivem em Application Services / Use Cases.
+| Área | Decisão |
+|---|---|
+| Logs | JSON estruturado, com `request_id`, `workspace_id` e módulo |
+| Tracing | OpenTelemetry em HTTP, PostgreSQL, fila e chamada externa |
+| Erros | Sentry no browser, no servidor e no worker |
+| Correlação | `request_id` atravessa Action ou Route → Outbox → pgmq → worker → provider |
 
-- Use Cases podem ser reutilizados por REST, Automation Engine, Workers, MCP e Public API quando apropriado.
+Erro de negócio esperado — conflito de agenda, limite de plano — **não vira exceção no Sentry**.
 
-- Operações atômicas usam transactions PostgreSQL.
+## 11.1 Alvos
 
-- Não manter transação aberta aguardando API externa lenta.
+| Métrica | Alvo |
+|---|---|
+| Rota simples, p95 | ≤ 500 ms, excluindo chamada externa longa |
+| Core Web Vitals, p75 | LCP ≤ 2,5 s · INP ≤ 200 ms · CLS ≤ 0,1 |
+| Espera em fila, p95 | < 60 s em condição normal |
+| Disponibilidade pós-GA | 99,9% mensal no que está sob nosso controle |
 
-- Efeitos externos não essenciais à transação são assíncronos.
+---
 
-## 9.3 Transactional Outbox e Event Flow
+# 12. Testes
 
-<img src="media/image3.png" style="width:6.7in;height:0.49102in" />
+| Camada | Ferramenta | Foco |
+|---|---|---|
+| Unidade e integração | Vitest | Regras, cálculo, permissões, transições, Escadinha, imposto |
+| Banco | Vitest + PostgreSQL efêmero | Migrations, constraints, RLS |
+| Fila | Vitest + pgmq real | Retry, idempotência, visibility timeout |
+| E2E | Playwright | Ver §12.2 |
 
-- Business data e evento Outbox são gravados na mesma transaction.
+## 12.1 Cobertura
 
-- Outbox processor publica/enfileira posteriormente.
+Cobertura alta é exigida **onde o erro custa caro**, não como média global:
 
-- Eventos internos são versionados e carregam event_id, workspace_id, entity_id, actor, occurred_at e correlation_id.
+| Módulo | Mínimo |
+|---|---|
+| `identity` (autorização e tenancy) | 90% |
+| `financial` e `tax` | 90% |
+| `scheduling` (capacidade, conflito, Escadinha) | 90% |
+| `portal` | 85% |
+| Demais | 70% |
 
-- Um evento pode ter múltiplos consumidores; falha em notificação não reverte uma aprovação já persistida.
+A CI falha se um módulo crítico ficar abaixo do mínimo.
 
-- Consumidores possuem retry e idempotência próprios.
+## 12.2 Fluxos E2E obrigatórios
 
-# 10. Filas, Workers, Realtime e Automation Engine
+Aprovação de Estimate por magic link · conclusão de Service com assinatura · criação de Invoice e pagamento · conflito de agenda e Escadinha com Before/After e desfazer · negativa de permissão em acesso por ID direto.
 
-## 10.1 BullMQ + Valkey
+## 12.3 Casos obrigatórios
 
-- BullMQ + Render Key Value (Valkey/Redis-compatible) é a infraestrutura inicial de filas.
+Timezone e horário de verão dos EUA · Escadinha com feriado, bloqueio, serviço concluído e múltiplas Crews · arredondamento, imposto com isenção vencida, desconto, comissão, pagamento parcial e estorno · webhook duplicado, assinatura inválida, fora de ordem e timeout · retry e reinício de worker · imutabilidade do Estimate aprovado · matriz de permissão com acesso por ID direto e escopo do portal · grant expirado, consumido e de outro cliente · atribuição de Crew com seguro vencido.
 
-- Redis/Valkey não é banco de negócio.
+---
 
-- apps/worker executa consumidores separadamente da API.
+# 13. CI/CD e ambientes
 
-- Filas lógicas: notifications, integrations, automation, media, documents, webhooks, reports, maintenance.
+## 13.1 Git
 
-- Retries com backoff; sem retry infinito.
+Trunk-based com branches curtas. `main` protegida, mudança por Pull Request com ao menos uma aprovação humana. Squash merge.
 
-- Jobs falhos permanecem inspecionáveis e aparecem na observabilidade.
+## 13.2 Gates do PR
 
-- Workers devem ser idempotentes.
+Integridade de dependências · lint · type-check · testes unitários e de integração · **cobertura por módulo** · validação de migration · build · verificação de secret · E2E de fumaça nos fluxos críticos.
 
-## 10.2 Realtime
+## 13.3 Ambientes
 
-- Supabase Realtime Broadcast para casos relevantes.
+| Ambiente | Configuração |
+|---|---|
+| Development | Supabase local ou projeto de dev; providers em sandbox |
+| Preview | Deploy automático por PR na Vercel, contra o Supabase de Staging; providers em sandbox |
+| Staging | Projeto Supabase próprio; providers em sandbox; **sem pagamento real** |
+| Production | Projeto, secrets e providers próprios; monitoramento e backup |
 
-- Não habilitar Postgres Changes indiscriminadamente.
+Production **não reutiliza** nada de Development ou Staging.
 
-- Casos iniciais: chat, notifications, approvals, Job/Service updates relevantes e integration status.
+## 13.4 Deploy
 
-- Channels privados e tenant-scoped.
+Deploy automatizado pela Vercel. Migration preferencialmente compatível com a versão anterior: expandir → publicar → migrar → limpar.
 
-- Presence apenas para estados efêmeros de baixa frequência; não para tracking de funcionário.
+Rollback de aplicação **não implica** rollback de schema. Feature flag simples, como dado, para liberação progressiva.
 
-## 10.3 Automation Engine
+## 13.5 Domínio
 
-- Modelo declarativo WHEN → IF → THEN.
+O domínio próprio é adquirido **apenas na entrada em produção**. Até lá, tudo opera em domínio da Vercel.
 
-- Definitions persistidas no PostgreSQL; nenhum JavaScript arbitrário escrito por clientes.
+Consequência a planejar: verificação de domínio no Resend, URL de webhook no Stripe e no QuickBooks, e `redirect_uri` de OAuth precisarão ser refeitos na virada. Nada deve depender de URL fixa escrita no código.
 
-- Triggers alimentados por Domain Events e triggers temporais.
+---
 
-- Conditions suportam AND/OR.
+# 14. Operação
 
-- Actions iniciais: Send Email/SMS, Create Task, Change Status, Assign User, Add Tag, Send Notification.
+- Rota de health verifica processo e dependências essenciais, sem varrer todos os providers.
+- Toda chamada externa tem timeout explícito e retry com backoff.
+- Revisão de capacidade por usuários, Jobs, tamanho de banco, arquivos, volume de fila e tráfego.
+- Limite técnico para tamanho e quantidade de arquivo, ação em massa, destinatários e linhas de exportação.
+- Rate limit por categoria, mais restrito em autenticação e portal.
+- **Limite de plano é dado** em `Entitlement`, nunca condicional de nome de plano espalhado pelo código.
+- Conta de Supabase, Vercel, GitHub, Stripe, Resend e Intuit pertencem à empresa, não ao e-mail pessoal de um desenvolvedor.
+- Desenvolvedor não tem acesso irrestrito rotineiro ao banco de Production.
 
-- Ações financeiras sensíveis não serão expostas genericamente sem regras específicas.
+---
 
-- Execution history registra input, actions, status, timestamps e errors.
+# 15. Migração a partir do estado atual
 
-- Loop prevention por correlation chain + limite de profundidade.
+Parte da migração **já foi executada** pelo ADR-016, em 2026-09-25. O que resta é consequência
+do ADR-017.
 
-- Temporal não faz parte da V1; permanece opção futura para workflows duráveis complexos.
+## 15.1 Já concluído pelo ADR-016
 
-# 11. Integrações Externas
+| Item | Situação |
+|---|---|
+| `apps/api` (NestJS) e `apps/worker` | **Removidos** do workspace |
+| Dependências de BullMQ, Valkey e Render | **Removidas** |
+| `pgmq`, `pg_cron` e `pg_net` | **Habilitados** por migration |
+| Contrato de identidade do Slice 01 | Migrado para a Edge Function `identity-me`, publicada |
 
-Integrações seguem adapters e uma Integration Layer; módulos de negócio não acoplam diretamente a SDKs de providers.
+## 15.2 Pendente, por consequência do ADR-017
 
-## 11.1 QuickBooks Online
+| Item | Ação |
+|---|---|
+| Edge Function `identity-me` | Migra para **Route Handler** em `apps/web`, preservando o contrato do Slice 01. A função só é removida do Supabase após paridade comprovada por teste |
+| Consumo de fila | Passa de `pg_net` acionando Edge Function para **Vercel Cron** acionando rota protegida de worker |
+| `pg_net` | Deixa de ser necessário para dispatch de fila; avaliar remoção |
+| `apps/mobile` (Expo) | Fora da V1 pelo ADR-018. Permanece sem evolução ou é removido por decisão |
+| `packages/observability` | Preservado, reapontado para o runtime da Vercel |
+| `packages/db` | Preservado. É o núcleo do acesso a dados |
+| `packages/api-client` e `packages/domain-types` | Reavaliados: com a regra dentro do `apps/web`, parte deles pode perder propósito |
 
-- Primeira integração contábil: QuickBooks Online, via OAuth 2.0.
+`apps/api` e `apps/worker` **não retornam**.
 
-- CrewCommand é fonte operacional; QBO é fonte contábil para objetos sincronizados.
+---
 
-- Invoice nasce por ação manual no CrewCommand; envio ao QBO ocorre após review.
+# 16. ADRs
 
-- Mappings explícitos entre internal_id e external_id; evitar matching perigoso apenas por nome.
+Todos aceitos. A cadeia de backend se lê em três camadas: o **ADR-016** removeu o Render e
+consolidou o Supabase; o **ADR-017** e o **ADR-018** o emendam em dois pontos.
 
-- Sincronização inicial: Customers necessários, Invoices, Payments relacionados e Items/Services necessários.
+| ADR | Decisão |
+|---|---|
+| ADR-001 | Drizzle ORM + Drizzle Kit |
+| ADR-002 | Conexão e pooling no Supabase |
+| ADR-003 | Tailwind CSS 4 + tokens semânticos |
+| ADR-004 | pnpm + Turborepo |
+| ADR-006 | Supabase Realtime Broadcast |
+| ADR-007 | Stripe Connect Accounts v2 + Direct Charges |
+| ADR-008 | QuickBooks Online |
+| ADR-012 | OpenTelemetry + logs estruturados + Sentry |
+| ADR-013 | Next.js App Router |
+| **ADR-016** | Supabase-only backend runtime; `pgmq` e `pg_cron`; sem Render |
+| **ADR-017** | Next.js como camada de aplicação — supersede ADR-014, **emenda ADR-016** na execução HTTP e no consumo de fila |
+| **ADR-018** | PWA como superfície de campo — supersede ADR-011, **emenda ADR-016** na linha de mobile |
+| **ADR-019** | `TaxProvider` e tratamento fiscal |
+| **ADR-020** | Stripe Billing para a assinatura, separado do Connect |
+| **ADR-021** | Resend como provider único, outbound apenas — substitui ADR-010 |
+| **ADR-022** | Portal por magic link |
+| **ADR-023** | Arquitetura de i18n |
 
-- Webhooks funcionam como sinal de mudança; Worker reconsulta API quando necessário.
+Superseded: ADR-005, ADR-011, ADR-014 e ADR-015. Permanecem como registro histórico e não
+podem ser usados para reintroduzir a decisão revogada.
 
-- Reconciliation periódico para reduzir risco de estado perdido.
+Do ADR-017 em diante, todo ADR segue o formato do Technical Validation Plan §20, incluindo
+**Revisit Trigger** — campo ausente nos ADRs de 001 a 016.
 
-- Conflitos não sobrescrevem silenciosamente dados operacionais internos.
+---
 
-## 11.2 Stripe Connect / Payments
 
-- Stripe Connect como provider principal; onboarding hosted/embedded.
+# 17. Decisões abertas
 
-- Connected Accounts por Workspace; possibilidade futura por Location.
+| Item | Situação |
+|---|---|
+| Marca e domínio | Não definidos; domínio adquirido na virada para produção |
+| Valores e limites dos planos | Estrutura definida, números em aberto |
+| Política de retenção e período de exportação | Em aberto |
+| Extensão da UI de multi-location | `location_id` no modelo; alcance na interface em aberto |
+| Provider externo de imposto | Contrato definido; adoção só se a operação exigir |
 
-- Card + ACH inicialmente via Stripe.
+---
 
-- CrewCommand não armazena PAN/CVC ou dados bancários completos.
-
-- Confirmação de pagamento depende de provider state/webhook, não apenas do browser.
-
-- Webhook signature obrigatória e eventos idempotentes pelo provider Event ID.
-
-- Pagamentos manuais Cash/Check aparecem no mesmo domínio financeiro, diferenciados por origem.
-
-- Sem application fee na V1 até definir modelo comercial; arquitetura deve permitir evolução.
-
-## 11.3 PayPal, Twilio e Resend
-
-| **Provider** | **Uso**                   | **Regras-chave**                                                                                                       |
-|--------------|---------------------------|------------------------------------------------------------------------------------------------------------------------|
-| PayPal       | PaymentProvider adicional | REST/OAuth; webhooks verificados; opção só aparece se habilitada.                                                      |
-| Twilio       | SMS/MMS bidirecional      | Messaging Services; A2P 10DLC nos EUA; opt-out obrigatório; signature validation; usage metering por Workspace.        |
-| Resend       | E-mail outbound/inbound   | EmailProvider abstraction; inbound webhook; attachments passam por FileService; domínios próprios só após verificação. |
-
-## 11.4 Webhooks próprios, Public API e MCP
-
-- Public API versionada em /api/v1, com API credentials por Workspace e scopes.
-
-- Webhooks próprios com URL, eventos, secret, status, HMAC signature, retries, logs e manual retry.
-
-- Consumidores recebem Event ID único e devem tratar idempotência.
-
-- MCP será Remote MCP Server em TypeScript usando a linha estável do SDK no início real da implementação.
-
-- MCP não acessa banco diretamente; usa Application Services, authorization engine e Audit Log.
-
-- Tools são capacidades de negócio (search_customers, get_job, create_task, reschedule_service), nunca SQL genérico.
-
-# 12. Web, PWA e Mobile
-
-## 12.1 Web / Next.js
-
-- Next.js App Router para Web, PWA, Client Portal e rotas de autenticação.
-
-- Server Components onde agregam valor; Client Components em módulos altamente interativos.
-
-- TanStack Query para server state, mutations, invalidation e optimistic updates seguros.
-
-- api-client compartilhado para auth, workspace context, errors e request IDs.
-
-- Design System em packages/ui-web; design-tokens compartilhados.
-
-- PWA instalável, sem prometer Offline Mode completo na V1.
-
-## 12.2 React Native / Expo
-
-- React Native + Expo + Expo Router.
-
-- Usar a versão estável suportada no início real do desenvolvimento; nunca iniciar Production em beta sem justificativa.
-
-- New Architecture obrigatória nas versões modernas; dependências verificadas com Expo Doctor.
-
-- Universal Links / Android App Links por HTTPS; custom scheme como fallback.
-
-- SecureStore para tokens sensíveis; não usar AsyncStorage puro para credenciais.
-
-- TanStack Query também no mobile; cache não equivale a Offline Mode.
-
-- Uploads de foto com compressão no device + validação server-side.
-
-- Expo Push Service inicialmente, atrás de PushNotificationProvider.
-
-- EAS Build, Submit e Update com profiles development/preview/production e staging antes de produção.
-
-# 13. Segurança e Privacidade
-
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Baseline<br />
-</strong>OWASP ASVS 5.0 é o baseline técnico de segurança. Segurança faz parte do Definition of Done e usa least privilege + default deny.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
-
-## 13.1 Controles principais
-
-- HTTPS/TLS para tráfego externo; encryption at rest nos providers.
-
-- Secret Manager/Environment Secret Store; nenhum secret Production em Git ou bundle Web/Mobile.
-
-- Validação server-side de todos os payloads externos.
-
-- SQL parametrizado, sanitização quando houver HTML rico, redirect whitelist, headers/CSP adequados.
-
-- File validation por MIME/content + tamanho + bloqueio de tipos perigosos; scanning quando apropriado.
-
-- Isolamento multi-tenant é propriedade crítica; Search, Reports, exports, Realtime e Workers também aplicam scope.
-
-- Logs redacted: sem passwords, CVC, PAN, refresh tokens ou API secrets.
-
-- Stripe-hosted/embedded components para reduzir escopo PCI; nenhuma declaração de compliance formal sem auditoria.
-
-- Arquitetura SOC 2-ready: access control, logging, change management, backups, incident response e vendor register.
-
-## 13.2 Backups e Disaster Recovery
-
-| **Objetivo**   | **Decisão**                                                                                   |
-|----------------|-----------------------------------------------------------------------------------------------|
-| Backups        | Estratégia documentada + provider backups + cópia/export off-provider dos dados críticos.     |
-| PITR           | Habilitar quando estágio comercial justificar; recomendado para Production madura.            |
-| Restore drills | Obrigatórios periodicamente em ambiente isolado.                                              |
-| RPO alvo       | ≤ 15 minutos para banco crítico em Production madura.                                         |
-| RTO alvo       | ≤ 4 horas para incidente grave de banco/aplicação.                                            |
-| Runbook        | Database/storage loss, provider outage, bad deploy, credential compromise, destructive event. |
-
-# 14. Observabilidade e Performance
-
-## 14.1 Stack
-
-| **Área**   | **Tecnologia / regra**                                                           |
-|------------|----------------------------------------------------------------------------------|
-| Logs       | Pino JSON em Production; pino-pretty no Development.                             |
-| Tracing    | OpenTelemetry em HTTP, Postgres, Redis, queues, workers e external HTTP.         |
-| Metrics    | OpenTelemetry: request/error/latency, DB, queue, worker, provider, webhook.      |
-| Errors     | Sentry para Next.js, NestJS, Workers e Expo/React Native.                        |
-| Correlação | request_id/correlation_id atravessando API → Outbox → Queue → Worker → Provider. |
-
-## 14.2 Targets iniciais
-
-| **Métrica**             | **Target / princípio**                                                       |
-|-------------------------|------------------------------------------------------------------------------|
-| API simples             | p95 ≤ 500 ms, excluindo operações externas longas.                           |
-| Web público/Portal      | Core Web Vitals como referência: LCP ≤ 2.5s, INP ≤ 200ms, CLS ≤ 0.1 (p75).   |
-| Queue wait comum        | p95 \< 30s em condições normais.                                             |
-| Availability SLO pós-GA | 99.9% mensal para serviços sob nosso controle.                               |
-| 5xx                     | \<1% global como direção inicial; substancialmente menor em fluxos críticos. |
-
-# 15. Estratégia de Testes e Quality Gates
-
-| **Camada**         | **Ferramenta / foco**                                                                      |
-|--------------------|--------------------------------------------------------------------------------------------|
-| Unit / Integration | Vitest; rules, calculations, permissions, status transitions, Stair-Step.                  |
-| DB integration     | PostgreSQL real/efêmero; testar migrations, SQL e constraints.                             |
-| Queue integration  | Redis/Valkey + BullMQ reais em cenários críticos.                                          |
-| E2E Web            | Playwright; login, workspaces, CRM, Estimate, Job, Schedule, Portal, permissions.          |
-| E2E Mobile         | Maestro; Today, Service, Daily Log, photos, material, change order, signature, deep links. |
-| Performance        | k6; cenários críticos com thresholds objetivos.                                            |
-| Security           | Cross-tenant, direct-ID access, signatures, secrets, scopes e dependency scanning.         |
-
-## 15.1 Coverage baseline
-
-- Lines ≥ 80%
-
-- Functions ≥ 80%
-
-- Statements ≥ 80%
-
-- Branches ≥ 70%
-
-- Authorization, Financial e Scheduling podem exigir thresholds maiores por módulo.
-
-- Coverage é indicador, não substituto de testes significativos.
-
-## 15.2 Casos obrigatórios
-
-- Timezone e Daylight Saving Time dos EUA.
-
-- Escadinha: aumento/redução de duração, feriado, bloqueio, conflict, completed service e múltiplas Crews.
-
-- Money rounding, taxes, discounts, commission, partial payments, refunds e Change Orders.
-
-- Webhook duplicated, invalid signature, out-of-order, timeout, 500 e retry.
-
-- Queue retry/idempotency e worker restart.
-
-- Approved Estimate/Change Order snapshot imutável.
-
-- Permission matrix incluindo Custom Roles, direct-ID access e Client Portal scope.
-
-- Automation AND/OR, delay, disabled, loop prevention e failed action.
-
-- MCP/Public API authorization e credential revocation.
-
-# 16. CI/CD e Release Engineering
-
-## 16.1 Git e Pull Requests
-
-- Trunk-based development com branches curtas; sem GitFlow pesado.
-
-- main protegida; mudanças via Pull Request.
-
-- Pelo menos uma aprovação humana; mudanças sensíveis podem exigir revisão adicional.
-
-- Squash merge como direção para histórico principal limpo.
-
-- PR visual aponta para Screen ID/Figma quando aplicável; API pública atualiza contrato/docs; schema muda via migration.
-
-## 16.2 Quality Gates do PR
-
-1.  Install / dependency integrity.
-
-2.  Lint.
-
-3.  Type-check.
-
-4.  Unit tests.
-
-5.  Integration tests principais.
-
-6.  Coverage.
-
-7.  Build Web/API/Worker.
-
-8.  Security / dependency / secret checks.
-
-9.  Migration validation.
-
-10. E2E smoke Web quando aplicável.
-
-## 16.3 Deploy e rollback
-
-- Production deploy automatizado; nenhum upload manual de servidor como processo normal.
-
-- Staging persistente e separado; providers em Sandbox/Test.
-
-- Migrations preferencialmente backward-compatible: expand → deploy → migrate → cleanup.
-
-- Aplicação tem rollback; rollback de aplicação não implica rollback automático de schema.
-
-- Feature Flags para rollout progressivo e desativação rápida.
-
-- Production smoke tests seguros após deploy.
-
-- Mobile usa EAS Workflows/Build/Submit/Update com preview antes de production.
-
-# 17. Infraestrutura da V1
-
-| **Componente**                   | **Provider / Região inicial**       | **Notas**                                                                       |
-|----------------------------------|-------------------------------------|---------------------------------------------------------------------------------|
-| Web/PWA/Portal                   | Vercel / iad1 US East               | CDN global; server-side próximo do backend/dados.                               |
-| NestJS API                       | Render / Virginia                   | Docker, stateless, deploy independente.                                         |
-| BullMQ Workers                   | Render / Virginia                   | Background Workers separados da API.                                            |
-| Queue/Cache                      | Render Key Value / Virginia         | Valkey 8 Redis-compatible; persistence Journal + Snapshot para fila Production. |
-| PostgreSQL/Auth/Storage/Realtime | Supabase / North Virginia us-east-1 | Projects separados para Development/Staging/Production.                         |
-| Mobile                           | Expo / EAS                          | Build, Submit, Update e workflows.                                              |
-| CI                               | GitHub Actions                      | Orquestrador principal do monorepo.                                             |
-| Observability                    | Sentry + OpenTelemetry              | Errors + traces/metrics.                                                        |
-
-## 17.1 Ambiente por estágio
-
-| **Ambiente** | **Características**                                                                                |
-|--------------|----------------------------------------------------------------------------------------------------|
-| Development  | Local Web/API/Workers, Postgres/Redis locais ou dev project, provider mocks e Sandboxes opcionais. |
-| Staging      | Vercel + Render + Supabase + Key Value próprios; provider Sandboxes; sem pagamentos reais.         |
-| Production   | Infraestrutura separada, secrets próprios, monitoramento, backups e providers Production.          |
-
-## 17.2 Scaling
-
-- Web: scaling gerenciado pela Vercel.
-
-- API: stateless, horizontal scaling; começar dimensionado para Alpha/Beta e evoluir por métricas.
-
-- Antes de GA/pagantes relevantes, direção de mínimo duas instâncias de API se custo/plano permitir.
-
-- Workers escalam horizontalmente conforme queue depth/processing latency.
-
-- Autoscaling não será ativado cegamente no primeiro dia; medir antes e definir min/max/thresholds.
-
-- DB: índices, query optimization, pooling e vertical scaling primeiro; sem sharding na V1.
-
-- Search fica no PostgreSQL enquanto atender SLOs; adapter SearchService permitirá evolução futura.
-
-# 18. Operação, Health, SLOs e Capacity Planning
-
-## 18.1 Health checks
-
-- API expõe /health.
-
-- Liveness verifica processo vivo; readiness verifica capacidade de atender.
-
-- Health checks não executam dezenas de dependências externas pesadas.
-
-- API/Workers suportam graceful shutdown.
-
-## 18.2 Cron / tarefas periódicas
-
-- Reconciliation, cleanup, expired trials, overdue reminders e maintenance.
-
-- Scheduler dispara fila; lógica pesada roda em Worker.
-
-- Toda chamada externa possui timeout explícito e retry/backoff apropriado.
-
-- Circuit breaker pode ser adicionado onde falha persistente de provider justificar.
-
-## 18.3 Capacity e limites técnicos
-
-- Capacity reviews por users, Jobs, DB size, files, queue volume, API traffic e messaging volume.
-
-- Limites técnicos para file size/count, bulk actions, recipients, export rows, API page size etc.
-
-- Rate limits por categoria; Auth e Public API mais restritos.
-
-- Usage metering interno para users, Locations, storage, SMS, automation executions e API usage.
-
-- Planos mapeados para Entitlements, nunca dezenas de if plan === Pro espalhados pelo código.
-
-# 19. Segurança Operacional e Ownership
-
-- Contas Vercel, Render, Supabase, GitHub, Expo, Sentry e providers Production pertencem à empresa CrewCommand.
-
-- Nenhum provider crítico preso permanentemente ao e-mail pessoal de desenvolvedor.
-
-- Acessos de infraestrutura revisados periodicamente e revogados rapidamente na saída da equipe.
-
-- Desenvolvedores não possuem acesso irrestrito rotineiro ao banco Production.
-
-- Support Mode e ferramentas internas são preferidos a SQL direto para suporte ao cliente.
-
-- Infrastructure/config crítica versionada como código quando possível: Render Blueprints, Vercel config, Supabase migrations/config.
-
-- ADRs registram decisões arquiteturais; Runbooks cobrem incidentes e operações críticas.
-
-# 20. Estágios de Lançamento
-
-| **Estágio**          | **Requisitos principais**                                                                             |
-|----------------------|-------------------------------------------------------------------------------------------------------|
-| Internal Alpha       | Poucos usuários controlados; infra menor; Staging separado; isolamento e integridade já obrigatórios. |
-| Private Beta         | Backups, monitoring, alerts, incident runbook, Feature Flags e suporte operacional ativos.            |
-| Limited Production   | Capacidade e HA ampliadas conforme clientes reais; observabilidade e reconciliation maduros.          |
-| General Availability | SLO monitoring, restore drill, multi-instance API, security review, E2E crítico e support process.    |
-
-# 21. ADRs Iniciais Recomendados
-
-| **ADR** | **Decisão**                                          |
-|---------|------------------------------------------------------|
-| ADR-001 | Modular Monolith para a V1.                          |
-| ADR-002 | TypeScript como linguagem principal.                 |
-| ADR-003 | PostgreSQL como source of truth.                     |
-| ADR-004 | Supabase Auth + authorization própria.               |
-| ADR-005 | Shared DB / shared schema multi-tenancy.             |
-| ADR-006 | NestJS + Fastify para API.                           |
-| ADR-007 | BullMQ + Valkey para async workloads.                |
-| ADR-008 | Transactional Outbox para domain events.             |
-| ADR-009 | Next.js App Router para Web/PWA/Portal.              |
-| ADR-010 | React Native + Expo para mobile.                     |
-| ADR-011 | Vercel + Render + Supabase como infraestrutura V1.   |
-| ADR-012 | Stripe Connect como provider de pagamento principal. |
-| ADR-013 | QuickBooks Online como integração contábil inicial.  |
-| ADR-014 | Twilio + Resend para comunicação externa inicial.    |
-
-# 22. PoCs Obrigatórios Antes do Início da Implementação
-
-1\. ORM / query layer: comparar opções atuais sobre transactions, migrations, RLS, JSONB, FTS, pg_trgm, raw SQL, pooling e typing.
-
-2\. Database connection strategy: validar Supavisor/direct connection/session/transaction conforme driver escolhido.
-
-3\. Design System em código: validar solução de styling e integração com tokens aprovados.
-
-4\. Monorepo tooling: validar pnpm + Turborepo em Web/API/Worker/Mobile.
-
-5\. BullMQ + Render Key Value: validar jobs, retries, graceful shutdown, persistence e worker scaling.
-
-6\. Supabase Realtime Broadcast: validar canais privados, authorization e volume de Chat/Notifications.
-
-7\. Stripe Connect sandbox: onboarding, connected account, card, ACH e webhook signatures.
-
-8\. QuickBooks sandbox: OAuth refresh rotation, Customer mapping, Invoice/Payment sync, webhooks e reconciliation.
-
-9\. Twilio: Messaging Service, inbound SMS, status callbacks, opt-out e A2P onboarding flow.
-
-10\. Resend: outbound + inbound replies + attachments + conversation mapping.
-
-11\. Expo: deep links, push, camera/upload, EAS preview, source maps e Maestro flow.
-
-12\. End-to-end observability: request_id da API até Queue/Worker/Provider e Sentry/OTel correlation.
-
-# 23. Definition of Ready para o Implementation Plan
-
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Gate<br />
-</strong>O Implementation Plan só deve decompor a construção após os PoCs técnicos críticos resolverem as decisões marcadas como pendentes. O plano não deve inventar respostas que este TRD deliberadamente deixou para validação prática.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
-
-☐ PRD, App Flow, Domain Model e UI/UX aprovados.
-
-☐ TRD v1.0 aprovado.
-
-☐ Arquitetura e infraestrutura V1 aprovadas.
-
-☐ PoC do ORM/query layer concluído.
-
-☐ PoC de conexão/pooling concluído.
-
-☐ PoC do monorepo/build pipeline concluído.
-
-☐ PoCs de Stripe/QuickBooks/Twilio/Resend com Sandboxes concluídos.
-
-☐ PoC do mobile/deep links/push concluído.
-
-☐ ADR inicial criado para as decisões fundamentais.
-
-☐ Ambientes Development/Staging bootstrap definidos.
-
-# 24. Princípio Técnico Final
-
-<table>
-<colgroup>
-<col style="width: 100%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th><strong>Arquitetura oficial da V1<br />
-</strong>CrewCommand V1 será uma plataforma TypeScript modular, multi-tenant e orientada a eventos, com PostgreSQL como fonte de verdade, infraestrutura gerenciada, API e Workers independentes, autorização centralizada, integrações desacopladas, segurança em camadas, observabilidade completa e capacidade de escalar horizontalmente sem introduzir complexidade distribuída antes de ela ser necessária.</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
-</table>
-
-# Apêndice A — Referências Técnicas que Devem Ser Revalidadas no Kickoff
-
-Estas tecnologias foram aprovadas na descoberta do TRD. Versões exatas e detalhes de provider mudam com o tempo; no kickoff da implementação, a equipe deve revalidar a documentação oficial e registrar a versão efetivamente utilizada no ADR/repositório.
-
-| **Tecnologia**    | **Área**                                                  | **Referência oficial**                 |
-|-------------------|-----------------------------------------------------------|----------------------------------------|
-| Next.js           | App Router / PWA                                          | nextjs.org/docs                        |
-| NestJS            | Fastify / Queues / OpenAPI                                | docs.nestjs.com                        |
-| PostgreSQL        | Versão suportada pelo provider, UUIDv7/FTS/JSONB          | postgresql.org/docs                    |
-| Supabase          | Auth / Storage / Realtime / Backups / Regions             | supabase.com/docs                      |
-| Expo              | SDK estável / Router / Notifications / EAS                | docs.expo.dev                          |
-| Stripe            | Connect / Payments / Webhooks                             | docs.stripe.com                        |
-| QuickBooks Online | Accounting API / OAuth / Webhooks                         | developer.intuit.com                   |
-| Twilio            | Programmable Messaging / A2P 10DLC / Webhooks             | twilio.com/docs                        |
-| Resend            | Email / Inbound / Domains / Webhooks                      | resend.com/docs                        |
-| OpenTelemetry     | JavaScript instrumentation                                | opentelemetry.io/docs/languages/js     |
-| Sentry            | Next.js / NestJS / React Native                           | docs.sentry.io                         |
-| Playwright        | E2E / Trace / CI                                          | playwright.dev/docs                    |
-| Maestro           | Mobile E2E / Expo workflows                               | maestro.mobile.dev / docs.expo.dev     |
-| k6                | Performance testing                                       | grafana.com/docs/k6                    |
-| Render            | Web Services / Workers / Key Value / Scaling / Blueprints | render.com/docs                        |
-| Vercel            | Regions / Functions / Next.js                             | vercel.com/docs                        |
-| OWASP             | ASVS 5.0 / Secrets guidance                               | owasp.org / cheatsheetseries.owasp.org |
-
-# Apêndice B — Glossário Técnico
-
-| **Termo**                      | **Definição no CrewCommand**                                                         |
-|--------------------------------|--------------------------------------------------------------------------------------|
-| Workspace                      | Empresa/tenant cliente do SaaS.                                                      |
-| Membership                     | Relação User ↔ Workspace com Role/Permissions/Scope.                                 |
-| Location                       | Filial operacional dentro do Workspace.                                              |
-| Application Service / Use Case | Unidade de regra/aplicação chamada por API, Workers, MCP etc.                        |
-| Domain Event                   | Evento versionado de negócio, ex.: estimate.approved.                                |
-| Outbox                         | Registro transacional que garante que eventos não sejam perdidos após commit.        |
-| Worker                         | Processo assíncrono que consome BullMQ.                                              |
-| Provider Adapter               | Implementação específica de QuickBooks/Stripe/Twilio/etc. atrás de contrato interno. |
-| RLS                            | Row Level Security no PostgreSQL/Supabase como camada adicional de isolamento.       |
-| SLO                            | Objetivo operacional interno; não equivale automaticamente a SLA contratual.         |
+> **Princípio final.** A V1 é uma aplicação TypeScript única, multi-tenant e orientada a eventos, com PostgreSQL como fonte de verdade, fila dentro do próprio banco, dois fornecedores de infraestrutura e autorização centralizada no servidor. Complexidade distribuída só entra quando houver carga que a justifique.

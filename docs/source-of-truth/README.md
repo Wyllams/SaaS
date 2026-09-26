@@ -12,14 +12,18 @@ Este diretório concentra os documentos de produto e arquitetura que devem ser c
 
 ## Os 6 documentos-base
 
-| # | Documento | Estado | Arquivo |
+| # | Documento | Versão | Arquivo |
 |---|---|---|---|
-| 1 | PRD | CONCLUÍDO | `canonical/01-PRD.md` |
-| 2 | TRD | CONCLUÍDO / APROVADO | `canonical/02-TRD-OFICIAL.md` |
-| 3 | Fluxo do App | CONCLUÍDO / OFICIAL | `canonical/03-APP-FLOW-OFICIAL.md` |
-| 4 | UI/UX Design | CONCLUÍDO / APROVADO | `canonical/04-UI-UX-DESIGN.md` |
-| 5 | Esquema Backend / Domain Model | CONCLUÍDO / OFICIAL | `canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md` |
-| 6 | Implementation Plan v1.0 | **CONCLUÍDO / APROVADO** | `canonical/06-IMPLEMENTATION-PLAN-v1.0.md` |
+| 1 | PRD | **v2.0** | `canonical/01-PRD.md` |
+| 2 | TRD | **v2.0** | `canonical/02-TRD-OFICIAL.md` |
+| 3 | Fluxo do App | **v2.0** | `canonical/03-APP-FLOW-OFICIAL.md` |
+| 4 | UI/UX Design | v1.0 + adendo v2.0 | `canonical/04-UI-UX-DESIGN.md` |
+| 5 | Esquema Backend / Domain Model | **v2.0** | `canonical/05-BACKEND-SCHEMA-DOMAIN-MODEL.md` |
+| 6 | Implementation Plan | **v2.0** | `canonical/06-IMPLEMENTATION-PLAN.md` |
+
+As versões 2.0 foram reescritas em 2026-09-25 a partir das decisões registradas em
+`CURRENT-DECISIONS.md`: ICP de exterior contractors, sete papéis, stack Supabase + Vercel
+e escopo da V1. Os documentos v1.0 permanecem recuperáveis pelo histórico do Git.
 
 ## Material de apoio
 
