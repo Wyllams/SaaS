@@ -74,3 +74,14 @@ POC-04 demonstrated that:
 - POC document: `docs/poc/POC-04.md`
 - GitHub Actions run `36081203499`: 9/9 builds, 9/9 checks, 9/9 cache hits on second build.
 - Lockfile commit: `0fc803f6baef0e4569fd6494cd8e291c0e3d05ee`.
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. **revisão já agendada:** os itens 5, 6 e 7 do Epic 0 alteram a topologia — criam `packages/domain` e `packages/i18n`, reavaliam `api-client` e `domain-types`, e decidem o destino de `apps/mobile`. O ADR precisa ser atualizado quando isso fechar;
+2. o tempo de CI ultrapassar o orçamento definido, apesar do cache do Turborepo;
+3. o pnpm deixar de suportar a versão de Node fixada na fundação.

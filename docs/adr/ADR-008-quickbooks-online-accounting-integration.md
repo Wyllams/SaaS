@@ -246,3 +246,14 @@ Sensitive OAuth material is never placed in normal application logs.
 - POC document: `docs/poc/POC-08.md`
 - External Sandbox run: `36092493464`
 - External artifact: `poc-08-qbo-external-evidence`
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. o produto precisar de um segundo provedor contábil, o que exige generalizar o adapter;
+2. os limites de taxa da API do QuickBooks impedirem a reconciliação periódica no volume real;
+3. o conflito de versão entre o registro operacional e o contábil deixar de ser resolúvel pelo refetch autoritativo.

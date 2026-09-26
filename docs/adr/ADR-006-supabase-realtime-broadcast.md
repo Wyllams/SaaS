@@ -111,3 +111,14 @@ Postgres Changes can still be used selectively for a proven low-volume use case,
 - POC document: `docs/poc/POC-06.md`
 - Functional run: `36086788945`
 - Supabase project: `obpncbnzwrocvgngtodg`
+
+## Revisit Trigger
+
+> Campo acrescentado em 2026-09-25. É obrigatório pelo §20 do Technical Validation &
+> PoC Plan, mas os ADRs anteriores ao 017 foram escritos sem ele.
+
+Reavaliar se ocorrer **qualquer** um destes:
+
+1. o número de conexões simultâneas se aproximar do limite do plano contratado;
+2. a entrega passar a exigir garantia — Broadcast é best-effort, e qualquer requisito de "não pode perder" pertence ao Outbox, não ao Realtime;
+3. alguém propor ler estado do Broadcast como verdade, o que contraria o guardrail de que o PostgreSQL é a fonte transacional.

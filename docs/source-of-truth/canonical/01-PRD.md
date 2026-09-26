@@ -433,12 +433,15 @@ Conversão Lead→Estimate e Estimate→Won; tempo entre aprovação e agendamen
 
 Registradas para decisão do Product Owner. **Não devem ser resolvidas por inferência durante a implementação.**
 
+> Reprodução da lista autoritativa de `CURRENT-DECISIONS.md` §Decisões em aberto.
+> Os rótulos são idênticos de propósito, para que a divergência seja detectável.
+
 | Item | Situação |
 |---|---|
-| Marca do produto | Não definida. Nomes permanecem brand-neutral |
-| Valores dos planos e limites | Estrutura definida, números em aberto |
-| Escopo de UI de multi-location | `location_id` permanece no modelo; a extensão da interface na V1 está em aberto |
-| Duração do período de exportação e retenção | Em aberto |
+| Marca do produto | Não definida. Todo identificador permanece brand-neutral; o UI/UX usa o placeholder `[MARCA]` |
+| Valores e limites dos planos | Estrutura definida, números em aberto. Não bloqueia o Epic 4: limite é dado em `Entitlement`, nunca condicional por nome de plano |
+| Extensão da UI de multi-location | `location_id` permanece no modelo; o alcance na interface da V1 está em aberto |
+| Período de exportação e retenção | Em aberto — é o motivo de `SCR-SET-013` estar adiada |
 
 **Idiomas não estão em aberto.** A V1 entrega **`en-US` e `es-US`, ambos completos no produto inteiro**; PT-BR sai do escopo. Decidido em 2026-09-25 e registrado no **ADR-023** (Accepted), em `CURRENT-DECISIONS.md` §Idiomas, no TRD §8 e no adendo A5 do UI/UX. Esta linha existia como decisão pendente e propunha espanhol restrito às telas de campo — escopo **menor** que o decidido. Removida.
 
